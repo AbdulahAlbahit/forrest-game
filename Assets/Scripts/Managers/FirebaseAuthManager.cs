@@ -70,8 +70,22 @@ public class FirebaseAuthManager : MonoBehaviour
                 auth = FirebaseAuth.DefaultInstance;
                 IsFirebaseReady = true;
 
-                // Firebase hazir, anonim giris baslatiliyor
-                SignInAsGuest();
+                // Mevcut oturum kontrolu
+                if (auth.CurrentUser != null)
+                {
+                    // Cihazda zaten bir oturum var, yeniden giris yapma
+                    currentUser = auth.CurrentUser;
+                    Debug.Log("FirebaseAuthManager: Mevcut oyuncu bulundu, yeniden giris yapilmadi.");
+                    Debug.Log($"  -> Kullanici ID: {currentUser.UserId}");
+                    Debug.Log($"  -> Anonim mi: {currentUser.IsAnonymous}");
+                    OnLoginSuccess?.Invoke();
+                }
+                else
+                {
+                    // Oturum yok, sifirdan anonim giris yap
+                    Debug.Log("FirebaseAuthManager: Mevcut oturum bulunamadi, yeni misafir girisi baslatiliyor...");
+                    SignInAsGuest();
+                }
             }
             else
             {
