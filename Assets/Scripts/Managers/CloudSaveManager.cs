@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Firebase.Firestore;
@@ -43,19 +44,54 @@ public class CloudSaveManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void OnEnable()
+    private bool isSubscribed = false;
+
+    private void Start()
     {
         if (FirebaseAuthManager.Instance != null)
         {
-            FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
+            SubscribeToAuth();
+        }
+        else
+        {
+            // FirebaseAuthManager henuz hazir degil, hazir olana kadar bekle
+            StartCoroutine(WaitForAuthManager());
         }
     }
 
-    private void OnDisable()
+    private IEnumerator WaitForAuthManager()
     {
-        if (FirebaseAuthManager.Instance != null)
+        Debug.Log("CloudSaveManager: FirebaseAuthManager bekleniyor...");
+
+        while (FirebaseAuthManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        SubscribeToAuth();
+        Debug.Log("CloudSaveManager: FirebaseAuthManager bulundu, event aboneligi yapildi.");
+    }
+
+    private void SubscribeToAuth()
+    {
+        if (!isSubscribed)
+        {
+            FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
+            isSubscribed = true;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (isSubscribed && FirebaseAuthManager.Instance != null)
         {
             FirebaseAuthManager.Instance.OnLoginSuccess -= HandleLoginSuccess;
+        }
+
+        if (Instance == this)
+        {
+            db = null;
+            Instance = null;
         }
     }
 
@@ -204,12 +240,5 @@ public class CloudSaveManager : MonoBehaviour
         });
     }
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
-        {
-            db = null;
-            Instance = null;
-        }
-    }
+
 }
