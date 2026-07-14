@@ -1,109 +1,146 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// Oyunun ekonomi sistemini yöneten Singleton manager.
+/// Oyuncunun Coin ve XP değerlerini tutar, artırır ve azaltır.
+/// </summary>
 public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }
 
-    [Header("Baslangic Ayarlari")]
-    [SerializeField] private int baslangicParasi = 100;
+    // ── Inspector'dan Ayarlanabilir Başlangıç Değerleri ──
+    [Header("Başlangıç Değerleri")]
+    [SerializeField] private int startingCoins = 100;
+    [SerializeField] private int startingXP = 0;
 
-    private int mevcutPara;
+    // ── Güncel Değerler ──
+    private int _currentCoins;
+    private int _currentXP;
 
-    /// <summary>
-    /// Para miktari degistiginde tetiklenir. Yeni para miktarini parametre olarak verir.
-    /// </summary>
-    public event Action<int> OnMoneyChanged;
+    // ── Public Erişim (Sadece Okunabilir) ──
+    public int CurrentCoins => _currentCoins;
+    public int CurrentXP => _currentXP;
+
+    // ── Eventler ──
+    /// <summary>Coin miktarı değiştiğinde tetiklenir. Parametre: yeni coin miktarı.</summary>
+    public event Action<int> OnCoinsChanged;
+
+    /// <summary>XP miktarı değiştiğinde tetiklenir. Parametre: yeni XP miktarı.</summary>
+    public event Action<int> OnXPChanged;
+
+    /// <summary>Yetersiz bakiye nedeniyle harcama reddedildiğinde tetiklenir. Parametre: gereken miktar.</summary>
+    public event Action<int> OnInsufficientFunds;
+
+    // ═══════════════════════════════════════════
+    //  Lifecycle
+    // ═══════════════════════════════════════════
 
     private void Awake()
     {
+        // Singleton kontrolü
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        mevcutPara = baslangicParasi;
+        // Başlangıç değerlerini ata
+        _currentCoins = startingCoins;
+        _currentXP = startingXP;
+
+        Debug.Log($"[EconomyManager] Başlatıldı → Coin: {_currentCoins}, XP: {_currentXP}");
     }
 
-    private void OnEnable()
-    {
-        if (CloudSaveManager.Instance != null)
-        {
-            CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (CloudSaveManager.Instance != null)
-        {
-            CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
-        }
-    }
+    // ═══════════════════════════════════════════
+    //  Coin İşlemleri
+    // ═══════════════════════════════════════════
 
     /// <summary>
-    /// Buluttan veri yuklendiginde para miktarini senkronize eder.
+    /// Oyuncuya belirtilen miktarda coin ekler.
     /// </summary>
-    private void HandleDataLoaded(PlayerData data)
-    {
-        SetMoney(data.Para);
-        Debug.Log($"EconomyManager: Bulut verisi ile senkronize edildi. Para: {mevcutPara}");
-    }
-
-    /// <summary>
-    /// Mevcut para miktarini dondurur.
-    /// </summary>
-    public int MevcutPara => mevcutPara;
-
-    /// <summary>
-    /// Belirtilen miktarda para ekler.
-    /// </summary>
-    public void AddMoney(int amount)
+    public void AddCoins(int amount)
     {
         if (amount <= 0)
         {
-            Debug.LogWarning("EconomyManager: Eklenecek miktar pozitif olmalidir.");
+            Debug.LogWarning("[EconomyManager] AddCoins: Miktar 0 veya negatif olamaz.");
             return;
         }
 
-        mevcutPara += amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
-        Debug.Log($"EconomyManager: {amount} para eklendi. Mevcut: {mevcutPara}");
+        _currentCoins += amount;
+        Debug.Log($"[EconomyManager] +{amount} coin eklendi → Toplam: {_currentCoins}");
+        OnCoinsChanged?.Invoke(_currentCoins);
     }
 
     /// <summary>
-    /// Belirtilen miktarda para harcar. Yeterli para varsa true, yoksa false dondurur.
+    /// Oyuncunun parasını harcamaya çalışır.
+    /// Yeterli bakiye varsa true döner ve parayı düşer, yoksa false döner.
     /// </summary>
-    public bool SpendMoney(int amount)
+    public bool SpendCoins(int amount)
     {
         if (amount <= 0)
         {
-            Debug.LogWarning("EconomyManager: Harcanacak miktar pozitif olmalidir.");
+            Debug.LogWarning("[EconomyManager] SpendCoins: Miktar 0 veya negatif olamaz.");
             return false;
         }
 
-        if (mevcutPara < amount)
+        if (_currentCoins < amount)
         {
-            Debug.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {mevcutPara}");
+            Debug.LogWarning($"[EconomyManager] Yetersiz bakiye! Gereken: {amount}, Mevcut: {_currentCoins}");
+            OnInsufficientFunds?.Invoke(amount);
             return false;
         }
 
-        mevcutPara -= amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
-        Debug.Log($"EconomyManager: {amount} para harcandi. Mevcut: {mevcutPara}");
+        _currentCoins -= amount;
+        Debug.Log($"[EconomyManager] -{amount} coin harcandı → Kalan: {_currentCoins}");
+        OnCoinsChanged?.Invoke(_currentCoins);
         return true;
     }
 
     /// <summary>
-    /// Para miktarini dogrudan ayarlar (save/load islemi icin).
+    /// Paranın yetip yetmediğini kontrol eder (harcama yapmadan).
     /// </summary>
-    public void SetMoney(int amount)
+    public bool HasEnoughCoins(int amount)
     {
-        mevcutPara = amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
+        return _currentCoins >= amount;
+    }
+
+    // ═══════════════════════════════════════════
+    //  XP İşlemleri
+    // ═══════════════════════════════════════════
+
+    /// <summary>
+    /// Oyuncuya belirtilen miktarda XP ekler.
+    /// </summary>
+    public void AddXP(int amount)
+    {
+        if (amount <= 0)
+        {
+            Debug.LogWarning("[EconomyManager] AddXP: Miktar 0 veya negatif olamaz.");
+            return;
+        }
+
+        _currentXP += amount;
+        Debug.Log($"[EconomyManager] +{amount} XP eklendi → Toplam: {_currentXP}");
+        OnXPChanged?.Invoke(_currentXP);
+    }
+
+    // ═══════════════════════════════════════════
+    //  Değerleri Dışarıdan Yükleme (Save/Load için)
+    // ═══════════════════════════════════════════
+
+    /// <summary>
+    /// Kayıtlı verileri yüklerken coin ve XP değerlerini doğrudan set eder.
+    /// </summary>
+    public void SetValues(int coins, int xp)
+    {
+        _currentCoins = Mathf.Max(0, coins);
+        _currentXP = Mathf.Max(0, xp);
+
+        Debug.Log($"[EconomyManager] Değerler yüklendi → Coin: {_currentCoins}, XP: {_currentXP}");
+        OnCoinsChanged?.Invoke(_currentCoins);
+        OnXPChanged?.Invoke(_currentXP);
     }
 }
