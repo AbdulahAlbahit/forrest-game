@@ -35,7 +35,7 @@ public class UpgradeManager : MonoBehaviour
 
         int cost = GetUpgradeCost(currentLevel);
 
-        if (EconomyManager.Instance.SpendMoney(cost))
+        if (EconomyManager.Instance.SpendCoins(cost))
         {
             currentLevel++;
             Debug.Log($"UpgradeManager: {upgradeType} upgrade basarili! Yeni seviye: {currentLevel}, Harcanan: {cost}");
