@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
 /// Oyunun ekonomi sistemini yöneten Singleton manager.
 /// Oyuncunun Coin ve XP değerlerini tutar, artırır ve azaltır.
+/// CloudSaveManager ile haberleşerek verileri Firebase'e kaydeder ve yükler.
 /// </summary>
 public class EconomyManager : MonoBehaviour
 {
@@ -17,6 +19,9 @@ public class EconomyManager : MonoBehaviour
     // ── Güncel Değerler ──
     private int _currentCoins;
     private int _currentXP;
+
+    // ── Bulut Bağlantı Durumu ──
+    private bool _isCloudReady = false;
 
     // ── Public Erişim (Sadece Okunabilir) ──
     public int CurrentCoins => _currentCoins;
@@ -47,11 +52,107 @@ public class EconomyManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Başlangıç değerlerini ata
+        // Başlangıç değerlerini ata (buluttan veri gelene kadar geçici)
         _currentCoins = startingCoins;
         _currentXP = startingXP;
 
         Debug.Log($"[EconomyManager] Başlatıldı → Coin: {_currentCoins}, XP: {_currentXP}");
+    }
+
+    private void Start()
+    {
+        // CloudSaveManager hazır olduğunda bulut verisini dinlemeye başla
+        if (CloudSaveManager.Instance != null)
+        {
+            SubscribeToCloud();
+        }
+        else
+        {
+            StartCoroutine(WaitForCloudSaveManager());
+        }
+    }
+
+    /// <summary>
+    /// CloudSaveManager henüz başlatılmamışsa hazır olana kadar bekler.
+    /// </summary>
+    private IEnumerator WaitForCloudSaveManager()
+    {
+        Debug.Log("[EconomyManager] CloudSaveManager bekleniyor...");
+
+        while (CloudSaveManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        SubscribeToCloud();
+        Debug.Log("[EconomyManager] CloudSaveManager bulundu, bulut aboneliği yapıldı.");
+    }
+
+    /// <summary>
+    /// CloudSaveManager eventlerine abone olur.
+    /// Veri yüklendiğinde coin ve XP değerlerini günceller.
+    /// </summary>
+    private void SubscribeToCloud()
+    {
+        CloudSaveManager.Instance.OnDataLoaded += HandleCloudDataLoaded;
+        _isCloudReady = true;
+    }
+
+    private void OnDestroy()
+    {
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded -= HandleCloudDataLoaded;
+        }
+
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  Firebase Bulut Entegrasyonu
+    // ═══════════════════════════════════════════
+
+    /// <summary>
+    /// CloudSaveManager buluttan veri yüklediğinde çağrılır.
+    /// Firebase'deki Para ve XP değerlerini EconomyManager'a aktarır.
+    /// </summary>
+    private void HandleCloudDataLoaded(PlayerData data)
+    {
+        _currentCoins = data.Para;
+        _currentXP = data.XP;
+
+        Debug.Log($"[EconomyManager] Bulut verisi yüklendi → Coin: {_currentCoins}, XP: {_currentXP}");
+        OnCoinsChanged?.Invoke(_currentCoins);
+        OnXPChanged?.Invoke(_currentXP);
+    }
+
+    /// <summary>
+    /// Güncel coin ve XP değerlerini CloudSaveManager aracılığıyla Firestore'a kaydeder.
+    /// </summary>
+    private void SaveToCloud()
+    {
+        if (!_isCloudReady || CloudSaveManager.Instance == null)
+        {
+            Debug.LogWarning("[EconomyManager] Bulut bağlantısı henüz hazır değil, kayıt atlandı.");
+            return;
+        }
+
+        // CloudSaveManager'ın mevcut verisini al, coin/XP güncelle, geri kaydet
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+
+        if (data == null)
+        {
+            data = new PlayerData();
+        }
+
+        data.Para = _currentCoins;
+        data.XP = _currentXP;
+
+        CloudSaveManager.Instance.SaveData(data);
+        Debug.Log($"[EconomyManager] Değerler buluta kaydedildi → Coin: {_currentCoins}, XP: {_currentXP}");
     }
 
     // ═══════════════════════════════════════════
@@ -59,7 +160,7 @@ public class EconomyManager : MonoBehaviour
     // ═══════════════════════════════════════════
 
     /// <summary>
-    /// Oyuncuya belirtilen miktarda coin ekler.
+    /// Oyuncuya belirtilen miktarda coin ekler ve buluta kaydeder.
     /// </summary>
     public void AddCoins(int amount)
     {
@@ -72,10 +173,12 @@ public class EconomyManager : MonoBehaviour
         _currentCoins += amount;
         Debug.Log($"[EconomyManager] +{amount} coin eklendi → Toplam: {_currentCoins}");
         OnCoinsChanged?.Invoke(_currentCoins);
+
+        SaveToCloud();
     }
 
     /// <summary>
-    /// Oyuncunun parasını harcamaya çalışır.
+    /// Oyuncunun parasını harcamaya çalışır ve buluta kaydeder.
     /// Yeterli bakiye varsa true döner ve parayı düşer, yoksa false döner.
     /// </summary>
     public bool SpendCoins(int amount)
@@ -96,6 +199,8 @@ public class EconomyManager : MonoBehaviour
         _currentCoins -= amount;
         Debug.Log($"[EconomyManager] -{amount} coin harcandı → Kalan: {_currentCoins}");
         OnCoinsChanged?.Invoke(_currentCoins);
+
+        SaveToCloud();
         return true;
     }
 
@@ -112,7 +217,7 @@ public class EconomyManager : MonoBehaviour
     // ═══════════════════════════════════════════
 
     /// <summary>
-    /// Oyuncuya belirtilen miktarda XP ekler.
+    /// Oyuncuya belirtilen miktarda XP ekler ve buluta kaydeder.
     /// </summary>
     public void AddXP(int amount)
     {
@@ -125,6 +230,8 @@ public class EconomyManager : MonoBehaviour
         _currentXP += amount;
         Debug.Log($"[EconomyManager] +{amount} XP eklendi → Toplam: {_currentXP}");
         OnXPChanged?.Invoke(_currentXP);
+
+        SaveToCloud();
     }
 
     // ═══════════════════════════════════════════
