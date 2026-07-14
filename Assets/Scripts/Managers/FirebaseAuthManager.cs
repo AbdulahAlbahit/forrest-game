@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Firebase;
 using Firebase.Auth;
+using Firebase.Extensions;
 
 public class FirebaseAuthManager : MonoBehaviour
 {
@@ -58,7 +59,7 @@ public class FirebaseAuthManager : MonoBehaviour
     /// </summary>
     private void InitializeFirebase()
     {
-        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task =>
+        FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
         {
             DependencyStatus dependencyStatus = task.Result;
 
@@ -88,7 +89,7 @@ public class FirebaseAuthManager : MonoBehaviour
     {
         Debug.Log("FirebaseAuthManager: Misafir girisi yapiliyor...");
 
-        auth.SignInAnonymouslyAsync().ContinueWith(task =>
+        auth.SignInAnonymouslyAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsCanceled)
             {

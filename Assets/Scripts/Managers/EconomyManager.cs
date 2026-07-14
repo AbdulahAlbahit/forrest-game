@@ -29,6 +29,31 @@ public class EconomyManager : MonoBehaviour
         mevcutPara = baslangicParasi;
     }
 
+    private void OnEnable()
+    {
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+        }
+    }
+
+    /// <summary>
+    /// Buluttan veri yuklendiginde para miktarini senkronize eder.
+    /// </summary>
+    private void HandleDataLoaded(PlayerData data)
+    {
+        SetMoney(data.Para);
+        Debug.Log($"EconomyManager: Bulut verisi ile senkronize edildi. Para: {mevcutPara}");
+    }
+
     /// <summary>
     /// Mevcut para miktarini dondurur.
     /// </summary>
