@@ -3,65 +3,108 @@
 public class EfeKarakterKontrol : MonoBehaviour
 {
     [Header("Hareket Ayarları")]
-    public float yuruHizi = 2f;
-    public float kosuHizi = 6f;
-    public float donmeHizi = 10f;
-    public float yercekimi = 9.81f;
+    [Min(0f)] public float yuruHizi = 2.4f;
+    [Min(0f)] public float kosuHizi = 5.5f;
+    [Min(0f)] public float hizlanma = 12f;
+    [Min(0f)] public float donmeHizi = 12f;
+    [Min(0f)] public float yercekimi = 20f;
 
     [Header("Mobil Kontrol")]
     public VirtualJoystick joystick;
 
-    [Range(0.2f, 0.95f)]
-    [Tooltip("Joystick yüzde kaç itildiğinde koşmaya başlasın? (Örn: 0.8 = %80)")]
-    public float kosuEsigi = 0.8f; // Varsayılan olarak %80 yaptık!
+    [Range(0f, 0.3f)]
+    [Tooltip("Bu değerin altındaki küçük joystick hareketleri yok sayılır.")]
+    public float hareketEsigi = 0.12f;
+
+    [Range(0.5f, 0.95f)]
+    [Tooltip("Joystick bu değeri geçince yürüyüşten koşuya karışmaya başlar.")]
+    public float kosuEsigi = 0.75f;
+
+    [Header("Animasyon Ayarları")]
+    [Range(0.01f, 0.5f)]
+    public float animasyonGecisSuresi = 0.12f;
 
     private CharacterController controller;
     private Animator animator;
+    private Vector3 yatayHiz;
+    private float dikeyHiz;
 
-    void Start()
+    private static readonly int HizParametresi = Animator.StringToHash("Hiz");
+
+    void Awake()
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+
+        if (animator != null)
+        {
+            animator.applyRootMotion = false;
+        }
     }
 
     void Update()
     {
-        if (joystick == null) return;
+        if (controller == null) return;
 
-        float yatay = joystick.InputDirection.x;
-        float dikey = joystick.InputDirection.y;
+        Vector2 joystickGirdisi = joystick != null
+            ? Vector2.ClampMagnitude(joystick.InputDirection, 1f)
+            : Vector2.zero;
+        float girdiMiktari = joystickGirdisi.magnitude;
+        bool hareketEdiyor = girdiMiktari > hareketEsigi;
 
-        Vector3 hareketYonu = new Vector3(yatay, 0, dikey).normalized;
-        float girdiMiktari = new Vector2(yatay, dikey).magnitude;
+        Vector3 hedefYatayHiz = Vector3.zero;
+        float animatorHizi = 0f;
 
-        if (girdiMiktari > 0.1f)
+        if (hareketEdiyor)
         {
+            Vector3 hareketYonu = new Vector3(joystickGirdisi.x, 0f, joystickGirdisi.y).normalized;
             Quaternion hedefDonus = Quaternion.LookRotation(hareketYonu);
             transform.rotation = Quaternion.Slerp(transform.rotation, hedefDonus, Time.deltaTime * donmeHizi);
 
-            // 🎯 Burayı güncelledik: Yeni belirlediğimiz eşiğe göre yürü/koş kararını veriyor
-            float mevcutHiz = girdiMiktari > kosuEsigi ? kosuHizi : yuruHizi;
-
-            Vector3 hareket = hareketYonu * mevcutHiz;
-
-            if (!controller.isGrounded)
+            float hedefHareketHizi;
+            if (girdiMiktari < kosuEsigi)
             {
-                hareket.y -= yercekimi;
+                float yurumeOrani = Mathf.InverseLerp(hareketEsigi, kosuEsigi, girdiMiktari);
+                hedefHareketHizi = Mathf.Lerp(yuruHizi * 0.55f, yuruHizi, yurumeOrani);
+                animatorHizi = Mathf.Lerp(0.2f, 0.5f, yurumeOrani);
+            }
+            else
+            {
+                float kosmaOrani = Mathf.InverseLerp(kosuEsigi, 1f, girdiMiktari);
+                hedefHareketHizi = Mathf.Lerp(yuruHizi, kosuHizi, kosmaOrani);
+                animatorHizi = Mathf.Lerp(0.5f, 1f, kosmaOrani);
             }
 
-            controller.Move(hareket * Time.deltaTime);
+            hedefYatayHiz = hareketYonu * hedefHareketHizi;
+        }
 
-            // ---- 🧠 ANİMATÖRÜ TETİKLEYEN KISIM ----
-            animator.SetFloat("Hiz", mevcutHiz);
+        yatayHiz = Vector3.MoveTowards(yatayHiz, hedefYatayHiz, hizlanma * Time.deltaTime);
+
+        if (controller.isGrounded && dikeyHiz < 0f)
+        {
+            dikeyHiz = -2f;
         }
         else
         {
-            animator.SetFloat("Hiz", 0f);
-
-            if (!controller.isGrounded)
-            {
-                controller.Move(new Vector3(0, -yercekimi * Time.deltaTime, 0));
-            }
+            dikeyHiz -= yercekimi * Time.deltaTime;
         }
+
+        Vector3 hareket = yatayHiz + Vector3.up * dikeyHiz;
+        controller.Move(hareket * Time.deltaTime);
+
+        if (animator != null)
+        {
+            animator.SetFloat(
+                HizParametresi,
+                animatorHizi,
+                animasyonGecisSuresi,
+                Time.deltaTime);
+        }
+    }
+
+    void OnValidate()
+    {
+        kosuHizi = Mathf.Max(kosuHizi, yuruHizi);
+        kosuEsigi = Mathf.Max(kosuEsigi, hareketEsigi + 0.1f);
     }
 }

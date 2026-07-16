@@ -80,6 +80,7 @@ Bu dosyalar temizlenmeden branch değiştirmek veya merge/rebase yapmak risklidi
 | Dosya | Gerçek durum |
 |---|---|
 | `Assets/Scenes/Efe_Scene.unity` | Terrain, nehir, çit, joystick, kamera ve karakter bağlantıları var. Karakter/kamera prototip sahnesi. |
+| `Assets/Scenes/Efe_CharacterSandbox.unity` | Mert'in dünya sahnesinin test kopyası ile Efe'nin karakter, takip kamerası, Canvas/joystick ve EventSystem nesnelerini birleştiren kişisel geliştirme sahnesi. Harita öğeleri bu sahnede değiştirilmez. |
 | `Assets/Scenes/Mert_Artscene.unity` | Terrain, ev, duvar/zemin, çevre yerleşimi ve baked lighting verileri var. |
 | `Assets/Scenes/SampleScene.unity` | Boş URP örnek sahnesi; şu an Build Settings'teki tek sahne. |
 
@@ -87,7 +88,8 @@ Bu dosyalar temizlenmeden branch değiştirmek veya merge/rebase yapmak risklidi
 
 ### Mevcut kod
 
-- `EfeKarakterKontrol.cs`: joystick ile dünya ekseninde yürüme/koşma, dönüş, CharacterController hareketi ve `Hiz` animator parametresi.
+- `EfeKarakterKontrol.cs`: joystick şiddetini dead-zone sonrasında yürüyüş/koşu hızlarına kademeli dönüştürür; yumuşak hızlanma, dönüş, kararlı yerçekimi ve normalize `Hiz` Animator parametresi üretir.
+- `EfeBaltaKontrol.cs`: UI butonundan gelen saldırı isteğini cooldown ile sınırlar ve Animator `Saldir` trigger'ını çalıştırır; henüz hasar üretmez.
 - `KameraTakip.cs`: başlangıç ofsetini koruyan yumuşak kamera takibi.
 - `VirtualJoystick.cs`: pointer/drag tabanlı joystick.
 - `PlayerMovement.cs`: boş Unity şablonu; kullanılmıyor.
@@ -102,11 +104,11 @@ Bu dosyalar temizlenmeden branch değiştirmek veya merge/rebase yapmak risklidi
 |---|---|---|
 | Karakter hareketi | Prototip | Mobil joystick çalışması var; dayanıklılık, zemin eğimi ve kamera göreli hareket yok. |
 | Kamera | Prototip | Sabit açılı yumuşak takip var. |
-| Animasyon | Kısmi | Idle/walk/run/attack klipleri ve controller var; kesme döngüsü doğrulanmadı. |
+| Animasyon | Kısmi | Idle/Walk/Run, `Hiz` kontrollü 1D Blend Tree ile bağlı ve loop ayarlı; Axe Attack animasyonu UI butonuna bağlı, hasar anı henüz bağlı değil. |
 | Ağaç kesme | Yok | Can, hedef seçimi, darbe, düşme ve yeniden doğma sistemi yok. |
-| Balta | Sadece asset/prefab | Ekipman ve vuruş mantığı yok. |
+| Balta | Görsel/animasyon prototipi | Balta sağ ele bağlı; UI butonu Axe Attack animasyonunu tetikliyor. Ağaç algılama ve hasar henüz yok. |
 | Kütük üretme | Asset var, sistem yok | Kesilen ağaçtan kaynak üretimi yok. |
-| Sırtta taşıma | Yok | Kapasite, stack görünümü ve al/bırak yok. |
+| Sırtta taşıma | Görsel hazırlık | Ahşap sırt sepeti `Spine2` kemiğine bağlı ve gelecekteki odunlar için `LogStackAnchor` var; kapasite, stack ve al/bırak mantığı henüz yok. |
 | Kamyona yükleme | Yok | Yük kabul alanı, kapasite ve görsel stack yok. |
 | Kamyon yolculuğu | Ayrı branch'te prototip | Waypoint rota ve kamyon seviyeleri mevcut; ana döngüye bağlı değil. |
 | Atölye | Görsel temel var | Girdi kuyruğu, işleme süresi ve çıktı yok. |
@@ -219,3 +221,7 @@ Klasör taşıma işlemi şu an yapılmamalı; aktif branch'lerde zaten büyük 
 - 2026-07-16: Mert branch'i için merge provası yapıldı; 331 adet kayıp prefab GUID referansı nedeniyle entegrasyon durduruldu.
 - 2026-07-16: Mert'in `39698d2` düzeltmesi doğrulandı; Unity temiz import/derleme testi geçti, branch `develop`'a ve ardından `karakter-kontrol` branch'ine güvenli biçimde alındı.
 - 2026-07-16: Entegrasyon sonrası `Efe_Scene` içindeki 65 eski çit prefab referansı kayıp oluşturmayacak biçimde güncellendi.
+- 2026-07-16: `Efe_CharacterSandbox` temiz Unity otomasyonunda oluşturuldu; tek kamera, kamera hedefi ve joystick bağlantıları doğrulandı. Kaynak Mert/Efe sahneleri değiştirilmedi.
+- 2026-07-16: Karakter Idle/Walk/Run animasyonları `Hiz` (0/0.5/1) 1D Blend Tree ile bağlandı; klipler loop yapıldı ve joystick hareket/animasyon geçişleri gerçekçi hızlanma ile düzenlendi. Unity Animator doğrulaması ve C# derlemesi geçti.
+- 2026-07-16: Balta karakterin sağ el kemiğine bağlandı, sağ altta `BALTA` butonu oluşturuldu ve `Saldir` trigger'lı Axe Attack state'i eklendi. Buton bağlantısı/Animator Unity otomasyonunda doğrulandı, C# derlemesi geçti; hasar sistemi eklenmedi.
+- 2026-07-16: Üstü açık ahşap sırt sepeti prefabı oluşturuldu, karakterin `Spine2` kemiğine bağlandı ve gelecekte odun dizmek için `LogStackAnchor` eklendi. Taşıma mantığı eklenmedi; Unity prefab/sahne doğrulaması geçti.

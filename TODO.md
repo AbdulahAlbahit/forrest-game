@@ -34,8 +34,9 @@
 ## Sprint 1 — karakter ve etkileşim
 
 - [ ] **P1 / BELİRLENECEK:** Karakter hareketini kamera yönüne göre test et; izometrik görünümde joystick yönlerinin sezgisel olduğunu doğrula.
-- [ ] **P1 / BELİRLENECEK:** CharacterController yerçekimini düşey hız biriktiren kararlı yapıya çevir; eğim/basamak sınırlarını ayarla.
-- [ ] **P1 / BELİRLENECEK:** Animator null/parametre doğrulaması ve hareket state geçişlerini düzenle.
+- [x] **P1 / EFE:** CharacterController yerçekimini düşey hız biriktiren kararlı yapıya çevir.
+- [ ] **P1 / EFE:** CharacterController eğim ve basamak sınırlarını oyun alanında test edip ayarla.
+- [x] **P1 / EFE:** Animator null/parametre doğrulamasını ve Idle/Walk/Run Blend Tree geçişlerini düzenle.
 - [ ] **P1 / BELİRLENECEK:** Etkileşim algılama sistemi ekle (trigger veya yakın hedef seçimi).
 - [ ] **P1 / BELİRLENECEK:** Oyuncunun hangi hedefle etkileşeceğini görsel olarak belirt.
 - [ ] **P2 / BELİRLENECEK:** Mobil joystick'i farklı çözünürlük, safe area ve DPI değerlerinde test et.
@@ -44,6 +45,7 @@
 
 ## Sprint 2 — ağaç kesme
 
+- [x] **P1 / EFE:** Baltayı sağ el kemiğine bağla ve UI butonuyla Axe Attack animasyonunu tetikle.
 - [ ] **P1 / BELİRLENECEK:** `TreeHarvestable` can, kaynak miktarı ve kesilmiş durumunu uygula.
 - [ ] **P1 / BELİRLENECEK:** Balta ekipmanı ve vuruş gücü modelini uygula.
 - [ ] **P1 / BELİRLENECEK:** Saldırı animasyon event'i ile hasar anını senkronize et.
@@ -56,6 +58,7 @@
 
 ## Sprint 3 — sırt çantası ve kütük taşıma
 
+- [x] **P1 / EFE:** Karakterin sırtına ahşap sepet prefabı bağla ve gelecekteki kütükler için `LogStackAnchor` hazırla.
 - [ ] **P1 / BELİRLENECEK:** `PlayerCarryInventory` kapasite ve kaynak sayacı uygula.
 - [ ] **P1 / BELİRLENECEK:** Yakındaki kütüğü otomatik veya düğmeyle toplama kararını teknik dokümana göre uygula.
 - [ ] **P1 / BELİRLENECEK:** Sırtta kütük stack noktaları ve kapasiteye bağlı görselleştirme ekle.
