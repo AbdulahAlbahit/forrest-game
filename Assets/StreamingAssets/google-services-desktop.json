@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "260516912993",
+    "project_id": "forreset-game",
+    "storage_bucket": "forreset-game.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:260516912993:android:243ef5e6bdbc81bbf46f20",
+        "android_client_info": {
+          "package_name": "com.eyagamestudio.forrestgame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALzZXJOcXR-lPoLOyNW5PL_XXVDdt6Hww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
