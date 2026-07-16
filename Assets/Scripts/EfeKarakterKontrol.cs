@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class EfeKarakterKontrol : MonoBehaviour
 {
@@ -57,7 +57,23 @@ public class EfeKarakterKontrol : MonoBehaviour
 
         if (hareketEdiyor)
         {
-            Vector3 hareketYonu = new Vector3(joystickGirdisi.x, 0f, joystickGirdisi.y).normalized;
+            // Kameranın baktığı yatay (X-Z) yönü al (y ekseni sıfırlanır ki yere saplanmasın)
+            Vector3 camForward = Vector3.forward;
+            Vector3 camRight = Vector3.right;
+            if (Camera.main != null)
+            {
+                camForward = Camera.main.transform.forward;
+                camForward.y = 0f;
+                camForward.Normalize();
+
+                camRight = Camera.main.transform.right;
+                camRight.y = 0f;
+                camRight.Normalize();
+            }
+
+            // Joystick girdisini kameranın yönüyle harmanla (İleri = Kameranın İlerisi)
+            Vector3 hareketYonu = (camForward * joystickGirdisi.y + camRight * joystickGirdisi.x).normalized;
+
             Quaternion hedefDonus = Quaternion.LookRotation(hareketYonu);
             transform.rotation = Quaternion.Slerp(transform.rotation, hedefDonus, Time.deltaTime * donmeHizi);
 
