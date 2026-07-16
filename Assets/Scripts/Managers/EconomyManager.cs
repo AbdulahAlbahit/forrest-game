@@ -72,6 +72,7 @@ public class EconomyManager : MonoBehaviour
         }
     }
 
+
     /// <summary>
     /// CloudSaveManager henüz başlatılmamışsa hazır olana kadar bekler.
     /// </summary>
