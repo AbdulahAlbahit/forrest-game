@@ -209,6 +209,7 @@ Klasör taşıma işlemi şu an yapılmamalı; aktif branch'lerde zaten büyük 
 - Unity 6000.5.2f1 temiz import testinde 4.076 asset içe aktarıldı; C# derlemesi tamamlandı ve batchmode 0 hata koduyla kapandı.
 - Test edilmiş sonuç `7a08e2f` ile `develop` branch'ine merge edilip GitHub'a pushlandı.
 - Güncel `develop`, `449c84e` ile `karakter-kontrol` branch'ine merge edildi. Kullanıcının yerel material, graphics, proje dokümanı ve Unity kişisel ayar değişiklikleri yedeklenip geri yüklendi.
+- Kopya prefab temizliği sonrasında `Efe_Scene.unity` içinde kalan 65 eski çit GUID referansı, aynı içeriğe sahip korunan `Assets/Prefabs/Fence_group_6x.prefab` GUID'sine geçirildi.
 - `UserSettings` artık Git takibinde değildir; dosyalar yerelde korunur ve ignore edilir.
 
 ## 10. Güncelleme günlüğü
@@ -217,3 +218,4 @@ Klasör taşıma işlemi şu an yapılmamalı; aktif branch'lerde zaten büyük 
 - 2026-07-16: Git remote URL'sindeki düz metin erişim anahtarı kaldırıldı.
 - 2026-07-16: Mert branch'i için merge provası yapıldı; 331 adet kayıp prefab GUID referansı nedeniyle entegrasyon durduruldu.
 - 2026-07-16: Mert'in `39698d2` düzeltmesi doğrulandı; Unity temiz import/derleme testi geçti, branch `develop`'a ve ardından `karakter-kontrol` branch'ine güvenli biçimde alındı.
+- 2026-07-16: Entegrasyon sonrası `Efe_Scene` içindeki 65 eski çit prefab referansı kayıp oluşturmayacak biçimde güncellendi.
