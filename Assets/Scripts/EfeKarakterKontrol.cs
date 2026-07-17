@@ -3,7 +3,8 @@ using UnityEngine;
 public class EfeKarakterKontrol : MonoBehaviour
 {
     [Header("Hareket Ayarları")]
-    [Min(0f)] public float yuruHizi = 2.4f;
+    [Min(0f)] public float yuruHizi = 1.75f;
+    [Min(0f)] public float kosuyaGecisHizi = 2.4f;
     [Min(0f)] public float kosuHizi = 5.5f;
     [Min(0f)] public float hizlanma = 12f;
     [Min(0f)] public float donmeHizi = 12f;
@@ -30,11 +31,17 @@ public class EfeKarakterKontrol : MonoBehaviour
     private float dikeyHiz;
 
     private static readonly int HizParametresi = Animator.StringToHash("Hiz");
+    private const float SenkronYurumeUstHizi = 1.75f;
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+
+        if (GetComponent<EfeOdunTasima>() == null)
+        {
+            gameObject.AddComponent<EfeOdunTasima>();
+        }
 
         if (animator != null)
         {
@@ -81,13 +88,14 @@ public class EfeKarakterKontrol : MonoBehaviour
             if (girdiMiktari < kosuEsigi)
             {
                 float yurumeOrani = Mathf.InverseLerp(hareketEsigi, kosuEsigi, girdiMiktari);
-                hedefHareketHizi = Mathf.Lerp(yuruHizi * 0.55f, yuruHizi, yurumeOrani);
+                float senkronYurumeHizi = Mathf.Min(yuruHizi, SenkronYurumeUstHizi);
+                hedefHareketHizi = Mathf.Lerp(senkronYurumeHizi * 0.55f, senkronYurumeHizi, yurumeOrani);
                 animatorHizi = Mathf.Lerp(0.2f, 0.5f, yurumeOrani);
             }
             else
             {
                 float kosmaOrani = Mathf.InverseLerp(kosuEsigi, 1f, girdiMiktari);
-                hedefHareketHizi = Mathf.Lerp(yuruHizi, kosuHizi, kosmaOrani);
+                hedefHareketHizi = Mathf.Lerp(kosuyaGecisHizi, kosuHizi, kosmaOrani);
                 animatorHizi = Mathf.Lerp(0.5f, 1f, kosmaOrani);
             }
 
@@ -120,7 +128,8 @@ public class EfeKarakterKontrol : MonoBehaviour
 
     void OnValidate()
     {
-        kosuHizi = Mathf.Max(kosuHizi, yuruHizi);
+        kosuyaGecisHizi = Mathf.Max(kosuyaGecisHizi, yuruHizi);
+        kosuHizi = Mathf.Max(kosuHizi, kosuyaGecisHizi);
         kosuEsigi = Mathf.Max(kosuEsigi, hareketEsigi + 0.1f);
     }
 }
