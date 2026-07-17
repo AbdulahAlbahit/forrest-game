@@ -12,9 +12,6 @@ public class XPManager : MonoBehaviour
     [Tooltip("Her seviyede gereken XP bu carpan ile artar. Ornek: 1.4 ise her seviye %40 daha fazla XP gerektirir.")]
     [SerializeField] private float seviyeCarpani = 1.4f;
 
-    private int mevcutXP;
-    private int mevcutSeviye;
-
     /// <summary>
     /// XP miktari degistiginde tetiklenir. Mevcut XP degerini parametre olarak verir.
     /// </summary>
@@ -26,14 +23,30 @@ public class XPManager : MonoBehaviour
     public event Action<int> OnLevelUp;
 
     /// <summary>
-    /// Mevcut XP miktarini dondurur.
+    /// Mevcut XP miktarini dogrudan bulut verisinden dondurur.
     /// </summary>
-    public int MevcutXP => mevcutXP;
+    public int MevcutXP 
+    {
+        get 
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                return CloudSaveManager.Instance.CurrentData.XP;
+            return 0;
+        }
+    }
 
     /// <summary>
-    /// Mevcut oyuncu seviyesini dondurur.
+    /// Mevcut oyuncu seviyesini dogrudan bulut verisinden dondurur.
     /// </summary>
-    public int MevcutSeviye => mevcutSeviye;
+    public int MevcutSeviye 
+    {
+        get 
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                return CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+            return 1;
+        }
+    }
 
     private void Awake()
     {
@@ -45,9 +58,6 @@ public class XPManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        mevcutXP = 0;
-        mevcutSeviye = 1;
     }
 
     private void OnEnable()
@@ -67,21 +77,17 @@ public class XPManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Buluttan veri yuklendiginde XP ve seviye degerlerini senkronize eder.
+    /// Buluttan veri yuklendiginde arayuzu guncellemek icin tetiklenir.
     /// </summary>
     private void HandleDataLoaded(PlayerData data)
     {
-        mevcutXP = data.XP;
-        mevcutSeviye = data.OyuncuSeviyesi;
-
-        OnXPChanged?.Invoke(mevcutXP);
-
-        Debug.Log($"XPManager: Bulut verisi ile senkronize edildi. XP: {mevcutXP}, Seviye: {mevcutSeviye}");
+        OnXPChanged?.Invoke(data.XP);
+        Debug.Log($"XPManager: Bulut verisi ile senkronize edildi. XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
     }
 
     /// <summary>
     /// Belirtilen miktarda XP ekler. Yeterli XP'ye ulasilirsa seviye atlatir.
-    /// Ornek kullanim: XPManager.Instance.AddXP(25);
+    /// Tumu dogrudan CurrentData uzerinden hesaplanir.
     /// </summary>
     public void AddXP(int amount)
     {
@@ -91,33 +97,36 @@ public class XPManager : MonoBehaviour
             return;
         }
 
-        mevcutXP += amount;
-        Debug.Log($"XPManager: +{amount} XP kazanildi. Toplam XP: {mevcutXP}");
-
-        // Seviye atlama kontrolu (birden fazla seviye atlanabilir)
-        while (mevcutXP >= GetRequiredXPForLevel(mevcutSeviye))
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
-            mevcutXP -= GetRequiredXPForLevel(mevcutSeviye);
-            mevcutSeviye++;
-
-            Debug.Log($"XPManager: LEVEL UP! Yeni seviye: {mevcutSeviye}");
-            OnLevelUp?.Invoke(mevcutSeviye);
+            Debug.LogWarning("XPManager: CloudSaveManager veya CurrentData hazir degil. XP eklenemiyor.");
+            return;
         }
 
-        OnXPChanged?.Invoke(mevcutXP);
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
 
-        // PlayerData'yi guncelle ve buluta kaydet
-        SyncAndSave();
+        data.XP += amount;
+        Debug.Log($"XPManager: +{amount} XP kazanildi. Toplam XP: {data.XP}");
+
+        // Seviye atlama kontrolu (birden fazla seviye atlanabilir)
+        while (data.XP >= GetRequiredXPForLevel(data.OyuncuSeviyesi))
+        {
+            data.XP -= GetRequiredXPForLevel(data.OyuncuSeviyesi);
+            data.OyuncuSeviyesi++;
+
+            Debug.Log($"XPManager: LEVEL UP! Yeni seviye: {data.OyuncuSeviyesi}");
+            OnLevelUp?.Invoke(data.OyuncuSeviyesi);
+        }
+
+        OnXPChanged?.Invoke(data.XP);
+
+        // Degisiklikleri buluta kaydet
+        CloudSaveManager.Instance.SaveData(data);
     }
 
     /// <summary>
     /// Belirtilen seviye icin gereken toplam XP miktarini hesaplar.
     /// Formul: temelGerekenXP * (seviyeCarpani ^ (seviye - 1))
-    /// Ornek (temel=100, carpan=1.4):
-    ///   Seviye 1 -> 2: 100 XP
-    ///   Seviye 2 -> 3: 140 XP
-    ///   Seviye 3 -> 4: 196 XP
-    ///   Seviye 4 -> 5: 274 XP
     /// </summary>
     public int GetRequiredXPForLevel(int level)
     {
@@ -127,32 +136,12 @@ public class XPManager : MonoBehaviour
 
     /// <summary>
     /// Mevcut seviye icin XP ilerleme yuzdesini dondurur (0.0 ~ 1.0).
-    /// HUD'daki XP bari icin kullanilabilir.
     /// </summary>
     public float GetXPProgress()
     {
-        int gerekenXP = GetRequiredXPForLevel(mevcutSeviye);
+        int gerekenXP = GetRequiredXPForLevel(MevcutSeviye);
         if (gerekenXP <= 0) return 1f;
-        return Mathf.Clamp01((float)mevcutXP / gerekenXP);
-    }
-
-    /// <summary>
-    /// Mevcut XP ve Seviye degerlerini PlayerData'ya yazar ve buluta kaydeder.
-    /// </summary>
-    private void SyncAndSave()
-    {
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("XPManager: CloudSaveManager veya CurrentData bulunamadi, kayit yapilamadi.");
-            return;
-        }
-
-        PlayerData data = CloudSaveManager.Instance.CurrentData;
-        data.XP = mevcutXP;
-        data.OyuncuSeviyesi = mevcutSeviye;
-
-        CloudSaveManager.Instance.SaveData(data);
-        Debug.Log($"XPManager: Veriler buluta kaydedildi. XP: {mevcutXP}, Seviye: {mevcutSeviye}");
+        return Mathf.Clamp01((float)MevcutXP / gerekenXP);
     }
 
     private void OnDestroy()

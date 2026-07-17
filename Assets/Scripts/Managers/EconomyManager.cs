@@ -5,15 +5,24 @@ public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }
 
-    [Header("Baslangic Ayarlari")]
-    [SerializeField] private int baslangicParasi = 100;
-
-    private int mevcutPara;
-
     /// <summary>
     /// Para miktari degistiginde tetiklenir. Yeni para miktarini parametre olarak verir.
     /// </summary>
     public event Action<int> OnMoneyChanged;
+
+    /// <summary>
+    /// Mevcut para miktarini dogrudan bulut verisinden dondurur.
+    /// Eger veriler henuz yuklenmediyse 0 dondurur.
+    /// </summary>
+    public int MevcutPara
+    {
+        get
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                return CloudSaveManager.Instance.CurrentData.Para;
+            return 0;
+        }
+    }
 
     private void Awake()
     {
@@ -25,8 +34,6 @@ public class EconomyManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        mevcutPara = baslangicParasi;
     }
 
     private void OnEnable()
@@ -46,21 +53,17 @@ public class EconomyManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Buluttan veri yuklendiginde para miktarini senkronize eder.
+    /// Buluttan veri ilk yüklendiginde arayuzu senkronize eder.
     /// </summary>
     private void HandleDataLoaded(PlayerData data)
     {
-        SetMoney(data.Para);
-        Debug.Log($"EconomyManager: Bulut verisi ile senkronize edildi. Para: {mevcutPara}");
+        OnMoneyChanged?.Invoke(data.Para);
+        Debug.Log($"EconomyManager: Bulut verisi yuklendi. Para: {data.Para}");
     }
 
     /// <summary>
-    /// Mevcut para miktarini dondurur.
-    /// </summary>
-    public int MevcutPara => mevcutPara;
-
-    /// <summary>
     /// Belirtilen miktarda para ekler.
+    /// Islem dogrudan PlayerData uzerinde yapilir ancak buluta kayit hemen atilmaz (Performans amaciyla).
     /// </summary>
     public void AddMoney(int amount)
     {
@@ -70,13 +73,21 @@ public class EconomyManager : MonoBehaviour
             return;
         }
 
-        mevcutPara += amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
-        Debug.Log($"EconomyManager: {amount} para eklendi. Mevcut: {mevcutPara}");
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("EconomyManager: CloudSaveManager veya CurrentData hazir degil, para eklenemiyor.");
+            return;
+        }
+
+        CloudSaveManager.Instance.CurrentData.Para += amount;
+        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
+        
+        Debug.Log($"EconomyManager: {amount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
     }
 
     /// <summary>
     /// Belirtilen miktarda para harcar. Yeterli para varsa true, yoksa false dondurur.
+    /// Islem dogrudan PlayerData uzerinde yapilir ancak buluta kayit hemen atilmaz.
     /// </summary>
     public bool SpendMoney(int amount)
     {
@@ -86,24 +97,34 @@ public class EconomyManager : MonoBehaviour
             return false;
         }
 
-        if (mevcutPara < amount)
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
-            Debug.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {mevcutPara}");
+            Debug.LogWarning("EconomyManager: CloudSaveManager veya CurrentData hazir degil, para harcanamiyor.");
             return false;
         }
 
-        mevcutPara -= amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
-        Debug.Log($"EconomyManager: {amount} para harcandi. Mevcut: {mevcutPara}");
+        if (CloudSaveManager.Instance.CurrentData.Para < amount)
+        {
+            Debug.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+            return false;
+        }
+
+        CloudSaveManager.Instance.CurrentData.Para -= amount;
+        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
+        
+        Debug.Log($"EconomyManager: {amount} para harcandi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
         return true;
     }
 
     /// <summary>
-    /// Para miktarini dogrudan ayarlar (save/load islemi icin).
+    /// Oyun kapanirken guncel parayi (ve diger verileri) buluta kaydeder.
     /// </summary>
-    public void SetMoney(int amount)
+    private void OnApplicationQuit()
     {
-        mevcutPara = amount;
-        OnMoneyChanged?.Invoke(mevcutPara);
+        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+        {
+            CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+            Debug.Log("EconomyManager: Oyun kapaniyor, veriler (Para vb.) buluta kaydedildi.");
+        }
     }
 }
