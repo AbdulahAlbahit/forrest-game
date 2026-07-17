@@ -16,6 +16,12 @@ public class TruckRouteController : MonoBehaviour
     public int requiredWoodToDepart = 30;
     public int currentLoadedWood = 0;
     public bool isAtHomePosition = true;
+    public bool isWorkshopProcessDone = false;
+
+    public void OnWorkshopProcessComplete()
+    {
+        isWorkshopProcessDone = true;
+    }
 
     [Header("--- HIZ VE BEKLEME AYARLARI ---")]
     public float maxSpeed = 12f;
@@ -25,6 +31,15 @@ public class TruckRouteController : MonoBehaviour
     public float stopWaitTime = 3f; 
     public float homeWaitTime = 5f; 
 
+    [Header("🔊 Ses Efektleri (SFX)")]
+    [Tooltip("Atölyeye vardığında çalacak ses (Korna, fren vb.)")]
+    public AudioClip truckArrivalSFX;
+    [Tooltip("Atölyeden kalkarken çalacak ses (Korna, motor ivmelenmesi vb.)")]
+    public AudioClip truckDepartureSFX;
+    [Tooltip("Mağazaya varıp satış yapınca çalacak ses (Para sesi ($))")]
+    public AudioClip marketSaleSFX;
+    private AudioSource audioSource;
+
     [Header("--- TEKERLEKLER ---")]
     public List<Transform> wheels = new List<Transform>();
 
@@ -33,6 +48,14 @@ public class TruckRouteController : MonoBehaviour
 
     void Start()
     {
+        // Ses oynatabilmek için dinamik AudioSource ekliyoruz
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.spatialBlend = 1f; // 3D Ses yapıyoruz (Kamyon yaklaştıkça duyulsun)
+
         if (routeContainer == null)
         {
             GameObject foundRoute = GameObject.Find("Truck_Route");
@@ -65,6 +88,12 @@ public class TruckRouteController : MonoBehaviour
         }
 
         StartCoroutine(RunRouteLoop());
+    }
+
+    private void PlaySFX(AudioClip clip) {
+        if (clip != null && audioSource != null) {
+            audioSource.PlayOneShot(clip);
+        }
     }
 
     private void FindAllWheelsRecursively(Transform parent)
@@ -108,7 +137,7 @@ public class TruckRouteController : MonoBehaviour
         while (true)
         {
             isAtHomePosition = true;
-            Debug.Log($"<color=cyan>[KAMYONET EVDE] Kargo Bekleniyor: ({currentLoadedWood}/{requiredWoodToDepart} Odun)</color>");
+            Debug.Log($"<color=cyan>[KAMYONET EVDE] Kargo Bekleniyor: ({currentLoadedWood}/{requiredWoodToDepart} Odun). Yüklemek için AddWoodToCargo(amount) çağırın.</color>");
 
             while (currentLoadedWood < requiredWoodToDepart)
             {
@@ -116,14 +145,48 @@ public class TruckRouteController : MonoBehaviour
             }
 
             isAtHomePosition = false;
-            Debug.Log($"<color=green>[KAMYONET YOLA ÇIKTI] {currentLoadedWood}/{requiredWoodToDepart} Odun yüklendi!</color>");
+            Debug.Log($"<color=green>[KAMYONET YOLA ÇIKTI] {currentLoadedWood}/{requiredWoodToDepart} Odun yüklendi! Atölyeye gidiliyor!</color>");
 
+            // HAREKET ET VE ATÖLYEYE YANAŞ
             yield return StartCoroutine(DriveToPoints(1, workshopIndex, true));
-            yield return StartCoroutine(StopAndWait(stopWaitTime));
+            
+            // ATÖLYEYE VARILDI -> YANAŞMA SESİ ÇALINIR
+            PlaySFX(truckArrivalSFX);
+            
+            // --- ATÖLYE ÜRETİM SÜRECİNİ BAŞLAT VE BEKLE ---
+            isWorkshopProcessDone = false;
+            WorkshopProductionManager workshop = Object.FindAnyObjectByType<WorkshopProductionManager>();
+            if (workshop != null && workshop.StartProductionCycle(this.gameObject))
+            {
+                Debug.Log("<color=yellow>[KAMYONET] Atölyeye varıldı. Üretim ve kolileme bekleniyor...</color>");
+                while (!isWorkshopProcessDone)
+                {
+                    yield return null;
+                }
+                Debug.Log("<color=green>[KAMYONET] Koliler yüklendi! Mağazaya doğru yola çıkılıyor!</color>");
+                // ATÖLYEDEN AYRILIŞ / KALKIŞ SESİ
+                PlaySFX(truckDepartureSFX);
+            }
+            else
+            {
+                yield return StartCoroutine(StopAndWait(stopWaitTime));
+            }
 
+            // ATÖLYEDEN MAĞAZAYA (MARKET POINT 22) GİT
             yield return StartCoroutine(DriveToPoints(workshopIndex + 1, marketIndex, true));
+            
+            // MAĞAZAYA VARILDI -> SATIŞ (PARA) SESİ ÇALINIR VE KASA BOŞALTILIR
+            PlaySFX(marketSaleSFX);
+            Debug.Log("<color=magenta>[KAMYONET MAĞAZADA] Koliler mağazaya indirildi ve satıldı! Kasa boşaltıldı.</color>");
+            Transform cargoBoxes = transform.Find("Cargo_Boxes");
+            if (cargoBoxes != null) cargoBoxes.gameObject.SetActive(false);
+
+            // Eğer WorkshopProductionManager üzerindeki largeBoxes kamyona bağlandıysa onu da gizle:
+            if (workshop != null && workshop.largeBoxes != null) workshop.largeBoxes.SetActive(false);
+
             yield return StartCoroutine(StopAndWait(stopWaitTime));
 
+            // MAĞAZADAN EVE GERİ DÖNÜŞ (BOŞ KASA İLE)
             yield return StartCoroutine(DriveToPointsReverse(marketIndex - 1, 0, true));
 
             yield return StartCoroutine(TurnToFaceFirstPoint());
