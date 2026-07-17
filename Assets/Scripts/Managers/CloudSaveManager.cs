@@ -144,6 +144,10 @@ public class CloudSaveManager : MonoBehaviour
             { "SepetSeviyesi", data.SepetSeviyesi },
             { "KamyonSeviyesi", data.KamyonSeviyesi },
             { "AtolyeSeviyesi", data.AtolyeSeviyesi },
+            { "BaltaSharpness", data.BaltaSharpness },
+            { "BaltaDamage", data.BaltaDamage },
+            { "MevsimZamani", data.MevsimZamani },
+            { "OyunSuresi", data.OyunSuresi },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp }
         };
@@ -208,6 +212,14 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("KamyonSeviyesi")) data.KamyonSeviyesi = Convert.ToInt32(dict["KamyonSeviyesi"]);
                 if (dict.ContainsKey("AtolyeSeviyesi")) data.AtolyeSeviyesi = Convert.ToInt32(dict["AtolyeSeviyesi"]);
 
+                // Balta stat'lari
+                if (dict.ContainsKey("BaltaSharpness")) data.BaltaSharpness = Convert.ToSingle(dict["BaltaSharpness"]);
+                if (dict.ContainsKey("BaltaDamage")) data.BaltaDamage = Convert.ToSingle(dict["BaltaDamage"]);
+
+                // Zaman verileri
+                if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
+                if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
+
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
                 {
                     data.AcilanBolgeler = new List<string>();
@@ -221,6 +233,8 @@ public class CloudSaveManager : MonoBehaviour
                 Debug.Log("CloudSaveManager: Veriler basariyla yuklendi!");
                 Debug.Log($"  -> Para: {data.Para}, XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
                 Debug.Log($"  -> Balta: {data.BaltaSeviyesi}, Sepet: {data.SepetSeviyesi}, Kamyon: {data.KamyonSeviyesi}, Atolye: {data.AtolyeSeviyesi}");
+                Debug.Log($"  -> BaltaSharpness: {data.BaltaSharpness}, BaltaDamage: {data.BaltaDamage}");
+                Debug.Log($"  -> MevsimZamani: {data.MevsimZamani}, OyunSuresi: {data.OyunSuresi}");
                 Debug.Log($"  -> Acilan Bolge Sayisi: {data.AcilanBolgeler.Count}");
                 OnDataLoaded?.Invoke(data);
             }
