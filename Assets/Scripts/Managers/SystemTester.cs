@@ -34,33 +34,21 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 3: Sepeti Gelistir (Upgrade)")]
     public void TestUpgradeBasket()
     {
-        int upgradeCost = 100;
-
-        if (EconomyManager.Instance == null || CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null || BasketManager.Instance == null)
+        if (BasketManager.Instance != null && EconomyManager.Instance != null)
         {
-            Debug.LogError("[Test 3] Gerekli Manager'lardan biri veya CurrentData eksik!");
-            return;
-        }
-
-        if (EconomyManager.Instance.SpendMoney(upgradeCost))
-        {
-            PlayerData data = CloudSaveManager.Instance.CurrentData;
-            
-            // Sepet seviyesini artir
-            data.SepetSeviyesi++;
-            
-            // BasketManager'a yeni seviyeyi bildirerek kapasiteyi guncelle
-            BasketManager.Instance.UpdateCapacity(data.SepetSeviyesi);
-            
-            // Guncel parayi data icine esitle ve kaydet
-            data.Para = EconomyManager.Instance.MevcutPara;
-            CloudSaveManager.Instance.SaveData(data);
-
-            Debug.Log($"[Test 3] Sepet basariyla gelistirildi! Yeni Sepet Seviyesi: {data.SepetSeviyesi}, Yeni Kapasite: {BasketManager.Instance.MaksKapasite}, Kalan Para: {EconomyManager.Instance.MevcutPara}");
+            bool basarili = BasketManager.Instance.UpgradeBasket();
+            if (basarili)
+            {
+                Debug.Log($"[Test Sepet] Sepet yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Kapasite: {BasketManager.Instance.GetBasketCapacity()}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test Sepet] Sepet yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            }
         }
         else
         {
-            Debug.LogWarning($"[Test 3] Sepeti gelistirmek icin yeterli paraniz yok! (Gereken: {upgradeCost}, Mevcut: {EconomyManager.Instance.MevcutPara})");
+            Debug.LogError("[Test Sepet] BasketManager veya EconomyManager bulunamadi!");
         }
     }
 
