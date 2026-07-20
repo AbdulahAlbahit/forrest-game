@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class SystemTester : MonoBehaviour
 {
+    [Header("Bolge Test Ayarlari")]
+    public int testRegionId = 1;
     [ContextMenu("Test 1: 1000 Altin Ekle")]
     public void TestAddMoney()
     {
@@ -52,25 +54,8 @@ public class SystemTester : MonoBehaviour
         }
     }
 
-    [ContextMenu("Test: Bolge 1'i Ac (Config)")]
-    public void TestUnlockRegion()
-    {
-        TestUnlockRegionById(1);
-    }
-
-    [ContextMenu("Test: Bolge 2'yi Ac (Config)")]
-    public void TestUnlockRegion2()
-    {
-        TestUnlockRegionById(2);
-    }
-
-    [ContextMenu("Test: Bolge 3'u Ac (Config)")]
-    public void TestUnlockRegion3()
-    {
-        TestUnlockRegionById(3);
-    }
-
-    private void TestUnlockRegionById(int regionId)
+    [ContextMenu("Test: Secili Bolgeyi Ac (Config)")]
+    public void TestUnlockSelectedRegion()
     {
         if (RegionManager.Instance == null)
         {
@@ -84,17 +69,17 @@ public class SystemTester : MonoBehaviour
             return;
         }
 
-        int maliyet = RegionManager.Instance.GetRegionCost(regionId);
-        Debug.Log($"Bolge {regionId} acilis testi baslatildi. Config'den okunan maliyet: {maliyet}");
+        int maliyet = RegionManager.Instance.GetRegionCost(testRegionId);
+        Debug.Log($"Bolge {testRegionId} acilis testi baslatildi. Config'den okunan maliyet: {maliyet}");
 
-        bool basarili = RegionManager.Instance.UnlockRegion(regionId);
+        bool basarili = RegionManager.Instance.UnlockRegion(testRegionId);
         if (basarili)
         {
-            Debug.Log($"[Test Bolge] Bolge {regionId} kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
+            Debug.Log($"[Test Bolge] Bolge {testRegionId} kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
         }
         else
         {
-            Debug.LogWarning($"[Test Bolge] Bolge {regionId} acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            Debug.LogWarning($"[Test Bolge] Bolge {testRegionId} acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
         }
     }
 
