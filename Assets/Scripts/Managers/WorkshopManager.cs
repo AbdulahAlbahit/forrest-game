@@ -6,17 +6,7 @@ public class WorkshopManager : MonoBehaviour
     public static WorkshopManager Instance { get; private set; }
 
     [Header("Atolye Ayarlari")]
-    [Tooltip("Seviye 1'deki temel uretim hizi (saniyede islenen odun sayisi).")]
-    [SerializeField] private float temelUretimHizi = 0.5f;
-
-    [Tooltip("Her atolye seviyesinde eklenen uretim hizi artisi.")]
-    [SerializeField] private float uretimHiziCarpani = 0.25f;
-
-    [Tooltip("Seviye 1'deki temel atolye kapasitesi (max birikebilecek urun sayisi).")]
-    [SerializeField] private int temelKapasite = 10;
-
-    [Tooltip("Her atolye seviyesinde eklenen ekstra kapasite.")]
-    [SerializeField] private int kapasiteCarpani = 5;
+    [SerializeField] private WorkshopUpgradeConfig config;
 
     private int mevcutKuyruk;
     private float uretimZamanlayicisi;
@@ -73,30 +63,40 @@ public class WorkshopManager : MonoBehaviour
         ProcessQueue();
     }
 
-    /// <summary>
-    /// Atolye seviyesine bagli olarak saniyede kac odun islendigini hesaplar.
-    /// Formul: temelUretimHizi + (AtolyeSeviyesi * uretimHiziCarpani)
-    /// Ornek (temel=0.5, carpan=0.25):
-    ///   Seviye 1: 0.75 odun/sn
-    ///   Seviye 2: 1.00 odun/sn
-    ///   Seviye 3: 1.25 odun/sn
-    /// </summary>
     public float GetProcessingSpeed()
     {
-        return temelUretimHizi + (AtolyeSeviyesi * uretimHiziCarpani);
+        if (config == null)
+        {
+            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return 0.5f;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("WorkshopManager: CloudSaveManager veya CurrentData hazir degil, varsayilan hiz donduruluyor.");
+            return config.GetLevelData(1).CraftSpeed;
+        }
+
+        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
+        return config.GetLevelData(seviye).CraftSpeed;
     }
 
-    /// <summary>
-    /// Atolye seviyesine bagli olarak max birikebilecek urun kapasitesini hesaplar.
-    /// Formul: temelKapasite + (AtolyeSeviyesi * kapasiteCarpani)
-    /// Ornek (temel=10, carpan=5):
-    ///   Seviye 1: 15 urun
-    ///   Seviye 2: 20 urun
-    ///   Seviye 3: 25 urun
-    /// </summary>
     public int GetWorkshopCapacity()
     {
-        return temelKapasite + (AtolyeSeviyesi * kapasiteCarpani);
+        if (config == null)
+        {
+            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return 10;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("WorkshopManager: CloudSaveManager veya CurrentData hazir degil, varsayilan kapasite donduruluyor.");
+            return config.GetLevelData(1).QueueCapacity;
+        }
+
+        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
+        return config.GetLevelData(seviye).QueueCapacity;
     }
 
     /// <summary>
@@ -157,23 +157,28 @@ public class WorkshopManager : MonoBehaviour
         return Mathf.Clamp01(uretimZamanlayicisi / saniyePerOdun);
     }
 
-    /// <summary>
-    /// Atolyeyi bir seviye yukseltir. Maliyet EconomyManager uzerinden kontrol edilir.
-    /// Yeterli para varsa seviyeyi artirip buluta kaydeder.
-    /// </summary>
-    public bool UpgradeWorkshop(int cost)
+    public bool UpgradeWorkshop()
     {
+        if (config == null)
+        {
+            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return false;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogError("WorkshopManager: CloudSaveManager veya CurrentData hazir degil. Yukseltme iptal edildi!");
+            return false;
+        }
+
         if (EconomyManager.Instance == null)
         {
             Debug.LogError("WorkshopManager: EconomyManager bulunamadi!");
             return false;
         }
 
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("WorkshopManager: CloudSaveManager veya CurrentData hazir degil.");
-            return false;
-        }
+        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
+        int cost = config.GetLevelData(seviye).UpgradeCost;
 
         if (!EconomyManager.Instance.SpendMoney(cost))
         {

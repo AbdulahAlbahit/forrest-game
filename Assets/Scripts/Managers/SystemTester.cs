@@ -175,12 +175,12 @@ public class SystemTester : MonoBehaviour
         }
     }
 
-    [ContextMenu("Test: Atolyeyi Gelistir (Maliyet 200)")]
+    [ContextMenu("Test: Atolyeyi Gelistir")]
     public void TestUpgradeWorkshop()
     {
         if (WorkshopManager.Instance != null && EconomyManager.Instance != null)
         {
-            bool basarili = WorkshopManager.Instance.UpgradeWorkshop(200);
+            bool basarili = WorkshopManager.Instance.UpgradeWorkshop();
             if (basarili)
             {
                 Debug.Log($"[Test Atolye] Atolye yukseltildi!\n" +
