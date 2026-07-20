@@ -126,12 +126,23 @@ public class WorkshopProductionManager : MonoBehaviour {
 
         // 3. ADIM: Usta Üretimi Bitirdi -> Atölye Çıkışında NORMAL BOX Belirir ve Başarı Sesi Çalar!
         PlaySFX(productionSuccessSFX);
-        if (normalBoxes) normalBoxes.SetActive(true);
-        yield return new WaitForSeconds(loadingDuration);
+        if (normalBoxes) {
+            normalBoxes.SetActive(true);
+            Transform startPoint = (boxSpawnPoint != null) ? boxSpawnPoint : workshopTableTop;
+            Transform targetTruckCargo = (truckCargoPoint != null) ? truckCargoPoint : (truck != null ? truck.transform : null);
+            
+            if (startPoint != null && targetTruckCargo != null) {
+                // Kutuyu kamyonete doğru çok seri bir hızla (0.75 sn) uçuruyoruz!
+                yield return StartCoroutine(AnimateBoxFlight(normalBoxes, startPoint, targetTruckCargo, 0.75f));
+            } else {
+                yield return new WaitForSeconds(loadingDuration);
+            }
+            normalBoxes.SetActive(false);
+        } else {
+            yield return new WaitForSeconds(loadingDuration);
+        }
 
-        // 4. ADIM: Atölyedeki Normal Kutu Kaybolur & Kamyonetin Kasasında LARGE BOX Belirip Araç Yola Çıkar!
-        if (normalBoxes) normalBoxes.SetActive(false);
-
+        // 4. ADIM: Uçuş Bitti! Kamyonetin Kasasında LARGE BOX Belirip Araç Yola Çıkar!
         if (largeBoxes != null) {
             Transform targetTruckCargo = (truckCargoPoint != null) ? truckCargoPoint : (truck != null ? truck.transform : null);
             SnapToPoint(largeBoxes, targetTruckCargo);
@@ -148,5 +159,38 @@ public class WorkshopProductionManager : MonoBehaviour {
         }
 
         isProducing = false;
+    }
+
+    private IEnumerator AnimateBoxFlight(GameObject box, Transform startTransform, Transform endTransform, float duration) {
+        float elapsed = 0f;
+        Vector3 startPos = startTransform.position;
+        Vector3 endPos = endTransform.position;
+        
+        // Kutunun havaya kalkma yüksekliği (Zıplama yüksekliği)
+        float arcHeight = 2.5f; 
+        
+        // Kutunun havadayken dönüş açısını ayarlayalım
+        Quaternion startRot = startTransform.rotation;
+        Quaternion endRot = endTransform.rotation;
+
+        while (elapsed < duration) {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+
+            // Parabolik (kavisli) zıplama matematiği: sinüs dalgası
+            Vector3 currentPos = Vector3.Lerp(startPos, endPos, t);
+            currentPos.y += Mathf.Sin(t * Mathf.PI) * arcHeight;
+            box.transform.position = currentPos;
+
+            // Havada giderken yavaşça hedef yöne dönsün ve kendi etrafında hafif bir takla (360 derece) atsın
+            Quaternion lookRot = Quaternion.Lerp(startRot, endRot, t);
+            box.transform.rotation = lookRot * Quaternion.AngleAxis(t * 360f, Vector3.right + Vector3.up);
+
+            yield return null;
+        }
+
+        // Uçuş bittiğinde tam hedefe oturt
+        box.transform.position = endPos;
+        box.transform.rotation = endRot;
     }
 }

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class UpgradeZoneController : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class UpgradeZoneController : MonoBehaviour
     [Header("--- GÖRSEL GERİ BİLDİRİM ---")]
     public Color emptyColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
     public Color completedColor = new Color(0.1f, 0.9f, 0.2f, 1f);
+    
+    [Tooltip("Dolan çember efekti için World Space Canvas içindeki Filled Image'ı sürükleyin.")]
+    public Image fillImage;
 
     [Header("--- YASİR İÇİN EVENT PRİZİ ---")]
     public UnityEvent OnUpgradeComplete;
@@ -32,9 +36,15 @@ public class UpgradeZoneController : MonoBehaviour
             padMaterialInstance = padRenderer.material;
             UpdatePadColor(emptyColor);
         }
+
+        // Eğer Canvas resmi kullanıyorsak, başlangıçta sıfırla ve rengini saf yeşil yap
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = 0f;
+            fillImage.color = completedColor; 
+        }
     }
 
-    // Karakter zemine ilk değdiği an Console'a kocaman mesaj at!
     void OnTriggerEnter(Collider other)
     {
         if (isCompleted) return;
@@ -45,14 +55,22 @@ public class UpgradeZoneController : MonoBehaviour
     {
         if (isCompleted) return;
 
-        // Player etiketli veya adı içinde player/mert/fake geçen herhangi biri
         if (other.CompareTag("Player") || other.name.ToLower().Contains("player") || other.name.ToLower().Contains("mert") || other.name.ToLower().Contains("fake"))
         {
             currentPaid += transferRatePerSecond * Time.deltaTime;
-
             float progress = Mathf.Clamp01(currentPaid / targetCost);
-            Color lerpedColor = Color.Lerp(emptyColor, completedColor, progress);
-            UpdatePadColor(lerpedColor);
+
+            if (fillImage != null)
+            {
+                // UI Canvas Resmi kullanılıyorsa: Renk karıştırma (Lerp) YAPMA, pasta dilimi gibi doldur!
+                fillImage.fillAmount = progress;
+            }
+            else
+            {
+                // Eski 3D Zemin kullanılıyorsa: Renk geçişi yap
+                Color lerpedColor = Color.Lerp(emptyColor, completedColor, progress);
+                UpdatePadColor(lerpedColor);
+            }
 
             if (currentPaid >= targetCost)
             {
@@ -62,7 +80,6 @@ public class UpgradeZoneController : MonoBehaviour
         }
     }
 
-    // URP ve Normal Shadera aynı anda rengi zorla uygula
     private void UpdatePadColor(Color c)
     {
         if (padMaterialInstance != null)
@@ -78,6 +95,8 @@ public class UpgradeZoneController : MonoBehaviour
     private void CompleteUpgrade()
     {
         isCompleted = true;
+        
+        if (fillImage != null) fillImage.fillAmount = 1f;
         UpdatePadColor(completedColor);
 
         Debug.Log($"<color=green>---> [UPGRADE TAMAMLANDI] : {upgradeTitle} başarıyla açıldı! <---</color>");

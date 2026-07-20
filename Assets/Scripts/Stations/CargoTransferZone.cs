@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class CargoTransferZone : MonoBehaviour
 {
@@ -20,6 +21,10 @@ public class CargoTransferZone : MonoBehaviour
     public Color emptyColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);      // Koyu Gri (Boş)
     public Color completedColor = new Color(0.1f, 0.9f, 0.2f, 1f);    // Parlak Yeşil (Doluyor/Hazır)
     public Color craftingColor = new Color(0.9f, 0.8f, 0.1f, 1f);     // Parlak Sarı (Atölye Çalışıyor)
+    public Color readyColor = new Color(0f, 0.9f, 0.9f, 1f);          // Hazır Turkuazı
+
+    [Tooltip("Dolan bar efekti için World Space Canvas içindeki Filled Image'ı sürükleyin.")]
+    public Image fillImage;
 
     [Header("--- ANLIK DEPO DURUMU ---")]
     public int currentWoodCount = 0;
@@ -43,6 +48,12 @@ public class CargoTransferZone : MonoBehaviour
         {
             padMaterialInstance = padRenderer.material;
             UpdatePadColor(emptyColor);
+        }
+
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = 0f;
+            fillImage.color = completedColor;
         }
 
         if (gameObject.name.ToLower().Contains("wood_loading"))
@@ -74,13 +85,18 @@ public class CargoTransferZone : MonoBehaviour
                 {
                     Debug.Log($"<color=green>[ODUN YÜKLENDİ] Kamyonetteki kargo: {activeTruck.currentLoadedWood}/{activeTruck.requiredWoodToDepart}</color>");
                     
-                    // Görsel Renk Geçişi: 0'dan 30'a doğru yeşile dön!
                     float progress = Mathf.Clamp01((float)activeTruck.currentLoadedWood / activeTruck.requiredWoodToDepart);
-                    UpdatePadColor(Color.Lerp(emptyColor, completedColor, progress));
+                    
+                    if (fillImage != null) {
+                        fillImage.fillAmount = progress;
+                        fillImage.color = completedColor;
+                    } else {
+                        UpdatePadColor(Color.Lerp(emptyColor, completedColor, progress));
+                    }
 
                     OnItemTransferredTick?.Invoke();
 
-                    // 30/30 olunca levhayı tekrar griye sıfırla ki araç gidince boş görünsün
+                    // 30/30 olunca levhayı sıfırla ki araç gidince boş görünsün
                     if (activeTruck.currentLoadedWood >= activeTruck.requiredWoodToDepart)
                     {
                         StartCoroutine(ResetColorAfterDelay(1.5f));
@@ -91,7 +107,10 @@ public class CargoTransferZone : MonoBehaviour
         // 2. MOD: ARAÇTAN ATÖLYEYE İNDİR -> ÜRET -> MOBİLYA YÜKLE (Zone_Workshop_Upload)
         else if (mode == StationMode.TruckToWorkshop_CraftAndReturn)
         {
-            if (!isCraftingInProgress && (other.name.ToLower().Contains("truck") || other.CompareTag("Player") || other.name.ToLower().Contains("fake")))
+            bool isTruck = other.GetComponentInParent<TruckRouteController>() != null || other.name.ToLower().Contains("truck");
+            bool isPlayerOrFake = other.CompareTag("Player") || other.name.ToLower().Contains("player") || other.name.ToLower().Contains("fake");
+
+            if (!isCraftingInProgress && (isTruck || isPlayerOrFake))
             {
                 if (currentWoodCount < 10)
                 {
@@ -99,7 +118,13 @@ public class CargoTransferZone : MonoBehaviour
                     Debug.Log($"[ATÖLYEYE İNDİ] Atölyeye giren odun: {currentWoodCount}/10");
                     
                     float progress = Mathf.Clamp01((float)currentWoodCount / 10f);
-                    UpdatePadColor(Color.Lerp(emptyColor, completedColor, progress));
+                    
+                    if (fillImage != null) {
+                        fillImage.fillAmount = progress;
+                        fillImage.color = completedColor;
+                    } else {
+                        UpdatePadColor(Color.Lerp(emptyColor, completedColor, progress));
+                    }
                     
                     OnItemTransferredTick?.Invoke();
                 }
@@ -114,6 +139,7 @@ public class CargoTransferZone : MonoBehaviour
     private IEnumerator ResetColorAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
+        if (fillImage != null) fillImage.fillAmount = 0f;
         UpdatePadColor(emptyColor);
     }
 
@@ -122,6 +148,10 @@ public class CargoTransferZone : MonoBehaviour
         isCraftingInProgress = true;
         Debug.Log($"<color=yellow>[ATÖLYE ÇALIŞIYOR] {currentWoodCount} odun mobilyaya dönüştürülüyor... ({workshopCraftingTime} saniye)</color>");
 
+        if (fillImage != null) {
+            fillImage.fillAmount = 1f;
+            fillImage.color = craftingColor; // Doluyken sarı olsun
+        }
         UpdatePadColor(craftingColor); // Parlak Sarı
 
         yield return new WaitForSeconds(workshopCraftingTime);
@@ -130,7 +160,8 @@ public class CargoTransferZone : MonoBehaviour
         currentWoodCount = 0;
         isCraftingInProgress = false;
 
-        UpdatePadColor(new Color(0f, 0.9f, 0.9f, 1f)); // Hazır Turkuazı
+        if (fillImage != null) fillImage.color = readyColor; // Bitince turkuaz
+        UpdatePadColor(readyColor); // Hazır Turkuazı
 
         Debug.Log($"<color=cyan>[ÜRETİM TAMAMLANDI] Atölyede {currentFurnitureCount} adet Mobilya hazır!</color>");
         OnCraftingFinished?.Invoke();
