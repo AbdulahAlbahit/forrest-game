@@ -14,10 +14,6 @@ public class PlayerData
     public int KamyonSeviyesi;
     public int AtolyeSeviyesi;
 
-    // --- Balta Stat'lari ---
-    public float BaltaSharpness;
-    public float BaltaDamage;
-
     // --- Zaman Verileri ---
     public float MevsimZamani;
     public float OyunSuresi;
@@ -35,9 +31,6 @@ public class PlayerData
         SepetSeviyesi = 1;
         KamyonSeviyesi = 1;
         AtolyeSeviyesi = 1;
-
-        BaltaSharpness = 1.0f;
-        BaltaDamage = 10.0f;
 
         MevsimZamani = 0f;
         OyunSuresi = 0f;
