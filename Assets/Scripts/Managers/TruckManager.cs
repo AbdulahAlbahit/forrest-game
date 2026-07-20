@@ -43,6 +43,18 @@ public class TruckManager : MonoBehaviour
     /// </summary>
     public int GetTruckCapacity()
     {
+        if (config == null)
+        {
+            Debug.LogError("TruckManager: TruckUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return 10;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("TruckManager: CloudSaveManager veya CurrentData hazir degil, varsayilan kapasite donduruluyor.");
+            return config.GetLevelData(1).TruckCapacity;
+        }
+
         int seviye = CloudSaveManager.Instance.CurrentData.KamyonSeviyesi;
         return config.GetLevelData(seviye).TruckCapacity;
     }
@@ -53,15 +65,21 @@ public class TruckManager : MonoBehaviour
     /// </summary>
     public bool UpgradeTruck()
     {
-        if (EconomyManager.Instance == null)
+        if (config == null)
         {
-            Debug.LogError("TruckManager: EconomyManager bulunamadi!");
+            Debug.LogError("TruckManager: TruckUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
             return false;
         }
 
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
-            Debug.LogWarning("TruckManager: CloudSaveManager veya CurrentData hazir degil.");
+            Debug.LogError("TruckManager: CloudSaveManager veya CurrentData hazir degil. Yukseltme iptal edildi!");
+            return false;
+        }
+
+        if (EconomyManager.Instance == null)
+        {
+            Debug.LogError("TruckManager: EconomyManager bulunamadi!");
             return false;
         }
 

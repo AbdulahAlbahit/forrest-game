@@ -43,6 +43,18 @@ public class AxeManager : MonoBehaviour
     /// </summary>
     public float GetAxePower()
     {
+        if (config == null)
+        {
+            Debug.LogError("AxeManager: AxeUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return 1f;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("AxeManager: CloudSaveManager veya CurrentData hazir degil, varsayilan guc donduruluyor.");
+            return config.GetLevelData(1).AxePower;
+        }
+
         int seviye = CloudSaveManager.Instance.CurrentData.BaltaSeviyesi;
         return config.GetLevelData(seviye).AxePower;
     }
@@ -53,7 +65,17 @@ public class AxeManager : MonoBehaviour
     /// </summary>
     public bool UpgradeAxe()
     {
-        Debug.Log("UpgradeAxe çalıştı! Buluttaki Seviye: " + CloudSaveManager.Instance.CurrentData.BaltaSeviyesi);
+        if (config == null)
+        {
+            Debug.LogError("AxeManager: AxeUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
+            return false;
+        }
+
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogError("AxeManager: CloudSaveManager veya CurrentData hazir degil. Yukseltme iptal edildi!");
+            return false;
+        }
 
         if (EconomyManager.Instance == null)
         {
@@ -61,11 +83,7 @@ public class AxeManager : MonoBehaviour
             return false;
         }
 
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("AxeManager: CloudSaveManager veya CurrentData hazir degil.");
-            return false;
-        }
+        Debug.Log("UpgradeAxe çalıştı! Buluttaki Seviye: " + CloudSaveManager.Instance.CurrentData.BaltaSeviyesi);
 
         int seviye = CloudSaveManager.Instance.CurrentData.BaltaSeviyesi;
         int cost = config.GetLevelData(seviye).UpgradeCost;
