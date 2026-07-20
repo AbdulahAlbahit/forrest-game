@@ -52,65 +52,49 @@ public class SystemTester : MonoBehaviour
         }
     }
 
-    [ContextMenu("Test 4: Bolge 1'i Ac")]
+    [ContextMenu("Test: Bolge 1'i Ac (Config)")]
     public void TestUnlockRegion()
     {
-        if (RegionManager.Instance != null && EconomyManager.Instance != null)
-        {
-            bool basarili = RegionManager.Instance.UnlockRegion("Bolge 1");
-            if (basarili)
-            {
-                Debug.Log($"[Test 4] 'Bolge 1' kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test 4] Bolge acilamadi. (Belki onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
-        }
-        else
-        {
-            Debug.LogError("[Test 4] RegionManager veya EconomyManager bulunamadi!");
-        }
-    }
-    [ContextMenu("Test: Bolge 2'yi Ac")]
-    public void TestUnlockRegion2()
-    {
-        if (RegionManager.Instance != null && EconomyManager.Instance != null)
-        {
-            bool basarili = RegionManager.Instance.UnlockRegion("Bolge_2");
-            if (basarili)
-            {
-                Debug.Log($"[Test] 'Bolge_2' kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test] Bolge_2 acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
-        }
-        else
-        {
-            Debug.LogError("[Test] RegionManager veya EconomyManager bulunamadi!");
-        }
+        TestUnlockRegionById(1);
     }
 
-    [ContextMenu("Test: Bolge 3'u Ac")]
+    [ContextMenu("Test: Bolge 2'yi Ac (Config)")]
+    public void TestUnlockRegion2()
+    {
+        TestUnlockRegionById(2);
+    }
+
+    [ContextMenu("Test: Bolge 3'u Ac (Config)")]
     public void TestUnlockRegion3()
     {
-        if (RegionManager.Instance != null && EconomyManager.Instance != null)
+        TestUnlockRegionById(3);
+    }
+
+    private void TestUnlockRegionById(int regionId)
+    {
+        if (RegionManager.Instance == null)
         {
-            bool basarili = RegionManager.Instance.UnlockRegion("Bolge_3");
-            if (basarili)
-            {
-                Debug.Log($"[Test] 'Bolge_3' kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test] Bolge_3 acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
+            Debug.LogError($"[Test Bolge] RegionManager bulunamadi!");
+            return;
+        }
+
+        if (EconomyManager.Instance == null)
+        {
+            Debug.LogError($"[Test Bolge] EconomyManager bulunamadi!");
+            return;
+        }
+
+        int maliyet = RegionManager.Instance.GetRegionCost(regionId);
+        Debug.Log($"Bolge {regionId} acilis testi baslatildi. Config'den okunan maliyet: {maliyet}");
+
+        bool basarili = RegionManager.Instance.UnlockRegion(regionId);
+        if (basarili)
+        {
+            Debug.Log($"[Test Bolge] Bolge {regionId} kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
         }
         else
         {
-            Debug.LogError("[Test] RegionManager veya EconomyManager bulunamadi!");
+            Debug.LogWarning($"[Test Bolge] Bolge {regionId} acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
         }
     }
 
