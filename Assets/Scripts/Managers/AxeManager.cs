@@ -6,11 +6,7 @@ public class AxeManager : MonoBehaviour
     public static AxeManager Instance { get; private set; }
 
     [Header("Balta Ayarlari")]
-    [Tooltip("Seviye 1'deki temel balta gucu (agac basina dusen odun).")]
-    [SerializeField] private float temelGuc = 1f;
-
-    [Tooltip("Her balta seviyesinde eklenen ekstra guc miktari.")]
-    [SerializeField] private float seviyeCarpani = 0.5f;
+    [SerializeField] private AxeUpgradeConfig config;
 
     /// <summary>
     /// Balta seviyesi yukseltildiginde tetiklenir. Yeni seviyeyi parametre olarak verir.
@@ -43,24 +39,19 @@ public class AxeManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Balta seviyesine bagli olarak agac basina ne kadar odun dusecegini hesaplar.
-    /// Formul: temelGuc + (BaltaSeviyesi * seviyeCarpani)
-    /// Ornek (temel=1, carpan=0.5):
-    ///   Seviye 1: 1.5 guc
-    ///   Seviye 2: 2.0 guc
-    ///   Seviye 3: 2.5 guc
-    ///   Seviye 4: 3.0 guc
+    /// Balta seviyesine bagli olarak config uzerinden balta gucunu dondurur.
     /// </summary>
     public float GetAxePower()
     {
-        return temelGuc + (BaltaSeviyesi * seviyeCarpani);
+        int seviye = CloudSaveManager.Instance.CurrentData.BaltaSeviyesi;
+        return config.GetLevelData(seviye).AxePower;
     }
 
     /// <summary>
-    /// Baltayi bir seviye yukseltir. Maliyet EconomyManager uzerinden kontrol edilir.
+    /// Baltayi bir seviye yukseltir. Maliyet config uzerinden alinir ve EconomyManager uzerinden kontrol edilir.
     /// Yeterli para varsa seviyeyi artirip buluta kaydeder.
     /// </summary>
-    public bool UpgradeAxe(int cost)
+    public bool UpgradeAxe()
     {
         if (EconomyManager.Instance == null)
         {
@@ -73,6 +64,9 @@ public class AxeManager : MonoBehaviour
             Debug.LogWarning("AxeManager: CloudSaveManager veya CurrentData hazir degil.");
             return false;
         }
+
+        int seviye = CloudSaveManager.Instance.CurrentData.BaltaSeviyesi;
+        int cost = config.GetLevelData(seviye).UpgradeCost;
 
         if (!EconomyManager.Instance.SpendMoney(cost))
         {
