@@ -130,17 +130,43 @@ public class WorkshopManager : MonoBehaviour
             return;
         }
 
-        // Seviyeye gore hesaplanan hiz: saniyede X odun => 1 odun icin 1/X saniye gerek
-        float saniyePerOdun = 1f / GetProcessingSpeed();
-        uretimZamanlayicisi += Time.deltaTime;
+        float hiz = GetProcessingSpeed();
+        
+        // Hata onleyici Guard Clause: Hiz 0 veya negatif ise sonsuz donguyu engelle
+        if (hiz <= 0f) 
+        {
+            return;
+        }
 
-        if (uretimZamanlayicisi >= saniyePerOdun)
+        // Seviyeye gore hesaplanan hiz: saniyede X odun => 1 odun icin 1/X saniye gerek
+        float saniyePerOdun = 1f / hiz;
+        
+        // Cok kucuk sayilar (sonsuz dongu riski) icin ekstra guvenlik onlemi
+        if (saniyePerOdun <= 0.01f) 
+        {
+            saniyePerOdun = 0.01f;
+        }
+
+        uretimZamanlayicisi += Time.deltaTime;
+        int islenenOdun = 0;
+
+        // Unity'nin donmasini engellemek icin guvenli while dongusu
+        while (uretimZamanlayicisi >= saniyePerOdun && mevcutKuyruk > 0)
         {
             mevcutKuyruk--;
             uretimZamanlayicisi -= saniyePerOdun;
+            islenenOdun++;
 
-            Debug.Log($"WorkshopManager: 1 odun islendi! Kalan: {mevcutKuyruk}/{GetWorkshopCapacity()}");
+            // StackOverflow veya Sonsuz Dongu onlemi: 1 frame'de 100'den fazla islem yapilmasin.
+            if (islenenOdun >= 100) 
+            {
+                break;
+            }
+        }
 
+        if (islenenOdun > 0)
+        {
+            Debug.Log($"WorkshopManager: {islenenOdun} odun islendi! Kalan: {mevcutKuyruk}/{GetWorkshopCapacity()}");
             OnWoodProcessed?.Invoke();
             OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
         }
