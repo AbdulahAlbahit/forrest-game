@@ -12,6 +12,14 @@ public class CloudSaveManager : MonoBehaviour
     private FirebaseFirestore db;
     private string userId;
 
+    private const string LOCAL_SAVE_KEY = "LocalPlayerData";
+
+    [Header("Otomatik Kayit Ayarlari")]
+    [Tooltip("Otomatik bulut kaydinin kac saniyede bir yapilacagi.")]
+    [SerializeField] private float autoSaveInterval = 60f;
+
+    private Coroutine autoSaveCoroutine;
+
     /// <summary>
     /// Bulut verisi basariyla yuklendiginde, yuklenlen PlayerData ile tetiklenir.
     /// </summary>
@@ -109,6 +117,11 @@ public class CloudSaveManager : MonoBehaviour
 
         // Giris yapildi, buluttan veriyi cek
         LoadData();
+
+        // Otomatik kayit dongusunu baslat
+        if (autoSaveCoroutine != null)
+            StopCoroutine(autoSaveCoroutine);
+        autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
     }
 
     /// <summary>
@@ -125,10 +138,21 @@ public class CloudSaveManager : MonoBehaviour
     /// </summary>
     public void SaveData(PlayerData data)
     {
+        if (data == null)
+        {
+            Debug.LogError("CloudSaveManager: SaveData'ya null PlayerData gonderildi!");
+            return;
+        }
+
+        // --- Lokal Kayit (Offline Save) ---
+        // Firestore'dan bagimsiz olarak her zaman yerel yedegi guncelle
+        SaveToLocal(data);
+
+        // --- Bulut Kayit (Cloud Save) ---
         if (db == null || string.IsNullOrEmpty(userId))
         {
-            string errorMsg = "Firestore baglantisi hazir degil veya kullanici girisi yapilmamis.";
-            Debug.LogError($"CloudSaveManager: {errorMsg}");
+            string errorMsg = "Firestore baglantisi hazir degil veya kullanici girisi yapilmamis. Sadece lokal kayit yapildi.";
+            Debug.LogWarning($"CloudSaveManager: {errorMsg}");
             OnCloudError?.Invoke(errorMsg);
             return;
         }
@@ -175,9 +199,8 @@ public class CloudSaveManager : MonoBehaviour
     {
         if (db == null || string.IsNullOrEmpty(userId))
         {
-            string errorMsg = "Firestore baglantisi hazir degil veya kullanici girisi yapilmamis.";
-            Debug.LogError($"CloudSaveManager: {errorMsg}");
-            OnCloudError?.Invoke(errorMsg);
+            Debug.LogWarning("CloudSaveManager: Firestore baglantisi hazir degil. Lokal veri deneniyor...");
+            LoadFromLocalFallback();
             return;
         }
 
@@ -190,6 +213,9 @@ public class CloudSaveManager : MonoBehaviour
                 string errorMsg = $"Buluttan veri yuklenirken hata olustu: {task.Exception?.Message}";
                 Debug.LogError($"CloudSaveManager: {errorMsg}");
                 OnCloudError?.Invoke(errorMsg);
+
+                // Bulut basarisiz oldu, lokal yedege dus
+                LoadFromLocalFallback();
                 return;
             }
 
@@ -224,8 +250,11 @@ public class CloudSaveManager : MonoBehaviour
                 }
 
                 CurrentData = data;
-                Debug.Log("CloudSaveManager: Veriler basariyla yuklendi!");
 
+                // Buluttan basariyla yuklendi, lokal yedegi de guncelle
+                SaveToLocal(data);
+
+                Debug.Log("CloudSaveManager: Veriler basariyla yuklendi!");
                 OnDataLoaded?.Invoke(data);
             }
             else
@@ -242,6 +271,91 @@ public class CloudSaveManager : MonoBehaviour
                 OnDataLoaded?.Invoke(newData);
             }
         });
+    }
+
+    // =============================================
+    // LOKAL KAYIT / YUKLE YARDIMCI METOTLARI
+    // =============================================
+
+    /// <summary>
+    /// PlayerData'yi JSON'a cevirip PlayerPrefs'e yazar.
+    /// Her SaveData cagrisinda otomatik olarak tetiklenir.
+    /// </summary>
+    private void SaveToLocal(PlayerData data)
+    {
+        try
+        {
+            string json = JsonUtility.ToJson(data);
+            PlayerPrefs.SetString(LOCAL_SAVE_KEY, json);
+            PlayerPrefs.Save();
+            Debug.Log("CloudSaveManager: Lokal yedek guncellendi (PlayerPrefs).");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"CloudSaveManager: Lokal kayit sirasinda hata: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Bulut baglantisi basarisiz oldugunda PlayerPrefs'ten veri okuyup oyunu baslatir.
+    /// Eger lokal veri de yoksa yeni bir PlayerData olusturur.
+    /// </summary>
+    private void LoadFromLocalFallback()
+    {
+        if (PlayerPrefs.HasKey(LOCAL_SAVE_KEY))
+        {
+            try
+            {
+                string json = PlayerPrefs.GetString(LOCAL_SAVE_KEY);
+                PlayerData localData = JsonUtility.FromJson<PlayerData>(json);
+
+                if (localData != null)
+                {
+                    CurrentData = localData;
+                    Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
+                    OnDataLoaded?.Invoke(localData);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"CloudSaveManager: Lokal veri okuma hatasi: {e.Message}");
+            }
+        }
+
+        // Lokal veri de yoksa sifirdan baslat
+        Debug.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
+        PlayerData newData = new PlayerData();
+        CurrentData = newData;
+        OnDataLoaded?.Invoke(newData);
+    }
+
+    // =============================================
+    // OTOMATIK KAYIT (AUTO-SAVE) COROUTINE
+    // =============================================
+
+    /// <summary>
+    /// Oyun calistigi surece belirli aralikla (varsayilan 60sn) otomatik bulut kaydi yapar.
+    /// HandleLoginSuccess icinde baslatilir.
+    /// </summary>
+    private IEnumerator AutoSaveRoutine()
+    {
+        Debug.Log($"CloudSaveManager: Otomatik kayit basladi. Aralik: {autoSaveInterval} saniye.");
+
+        while (true)
+        {
+            yield return new WaitForSeconds(autoSaveInterval);
+
+            if (CurrentData != null)
+            {
+                Debug.Log("CloudSaveManager: [Auto-Save] Otomatik kayit tetiklendi...");
+                SaveData(CurrentData);
+            }
+            else
+            {
+                Debug.LogWarning("CloudSaveManager: [Auto-Save] CurrentData null, kayit atlandi.");
+            }
+        }
     }
 
 }
