@@ -1,7 +1,14 @@
 # Forrest Game — Proje Hafızası
 
-> Bu dosya projenin kalıcı teknik hafızasıdır. Son güncelleme: 16 Temmuz 2026.
+> Bu dosya projenin kalıcı teknik hafızasıdır. Son güncelleme: 17 Temmuz 2026.
 > Yeni bir işe başlamadan önce tüm depoyu yeniden taramak yerine önce bu dosya ve `TODO.md` okunur.
+> Son karakter güncellemesi: Balta, `Hiz` ve locomotion animasyon döngüsüyle senkronize salınır; yürüyüşte hafif, koşuda daha belirgindir ve saldırı sırasında vuruş animasyonuna bırakılır.
+> Yürüyüş senkronu: Adım başına fazla yol alma/ayak kayması için yürüyüş hızı `1,75 m/sn` yapıldı; koşuya geçiş başlangıcı `2,4 m/sn` ve tam koşu `5,5 m/sn` korunarak koşu görünümü değiştirilmedi.
+> Kol animasyonu düzeltmesi: `Upper Body Attack` katmanı locomotion sırasında ağırlık `0`, yalnızca saldırı süresince `1` olur. Böylece Walk/Run kliplerinin kol salınımı ve ele bağlı baltanın doğal hareketi korunur.
+> Saldırı alt gövde koruması: `Efe_UpperBody` maskesinde Root, baş, iki bacak ve iki Foot IK kanalı kapalı; yalnızca gövde, kollar ve parmaklar açıktır. Eski prosedürel ayak taşıma IK’sı kaldırıldı; saldırıda alt gövde tamamen Base Layer Idle/Walk/Run pozunu korur.
+> Dengeli saldırı duruşu: Üst gövde maskesi korunurken Base Layer ayak IK’sı yalnızca saldırı boyunca devreye girer; sağ ayak `0,17 m` öne, sol ayak `0,11 m` geriye ve iki ayak `0,11 m` yana açılarak Terrain zemine basar. Böylece düz paralel duruş kırılırken bacak animasyonu saldırı klibinden etkilenmez.
+> Odun taşıma prototipi: Yalnızca `Efe_CharacterSandbox` içinde odunların yerde kalma süresi `60 sn` oldu. `EfeOdunTasima` yakındaki `Pool_WoodLog_*` odunlarını otomatik toplar, en fazla `6` odunu sepette gösterir ve `Zone_Truck_Wood_Loading` alanında mevcut `TruckRouteController.AddWoodToCargo` API’sine aktarır.
+> Sepet görünürlüğü: Taşınan odunlar sepet duvarlarının içinde kalmaması için `LogStackAnchor` üzerinde ikili yatay katlar olarak yerleştirilir; ölçek `0,74` ve kapasiteye göre görünürlük 1–6 arasında açılır.
 
 ## 1. Oyun vizyonu
 
@@ -105,11 +112,11 @@ Bu dosyalar temizlenmeden branch değiştirmek veya merge/rebase yapmak risklidi
 | Karakter hareketi | Prototip | Mobil joystick çalışması var; dayanıklılık, zemin eğimi ve kamera göreli hareket yok. |
 | Kamera | Prototip | Sabit açılı yumuşak takip var. |
 | Animasyon | Kısmi | Idle/Walk/Run, `Hiz` kontrollü 1D Blend Tree ile bağlı ve loop ayarlı; Axe Attack animasyonu UI butonuna bağlı, hasar anı henüz bağlı değil. |
-| Ağaç kesme | Yok | Can, hedef seçimi, darbe, düşme ve yeniden doğma sistemi yok. |
-| Balta | Görsel/animasyon prototipi | Balta sağ ele bağlı; UI butonu Axe Attack animasyonunu tetikliyor. Ağaç algılama ve hasar henüz yok. |
-| Kütük üretme | Asset var, sistem yok | Kesilen ağaçtan kaynak üretimi yok. |
-| Sırtta taşıma | Görsel hazırlık | Ahşap sırt sepeti `Spine2` kemiğine bağlı ve gelecekteki odunlar için `LogStackAnchor` var; kapasite, stack ve al/bırak mantığı henüz yok. |
-| Kamyona yükleme | Yok | Yük kabul alanı, kapasite ve görsel stack yok. |
+| Ağaç kesme | Prototip | Balta butonu 3 metre içindeki en yakın Terrain ağacını seçer; karakter ağaca döner ve animasyon temas anında `TreeManager` hasar alır. Ağaç 3 vuruşta devrilir, güdük/odun görselleri çıkar ve 10 saniye sonra yeniden doğar. |
+| Balta | Etkileşim prototipi | Balta sağ ele bağlı; UI butonu Axe Attack animasyonunu ve yakın Terrain ağacına 1 hasarı tetikliyor. Vuruş menzili 3 m, temas gecikmesi 0,45 sn. |
+| Kütük üretme | Prototip | `TreeManager`, kesilen ağaçtan havuzlanmış üç `Pool_WoodLog_*` odunu çıkarır; Efe sandbox içinde yerde kalma süresi 60 saniyedir. |
+| Sırtta taşıma | Prototip | `EfeOdunTasima`, 1,15 m içindeki odunları otomatik toplar; kapasite 4’tür ve `LogStackAnchor` üzerinde dört görsel odunla gösterilir. |
+| Kamyona yükleme | Entegrasyon prototipi | Efe karakteri `Zone_Truck_Wood_Loading` alanına girince sepetindeki odunları mevcut kamyonun açık kargo API’sine aktarır; Mert’in zone/truck kodu değiştirilmemiştir. |
 | Kamyon yolculuğu | Ayrı branch'te prototip | Waypoint rota ve kamyon seviyeleri mevcut; ana döngüye bağlı değil. |
 | Atölye | Görsel temel var | Girdi kuyruğu, işleme süresi ve çıktı yok. |
 | Ekonomi/upgrade | Ayrı branch'te | Backend branch'inde yöneticiler var; oynanışla entegre değil. |
@@ -225,3 +232,9 @@ Klasör taşıma işlemi şu an yapılmamalı; aktif branch'lerde zaten büyük 
 - 2026-07-16: Karakter Idle/Walk/Run animasyonları `Hiz` (0/0.5/1) 1D Blend Tree ile bağlandı; klipler loop yapıldı ve joystick hareket/animasyon geçişleri gerçekçi hızlanma ile düzenlendi. Unity Animator doğrulaması ve C# derlemesi geçti.
 - 2026-07-16: Balta karakterin sağ el kemiğine bağlandı, sağ altta `BALTA` butonu oluşturuldu ve `Saldir` trigger'lı Axe Attack state'i eklendi. Buton bağlantısı/Animator Unity otomasyonunda doğrulandı, C# derlemesi geçti; hasar sistemi eklenmedi.
 - 2026-07-16: Üstü açık ahşap sırt sepeti prefabı oluşturuldu, karakterin `Spine2` kemiğine bağlandı ve gelecekte odun dizmek için `LogStackAnchor` eklendi. Taşıma mantığı eklenmedi; Unity prefab/sahne doğrulaması geçti.
+- 2026-07-17: Mert'in güncel haritasını içeren `develop` (`1fd81d0`), yerel kullanıcı dosyaları korunarak `karakter-kontrol` branch'ine fast-forward ile alındı ve pushlandı. `Efe_CharacterSandbox`, Mert'in 12 güncel harita kökü ile Efe'ye ait mevcut karakter/kamera/Canvas/EventSystem kökleri birleştirilerek yenilendi; `Mert_Artscene` değiştirilmedi. Unity batch doğrulamasında 16 kök, tek kamera/joystick, karakter-kamera-balta-sepet bağlantıları, `TreeManager` ve sıfır eksik script doğrulandı.
+- 2026-07-17: `EfeBaltaKontrol`, 3 metre içindeki en yakın Terrain ağacını seçip karakteri hedefe döndürecek ve balta temasında `TreeManager.HitTreeAt` çağıracak şekilde bağlandı. Yalnızca `Efe_CharacterSandbox` içindeki kırık TreeManager prefab referansları mevcut pine/cone/default fallen, stump ve wood-log prefablarına düzeltildi; Mert'in kaynak sahnesi, scriptleri ve prefabları değiştirilmedi. Unity editör derlemesi hatasız tamamlandı.
+- 2026-07-17: Balta saldırısının uzun hazırlığı kısaltıldı: Axe Attack state hızı 2.0, başlangıç ofseti 0.20, giriş geçişi 0.03 sn ve hasar temas gecikmesi 0.30 sn olarak ayarlandı. Unity günlüğünde üç vuruş ve ağaç devrilme akışı doğrulandı.
+- 2026-07-17: Balta saldırısı Base Layer'dan çıkarılıp root/bacak/ayak IK kanalları kapalı `Efe_UpperBody` maskeli `Upper Body Attack` katmanına taşındı. Idle/Walk/Run alt gövdeyi ve ayak temasını korurken saldırı yalnızca üst gövdede çalışacak şekilde geçici Unity projesinde oluşturulup doğrulandı.
+- 2026-07-17: Saldırı sırasında donuk alt gövdeyi düzeltmek için ayak IK duruşu eklendi; sağ ayak 0,24 m ileri, sol ayak 0,18 m geri alınır, 0,08 sn'de duruşa girip 0,14 sn'de çıkar ve iki ayağın yüksekliği aktif Terrain üzerinden zemine sabitlenir. Üst gövde hızı ve hasar zamanlaması değiştirilmedi; minimal Unity projesinde C# derlemesi geçti.
+- 2026-07-20: Mert'in `feature/mert-art-design` PR'ı ekip tarafından `ca04e03` ile `develop` branch'ine birleştirildi. Güncel `develop`, ayrı worktree'de Git merge, sıfır duplicate GUID ve Unity 6000.5.2f1 temiz import/C# derleme testiyle doğrulandıktan sonra `karakter-kontrol` branch'ine alındı. Efe'nin kaydedilmemiş yerel dosyaları işlem öncesinde dış yedek ve Git stash ile korundu; çalışma kopyasında Mert'in güncel `New Terrain.asset` sürümü kullanıldı, önceki yerel Terrain sürümü yedekte tutuldu. Mert'in kaynak branch'i, sahnesi ve `develop` üzerinde bu işlem sırasında doğrudan değişiklik yapılmadı.
