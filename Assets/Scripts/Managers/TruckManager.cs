@@ -6,11 +6,7 @@ public class TruckManager : MonoBehaviour
     public static TruckManager Instance { get; private set; }
 
     [Header("Kamyon Ayarlari")]
-    [Tooltip("Seviye 1'deki temel kamyon kapasitesi (tek seferde tasiyabilecegi max odun).")]
-    [SerializeField] private int temelKapasite = 10;
-
-    [Tooltip("Her kamyon seviyesinde eklenen ekstra kapasite miktari.")]
-    [SerializeField] private int kapasiteCarpani = 5;
+    [SerializeField] private TruckUpgradeConfig config;
 
     /// <summary>
     /// Kamyon seviyesi yukseltildiginde tetiklenir. Yeni seviyeyi parametre olarak verir.
@@ -43,24 +39,19 @@ public class TruckManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Kamyon seviyesine bagli olarak tek seferde tasinabilecek maksimum odun miktarini hesaplar.
-    /// Formul: temelKapasite + (KamyonSeviyesi * kapasiteCarpani)
-    /// Ornek (temel=10, carpan=5):
-    ///   Seviye 1: 15 odun
-    ///   Seviye 2: 20 odun
-    ///   Seviye 3: 25 odun
-    ///   Seviye 4: 30 odun
+    /// Kamyon seviyesine bagli olarak config uzerinden kamyon kapasitesini dondurur.
     /// </summary>
     public int GetTruckCapacity()
     {
-        return temelKapasite + (KamyonSeviyesi * kapasiteCarpani);
+        int seviye = CloudSaveManager.Instance.CurrentData.KamyonSeviyesi;
+        return config.GetLevelData(seviye).TruckCapacity;
     }
 
     /// <summary>
-    /// Kamyonu bir seviye yukseltir. Maliyet EconomyManager uzerinden kontrol edilir.
+    /// Kamyonu bir seviye yukseltir. Maliyet config uzerinden alinir ve EconomyManager uzerinden kontrol edilir.
     /// Yeterli para varsa seviyeyi artirip buluta kaydeder.
     /// </summary>
-    public bool UpgradeTruck(int cost)
+    public bool UpgradeTruck()
     {
         if (EconomyManager.Instance == null)
         {
@@ -73,6 +64,9 @@ public class TruckManager : MonoBehaviour
             Debug.LogWarning("TruckManager: CloudSaveManager veya CurrentData hazir degil.");
             return false;
         }
+
+        int seviye = CloudSaveManager.Instance.CurrentData.KamyonSeviyesi;
+        int cost = config.GetLevelData(seviye).UpgradeCost;
 
         if (!EconomyManager.Instance.SpendMoney(cost))
         {

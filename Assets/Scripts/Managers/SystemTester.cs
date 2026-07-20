@@ -144,4 +144,71 @@ public class SystemTester : MonoBehaviour
             Debug.LogError("[Test Durum] RegionManager bulunamadi!");
         }
     }
+
+    [ContextMenu("Test: Baltayi Gelistir (Maliyet 100)")]
+    public void TestUpgradeAxe()
+    {
+        if (AxeManager.Instance != null && EconomyManager.Instance != null)
+        {
+            bool basarili = AxeManager.Instance.UpgradeAxe();
+            if (basarili)
+            {
+                Debug.Log($"[Test Balta] Balta yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Guc: {AxeManager.Instance.GetAxePower()}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test Balta] Balta yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            }
+        }
+        else
+        {
+            Debug.LogError("[Test Balta] AxeManager veya EconomyManager bulunamadi!");
+        }
+    }
+
+    [ContextMenu("Test: Kamyonu Gelistir (Maliyet 150)")]
+    public void TestUpgradeTruck()
+    {
+        if (TruckManager.Instance != null && EconomyManager.Instance != null)
+        {
+            bool basarili = TruckManager.Instance.UpgradeTruck();
+            if (basarili)
+            {
+                Debug.Log($"[Test Kamyon] Kamyon yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Kapasite: {TruckManager.Instance.GetTruckCapacity()}");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test Kamyon] Kamyon yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            }
+        }
+        else
+        {
+            Debug.LogError("[Test Kamyon] TruckManager veya EconomyManager bulunamadi!");
+        }
+    }
+
+    [ContextMenu("Test: Atolyeyi Gelistir (Maliyet 200)")]
+    public void TestUpgradeWorkshop()
+    {
+        if (WorkshopManager.Instance != null && EconomyManager.Instance != null)
+        {
+            bool basarili = WorkshopManager.Instance.UpgradeWorkshop(200);
+            if (basarili)
+            {
+                Debug.Log($"[Test Atolye] Atolye yukseltildi!\n" +
+                          $"  Kalan Para    : {EconomyManager.Instance.MevcutPara}\n" +
+                          $"  Yeni Uretim Hizi : {WorkshopManager.Instance.GetProcessingSpeed():F2} odun/sn\n" +
+                          $"  Yeni Kapasite    : {WorkshopManager.Instance.GetWorkshopCapacity()} urun");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test Atolye] Atolye yukseltme basarisiz. " +
+                                 $"(Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            }
+        }
+        else
+        {
+            Debug.LogError("[Test Atolye] WorkshopManager veya EconomyManager bulunamadi!");
+        }
+    }
 }
