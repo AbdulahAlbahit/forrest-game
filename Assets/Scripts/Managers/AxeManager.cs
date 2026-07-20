@@ -53,6 +53,8 @@ public class AxeManager : MonoBehaviour
     /// </summary>
     public bool UpgradeAxe()
     {
+        Debug.Log("UpgradeAxe çalıştı! Buluttaki Seviye: " + CloudSaveManager.Instance.CurrentData.BaltaSeviyesi);
+
         if (EconomyManager.Instance == null)
         {
             Debug.LogError("AxeManager: EconomyManager bulunamadi!");
@@ -68,21 +70,26 @@ public class AxeManager : MonoBehaviour
         int seviye = CloudSaveManager.Instance.CurrentData.BaltaSeviyesi;
         int cost = config.GetLevelData(seviye).UpgradeCost;
 
-        if (!EconomyManager.Instance.SpendMoney(cost))
+        Debug.Log("Config'den Okunan Gereken Para: " + cost + " | Sendeki Para: " + EconomyManager.Instance.MevcutPara);
+
+        if (EconomyManager.Instance.SpendMoney(cost))
         {
-            Debug.LogWarning($"AxeManager: Balta yukseltmek icin yeterli para yok! Gereken: {cost}");
+            PlayerData data = CloudSaveManager.Instance.CurrentData;
+            data.BaltaSeviyesi++;
+
+            CloudSaveManager.Instance.SaveData(data);
+
+            Debug.Log($"AxeManager: Balta yukseltildi! Yeni Seviye: {data.BaltaSeviyesi}, Yeni Guc: {GetAxePower()}");
+            OnAxeUpgraded?.Invoke(data.BaltaSeviyesi);
+
+            Debug.Log("Yükseltme başarılı, buluta kaydedildi!");
+            return true;
+        }
+        else
+        {
+            Debug.LogError("Yükseltme iptal edildi! Para yetersiz veya config okunamadı.");
             return false;
         }
-
-        PlayerData data = CloudSaveManager.Instance.CurrentData;
-        data.BaltaSeviyesi++;
-
-        CloudSaveManager.Instance.SaveData(data);
-
-        Debug.Log($"AxeManager: Balta yukseltildi! Yeni Seviye: {data.BaltaSeviyesi}, Yeni Guc: {GetAxePower()}");
-        OnAxeUpgraded?.Invoke(data.BaltaSeviyesi);
-
-        return true;
     }
 
     private void OnDestroy()
