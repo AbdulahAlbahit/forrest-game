@@ -4,9 +4,9 @@ using ForrestGame.Utils;
 
 namespace ForrestGame.Managers
 {
-    public class AxeManager : MonoBehaviour
+    public class AxeVisualManager : MonoBehaviour
     {
-        public static AxeManager Instance { get; private set; }
+        public static AxeVisualManager Instance { get; private set; }
 
         [Header("Axe Data")]
         public string currentAxeId = "lowpoly_axe";
@@ -30,7 +30,7 @@ namespace ForrestGame.Managers
             if (currentAxeId == newAxeId) return;
 
             currentAxeId = newAxeId;
-            GameLogger.Log($"[AxeManager] Equipped new axe: {newAxeId}", this);
+            GameLogger.Log($"[AxeVisualManager] Equipped new axe: {newAxeId}", this);
             
             OnAxeChanged?.Invoke(currentAxeId);
         }

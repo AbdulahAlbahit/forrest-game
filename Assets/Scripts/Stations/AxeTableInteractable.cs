@@ -15,19 +15,19 @@ namespace ForrestGame.Stations
 
         private void OnEnable()
         {
-            AxeManager.OnAxeChanged += HandleAxeChanged;
+            AxeVisualManager.OnAxeChanged += HandleAxeChanged;
         }
 
         private void OnDisable()
         {
-            AxeManager.OnAxeChanged -= HandleAxeChanged;
+            AxeVisualManager.OnAxeChanged -= HandleAxeChanged;
         }
 
         private void Start()
         {
-            if (AxeManager.Instance != null)
+            if (AxeVisualManager.Instance != null)
             {
-                HandleAxeChanged(AxeManager.Instance.currentAxeId);
+                HandleAxeChanged(AxeVisualManager.Instance.currentAxeId);
             }
         }
 
