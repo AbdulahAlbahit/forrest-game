@@ -135,6 +135,7 @@ public class CloudSaveManager : MonoBehaviour
 
     /// <summary>
     /// Oyuncu verisini Firestore'a kaydeder.
+    /// ItemLevels sozlugu ayri bir alan olarak yazilir.
     /// </summary>
     public void SaveData(PlayerData data)
     {
@@ -164,15 +165,17 @@ public class CloudSaveManager : MonoBehaviour
             { "Para", data.Para },
             { "XP", data.XP },
             { "OyuncuSeviyesi", data.OyuncuSeviyesi },
-            { "BaltaSeviyesi", data.BaltaSeviyesi },
-            { "SepetSeviyesi", data.SepetSeviyesi },
-            { "KamyonSeviyesi", data.KamyonSeviyesi },
-            { "AtolyeSeviyesi", data.AtolyeSeviyesi },
             { "MevsimZamani", data.MevsimZamani },
             { "OyunSuresi", data.OyunSuresi },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp }
         };
+
+        // ItemLevels sozlugunu Firestore'a yaz
+        if (data.ItemLevels != null)
+        {
+            playerDict["ItemLevels"] = data.ItemLevels.ToDictionary();
+        }
 
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
         {
@@ -194,6 +197,7 @@ public class CloudSaveManager : MonoBehaviour
     /// <summary>
     /// Oyuncu verisini Firestore'dan yukler.
     /// Eger bulutta veri yoksa yeni bir PlayerData olusturup kaydeder.
+    /// Eski format (BaltaSeviyesi vb.) tespit edilirse otomatik migration yapar.
     /// </summary>
     public void LoadData()
     {
@@ -231,15 +235,12 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("Para")) data.Para = Convert.ToInt32(dict["Para"]);
                 if (dict.ContainsKey("XP")) data.XP = Convert.ToInt32(dict["XP"]);
                 if (dict.ContainsKey("OyuncuSeviyesi")) data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
-                if (dict.ContainsKey("BaltaSeviyesi")) data.BaltaSeviyesi = Convert.ToInt32(dict["BaltaSeviyesi"]);
-                if (dict.ContainsKey("SepetSeviyesi")) data.SepetSeviyesi = Convert.ToInt32(dict["SepetSeviyesi"]);
-                if (dict.ContainsKey("KamyonSeviyesi")) data.KamyonSeviyesi = Convert.ToInt32(dict["KamyonSeviyesi"]);
-                if (dict.ContainsKey("AtolyeSeviyesi")) data.AtolyeSeviyesi = Convert.ToInt32(dict["AtolyeSeviyesi"]);
 
                 // Zaman verileri
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
                 if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
 
+                // Acilan Bolgeler
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
                 {
                     data.AcilanBolgeler = new List<string>();
@@ -249,10 +250,59 @@ public class CloudSaveManager : MonoBehaviour
                     }
                 }
 
+                // ═══════════════════════════════════════════
+                //  ItemLevels Yukleme + Geriye Donuk Uyumluluk (Migration)
+                // ═══════════════════════════════════════════
+
+                data.ItemLevels = new SerializableDict();
+                bool needsMigration = false;
+
+                // Yeni format: ItemLevels sozlugu
+                if (dict.ContainsKey("ItemLevels") && dict["ItemLevels"] is Dictionary<string, object> itemLevelsRaw)
+                {
+                    data.ItemLevels.FromDictionary(itemLevelsRaw);
+                    Debug.Log($"CloudSaveManager: ItemLevels yuklendi ({itemLevelsRaw.Count} esya).");
+                }
+
+                // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
+                // Eger eski alanlar varsa ve ItemLevels'da karsiligi yoksa, aktarim yap
+                if (dict.ContainsKey("BaltaSeviyesi") && !data.ItemLevels.ContainsKey("Axe"))
+                {
+                    data.ItemLevels.Set("Axe", Convert.ToInt32(dict["BaltaSeviyesi"]));
+                    needsMigration = true;
+                }
+                if (dict.ContainsKey("SepetSeviyesi") && !data.ItemLevels.ContainsKey("Basket"))
+                {
+                    data.ItemLevels.Set("Basket", Convert.ToInt32(dict["SepetSeviyesi"]));
+                    needsMigration = true;
+                }
+                if (dict.ContainsKey("KamyonSeviyesi") && !data.ItemLevels.ContainsKey("Truck"))
+                {
+                    data.ItemLevels.Set("Truck", Convert.ToInt32(dict["KamyonSeviyesi"]));
+                    needsMigration = true;
+                }
+                if (dict.ContainsKey("AtolyeSeviyesi") && !data.ItemLevels.ContainsKey("Workshop"))
+                {
+                    data.ItemLevels.Set("Workshop", Convert.ToInt32(dict["AtolyeSeviyesi"]));
+                    needsMigration = true;
+                }
+
+                if (needsMigration)
+                {
+                    Debug.LogWarning("CloudSaveManager: [MIGRATION] Eski format tespit edildi! Veriler yeni ItemLevels yapisina aktarildi.");
+                }
+
                 CurrentData = data;
 
                 // Buluttan basariyla yuklendi, lokal yedegi de guncelle
                 SaveToLocal(data);
+
+                // Migration yapildiysa yeni formati buluta kaydet
+                if (needsMigration)
+                {
+                    SaveData(data);
+                    Debug.Log("CloudSaveManager: [MIGRATION] Yeni format buluta kaydedildi.");
+                }
 
                 Debug.Log("CloudSaveManager: Veriler basariyla yuklendi!");
                 OnDataLoaded?.Invoke(data);
@@ -311,6 +361,12 @@ public class CloudSaveManager : MonoBehaviour
 
                 if (localData != null)
                 {
+                    // ItemLevels null olabilir (eski lokal kayit)
+                    if (localData.ItemLevels == null)
+                    {
+                        localData.ItemLevels = new SerializableDict();
+                    }
+
                     CurrentData = localData;
                     Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
                     OnDataLoaded?.Invoke(localData);

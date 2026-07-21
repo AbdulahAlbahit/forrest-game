@@ -4,6 +4,15 @@ public class SystemTester : MonoBehaviour
 {
     [Header("Bolge Test Ayarlari")]
     public int testRegionId = 1;
+
+    [Header("Upgrade Test Ayarlari")]
+    [Tooltip("Test edilecek esyanin ItemID'si (Axe, Basket, Truck, Workshop, WorkshopQueue vb.)")]
+    public string testItemId = "Axe";
+
+    // ═══════════════════════════════════════════
+    //  Ekonomi Testleri
+    // ═══════════════════════════════════════════
+
     [ContextMenu("Test 1: 1000 Altin Ekle")]
     public void TestAddMoney()
     {
@@ -17,6 +26,10 @@ public class SystemTester : MonoBehaviour
             Debug.LogError("[Test 1] EconomyManager bulunamadi!");
         }
     }
+
+    // ═══════════════════════════════════════════
+    //  XP Testleri
+    // ═══════════════════════════════════════════
 
     [ContextMenu("Test 2: 500 XP Ekle (Level Testi)")]
     public void TestAddXP()
@@ -33,26 +46,66 @@ public class SystemTester : MonoBehaviour
         }
     }
 
-    [ContextMenu("Test 3: Sepeti Gelistir (Upgrade)")]
-    public void TestUpgradeBasket()
+    // ═══════════════════════════════════════════
+    //  Jenerik Upgrade Testleri (Yeni Sistem)
+    // ═══════════════════════════════════════════
+
+    [ContextMenu("Test: Secili Esyayi Gelistir")]
+    public void TestUpgradeItem()
     {
-        if (BasketManager.Instance != null && EconomyManager.Instance != null)
+        if (UpgradeManager.Instance == null)
         {
-            bool basarili = BasketManager.Instance.UpgradeBasket();
-            if (basarili)
-            {
-                Debug.Log($"[Test Sepet] Sepet yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Kapasite: {BasketManager.Instance.GetBasketCapacity()}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test Sepet] Sepet yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
+            Debug.LogError($"[Test Upgrade] UpgradeManager bulunamadi!");
+            return;
+        }
+
+        if (EconomyManager.Instance == null)
+        {
+            Debug.LogError($"[Test Upgrade] EconomyManager bulunamadi!");
+            return;
+        }
+
+        int eskiSeviye = UpgradeManager.Instance.GetItemLevel(testItemId);
+        int maliyet = UpgradeManager.Instance.GetUpgradeCost(testItemId);
+        Debug.Log($"[Test Upgrade] '{testItemId}' yukseltme deneniyor. Mevcut Seviye: {eskiSeviye}, Maliyet: {maliyet}, Para: {EconomyManager.Instance.MevcutPara}");
+
+        bool basarili = UpgradeManager.Instance.UpgradeItem(testItemId);
+        if (basarili)
+        {
+            int yeniSeviye = UpgradeManager.Instance.GetItemLevel(testItemId);
+            float yeniDeger = UpgradeManager.Instance.GetItemValue(testItemId);
+            Debug.Log($"[Test Upgrade] '{testItemId}' yukseltildi! Seviye: {eskiSeviye} -> {yeniSeviye}, Deger: {yeniDeger:F1}, Kalan Para: {EconomyManager.Instance.MevcutPara}");
         }
         else
         {
-            Debug.LogError("[Test Sepet] BasketManager veya EconomyManager bulunamadi!");
+            Debug.LogWarning($"[Test Upgrade] '{testItemId}' yukseltme basarisiz. (Max seviye, yetersiz para veya config eksik)");
         }
     }
+
+    [ContextMenu("Test: Secili Esyanin Bilgilerini Goster")]
+    public void TestShowItemInfo()
+    {
+        if (UpgradeManager.Instance == null)
+        {
+            Debug.LogError("[Test Info] UpgradeManager bulunamadi!");
+            return;
+        }
+
+        int seviye = UpgradeManager.Instance.GetItemLevel(testItemId);
+        float deger = UpgradeManager.Instance.GetItemValue(testItemId);
+        int sonrakiMaliyet = UpgradeManager.Instance.GetUpgradeCost(testItemId);
+        bool maxMi = UpgradeManager.Instance.IsMaxLevel(testItemId);
+
+        Debug.Log($"[Test Info] === {testItemId} ===\n" +
+                  $"  Seviye      : {seviye}\n" +
+                  $"  Guncel Deger: {deger:F1}\n" +
+                  $"  Sonraki Maliyet: {sonrakiMaliyet}\n" +
+                  $"  Max Seviye Mi: {maxMi}");
+    }
+
+    // ═══════════════════════════════════════════
+    //  Bolge Testleri (Degistirilmedi)
+    // ═══════════════════════════════════════════
 
     [ContextMenu("Test: Secili Bolgeyi Ac (Config)")]
     public void TestUnlockSelectedRegion()
@@ -99,73 +152,6 @@ public class SystemTester : MonoBehaviour
         else
         {
             Debug.LogError("[Test Durum] RegionManager bulunamadi!");
-        }
-    }
-
-    [ContextMenu("Test: Baltayi Gelistir (Maliyet 100)")]
-    public void TestUpgradeAxe()
-    {
-        if (AxeManager.Instance != null && EconomyManager.Instance != null)
-        {
-            bool basarili = AxeManager.Instance.UpgradeAxe();
-            if (basarili)
-            {
-                Debug.Log($"[Test Balta] Balta yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Guc: {AxeManager.Instance.GetAxePower()}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test Balta] Balta yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
-        }
-        else
-        {
-            Debug.LogError("[Test Balta] AxeManager veya EconomyManager bulunamadi!");
-        }
-    }
-
-    [ContextMenu("Test: Kamyonu Gelistir (Maliyet 150)")]
-    public void TestUpgradeTruck()
-    {
-        if (TruckManager.Instance != null && EconomyManager.Instance != null)
-        {
-            bool basarili = TruckManager.Instance.UpgradeTruck();
-            if (basarili)
-            {
-                Debug.Log($"[Test Kamyon] Kamyon yukseltildi! Kalan Para: {EconomyManager.Instance.MevcutPara}, Yeni Kapasite: {TruckManager.Instance.GetTruckCapacity()}");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test Kamyon] Kamyon yukseltme basarisiz. (Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
-        }
-        else
-        {
-            Debug.LogError("[Test Kamyon] TruckManager veya EconomyManager bulunamadi!");
-        }
-    }
-
-    [ContextMenu("Test: Atolyeyi Gelistir")]
-    public void TestUpgradeWorkshop()
-    {
-        if (WorkshopManager.Instance != null && EconomyManager.Instance != null)
-        {
-            bool basarili = WorkshopManager.Instance.UpgradeWorkshop();
-            if (basarili)
-            {
-                Debug.Log($"[Test Atolye] Atolye yukseltildi!\n" +
-                          $"  Kalan Para    : {EconomyManager.Instance.MevcutPara}\n" +
-                          $"  Yeni Uretim Hizi : {WorkshopManager.Instance.GetProcessingSpeed():F2} odun/sn\n" +
-                          $"  Yeni Kapasite    : {WorkshopManager.Instance.GetWorkshopCapacity()} urun");
-            }
-            else
-            {
-                Debug.LogWarning($"[Test Atolye] Atolye yukseltme basarisiz. " +
-                                 $"(Para yetersiz veya sistem hazir degil - Mevcut: {EconomyManager.Instance.MevcutPara})");
-            }
-        }
-        else
-        {
-            Debug.LogError("[Test Atolye] WorkshopManager veya EconomyManager bulunamadi!");
         }
     }
 }
