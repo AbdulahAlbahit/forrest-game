@@ -1,23 +1,31 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using ForrestGame.Utils;
 
 public class TruckRouteController : MonoBehaviour
 {
-    [Header("--- ROTA VE EFEKTLER ---")]
+    [Header("Route & VFX")]
     public Transform routeContainer;
     public ParticleSystem exhaustVFX;
 
-    [Header("--- DURAK NOKTALARI ---")]
+    [Header("Waypoints")]
     public int workshopIndex = 10;
     public int marketIndex = 22;
 
-    [Header("--- KARGO VE YOLA ÇIKMA KURALLARI ---")]
+    [Header("Cargo Settings")]
     public int requiredWoodToDepart = 30;
     public int currentLoadedWood = 0;
     public bool isAtHomePosition = true;
+    public bool isWorkshopProcessDone = false;
 
-    [Header("--- HIZ VE BEKLEME AYARLARI ---")]
+    public void OnWorkshopProcessComplete()
+    {
+        isWorkshopProcessDone = true;
+    }
+
+    [Header("Movement Settings")]
     public float maxSpeed = 12f;
     public float acceleration = 4f;
     public float rotationSpeed = 2.5f; 
@@ -25,13 +33,18 @@ public class TruckRouteController : MonoBehaviour
     public float stopWaitTime = 3f; 
     public float homeWaitTime = 5f; 
 
-    [Header("--- TEKERLEKLER ---")]
+    // SFX Actions for AudioManager
+    public static event Action OnTruckArrival;
+    public static event Action OnTruckDeparture;
+    public static event Action OnMarketSale;
+
+    [Header("Wheels")]
     public List<Transform> wheels = new List<Transform>();
 
-    private List<Transform> waypoints = new List<Transform>();
-    private float currentSpeed = 0f;
+    private List<Transform> _waypoints = new List<Transform>();
+    private float _currentSpeed = 0f;
 
-    void Start()
+    private void Start()
     {
         if (routeContainer == null)
         {
@@ -42,15 +55,15 @@ public class TruckRouteController : MonoBehaviour
 
         if (routeContainer != null)
         {
-            foreach (Transform child in routeContainer) waypoints.Add(child);
+            foreach (Transform child in routeContainer) _waypoints.Add(child);
         }
 
         if (wheels.Count == 0) FindAllWheelsRecursively(transform);
 
         if (exhaustVFX == null)
         {
-            Transform foundDuman = transform.Find("VFX_Duman");
-            if (foundDuman != null) exhaustVFX = foundDuman.GetComponent<ParticleSystem>();
+            Transform foundSmoke = transform.Find("VFX_Duman");
+            if (foundSmoke != null) exhaustVFX = foundSmoke.GetComponent<ParticleSystem>();
             else exhaustVFX = GetComponentInChildren<ParticleSystem>(true);
         }
 
@@ -58,10 +71,10 @@ public class TruckRouteController : MonoBehaviour
         {
             exhaustVFX.gameObject.SetActive(true);
             var emission = exhaustVFX.emission;
-            emission.enabled = true; // VANA ASLA KAPANMAZ!
+            emission.enabled = true; 
             if (!exhaustVFX.isPlaying) exhaustVFX.Play();
             
-            Debug.Log($"<color=green>[DUMAN SÜREKLİ AÇIK + HIZA DUYARLI] : {exhaustVFX.name} bağlandı.</color>");
+            GameLogger.Log($"[TruckRoute] Exhaust VFX connected: {exhaustVFX.name}", this);
         }
 
         StartCoroutine(RunRouteLoop());
@@ -76,19 +89,17 @@ public class TruckRouteController : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
-        // 1. TEKERLEKLERİN DÖNÜŞÜ
-        if (currentSpeed > 0.05f && wheels.Count > 0)
+        if (_currentSpeed > 0.05f && wheels.Count > 0)
         {
-            float wheelRotationStep = currentSpeed * 200f * Time.deltaTime;
+            float wheelRotationStep = _currentSpeed * 200f * Time.deltaTime;
             foreach (Transform wheel in wheels)
             {
                 if (wheel != null) wheel.Rotate(Vector3.right, wheelRotationStep, Space.Self);
             }
         }
 
-        // 2. DUMAN - SÜREKLİ AÇIK, SABİT AYAR
         if (exhaustVFX != null)
         {
             var emission = exhaustVFX.emission;
@@ -108,7 +119,7 @@ public class TruckRouteController : MonoBehaviour
         while (true)
         {
             isAtHomePosition = true;
-            Debug.Log($"<color=cyan>[KAMYONET EVDE] Kargo Bekleniyor: ({currentLoadedWood}/{requiredWoodToDepart} Odun)</color>");
+            GameLogger.Log($"[TruckRoute] Truck at home. Waiting for cargo: ({currentLoadedWood}/{requiredWoodToDepart})", this);
 
             while (currentLoadedWood < requiredWoodToDepart)
             {
@@ -116,12 +127,39 @@ public class TruckRouteController : MonoBehaviour
             }
 
             isAtHomePosition = false;
-            Debug.Log($"<color=green>[KAMYONET YOLA ÇIKTI] {currentLoadedWood}/{requiredWoodToDepart} Odun yüklendi!</color>");
+            GameLogger.Log($"[TruckRoute] Cargo full ({currentLoadedWood}/{requiredWoodToDepart}). Departing to workshop!", this);
 
             yield return StartCoroutine(DriveToPoints(1, workshopIndex, true));
-            yield return StartCoroutine(StopAndWait(stopWaitTime));
+            
+            OnTruckArrival?.Invoke();
+            
+            isWorkshopProcessDone = false;
+            WorkshopProductionManager workshop = FindObjectOfType<WorkshopProductionManager>();
+            if (workshop != null && workshop.StartProductionCycle(this.gameObject))
+            {
+                GameLogger.Log("[TruckRoute] Arrived at workshop. Waiting for production and packing...", this);
+                while (!isWorkshopProcessDone)
+                {
+                    yield return null;
+                }
+                GameLogger.Log("[TruckRoute] Boxes loaded! Departing to market.", this);
+                OnTruckDeparture?.Invoke();
+            }
+            else
+            {
+                yield return StartCoroutine(StopAndWait(stopWaitTime));
+            }
 
             yield return StartCoroutine(DriveToPoints(workshopIndex + 1, marketIndex, true));
+            
+            OnMarketSale?.Invoke();
+            GameLogger.Log("[TruckRoute] Arrived at market. Boxes sold, cargo emptied.", this);
+            
+            Transform cargoBoxes = transform.Find("Cargo_Boxes");
+            if (cargoBoxes != null) cargoBoxes.gameObject.SetActive(false);
+
+            if (workshop != null && workshop.largeBoxes != null) workshop.largeBoxes.SetActive(false);
+
             yield return StartCoroutine(StopAndWait(stopWaitTime));
 
             yield return StartCoroutine(DriveToPointsReverse(marketIndex - 1, 0, true));
@@ -135,10 +173,10 @@ public class TruckRouteController : MonoBehaviour
 
     private IEnumerator DriveToPoints(int startIdx, int endIdx, bool stopAtEnd)
     {
-        for (int i = startIdx; i <= endIdx && i < waypoints.Count; i++)
+        for (int i = startIdx; i <= endIdx && i < _waypoints.Count; i++)
         {
             float threshold = (i == endIdx && stopAtEnd) ? 0.3f : turnRadius;
-            yield return StartCoroutine(MoveToTarget(waypoints[i].position, threshold));
+            yield return StartCoroutine(MoveToTarget(_waypoints[i].position, threshold));
         }
     }
 
@@ -147,7 +185,7 @@ public class TruckRouteController : MonoBehaviour
         for (int i = startIdx; i >= endIdx && i >= 0; i--)
         {
             float threshold = (i == endIdx && stopAtEnd) ? 0.3f : turnRadius;
-            yield return StartCoroutine(MoveToTarget(waypoints[i].position, threshold));
+            yield return StartCoroutine(MoveToTarget(_waypoints[i].position, threshold));
         }
     }
 
@@ -155,7 +193,7 @@ public class TruckRouteController : MonoBehaviour
     {
         while (Vector3.Distance(transform.position, targetPosition) > reachThreshold)
         {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, maxSpeed, acceleration * Time.deltaTime);
+            _currentSpeed = Mathf.MoveTowards(_currentSpeed, maxSpeed, acceleration * Time.deltaTime);
 
             Vector3 direction = (targetPosition - transform.position).normalized;
             direction.y = 0;
@@ -165,16 +203,16 @@ public class TruckRouteController : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
             }
 
-            transform.position = Vector3.MoveTowards(transform.position, targetPosition, currentSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, targetPosition, _currentSpeed * Time.deltaTime);
             yield return null;
         }
     }
 
     private IEnumerator TurnToFaceFirstPoint()
     {
-        if (waypoints.Count > 1)
+        if (_waypoints.Count > 1)
         {
-            Vector3 forwardDir = (waypoints[1].position - transform.position).normalized;
+            Vector3 forwardDir = (_waypoints[1].position - transform.position).normalized;
             forwardDir.y = 0;
             if (forwardDir != Vector3.zero)
             {
@@ -191,9 +229,9 @@ public class TruckRouteController : MonoBehaviour
 
     private IEnumerator StopAndWait(float waitSeconds)
     {
-        while (currentSpeed > 0f)
+        while (_currentSpeed > 0f)
         {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, (acceleration * 2) * Time.deltaTime);
+            _currentSpeed = Mathf.MoveTowards(_currentSpeed, 0f, (acceleration * 2) * Time.deltaTime);
             yield return null;
         }
         yield return new WaitForSeconds(waitSeconds);

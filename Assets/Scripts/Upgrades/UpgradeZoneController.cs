@@ -1,58 +1,74 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
+using ForrestGame.Utils;
 
 public class UpgradeZoneController : MonoBehaviour
 {
-    [Header("--- UPGRADE BİLGİLERİ ---")]
-    public string upgradeTitle = "Masa Yükseltme";
+    [Header("Upgrade Info")]
+    public string upgradeTitle = "Table Upgrade";
     public float targetCost = 500f;
     public float transferRatePerSecond = 250f;
 
-    [Header("--- GÖRSEL GERİ BİLDİRİM ---")]
+    [Header("Visual Feedback")]
     public Color emptyColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
     public Color completedColor = new Color(0.1f, 0.9f, 0.2f, 1f);
+    public Image fillImage;
 
-    [Header("--- YASİR İÇİN EVENT PRİZİ ---")]
-    public UnityEvent OnUpgradeComplete;
-
-    [Header("--- ANLIK DURUM ---")]
+    [Header("Status")]
     public float currentPaid = 0f;
     public bool isCompleted = false;
 
-    private MeshRenderer padRenderer;
-    private Material padMaterialInstance;
+    [Header("Unity Events")]
+    public UnityEvent OnUpgradeComplete;
 
-    void Start()
+    // SFX Action for AudioManager
+    public static event Action OnUpgradeCompletedAction;
+
+    private MeshRenderer _padRenderer;
+    private Material _padMaterialInstance;
+
+    private void Start()
     {
-        padRenderer = GetComponent<MeshRenderer>();
-        if (padRenderer != null)
+        _padRenderer = GetComponent<MeshRenderer>();
+        if (_padRenderer != null)
         {
-            padMaterialInstance = padRenderer.material;
+            _padMaterialInstance = _padRenderer.material;
             UpdatePadColor(emptyColor);
+        }
+
+        if (fillImage != null)
+        {
+            fillImage.fillAmount = 0f;
+            fillImage.color = completedColor; 
         }
     }
 
-    // Karakter zemine ilk değdiği an Console'a kocaman mesaj at!
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (isCompleted) return;
-        Debug.Log($"<color=yellow>---> [TETİKLENDİ] {other.name} ({other.tag}) ZEMİNE GİRDİ! <---</color>");
+        GameLogger.Log($"[UpgradeZone] {other.name} entered the upgrade zone.", this);
     }
 
-    void OnTriggerStay(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (isCompleted) return;
 
-        // Player etiketli veya adı içinde player/mert/fake geçen herhangi biri
         if (other.CompareTag("Player") || other.name.ToLower().Contains("player") || other.name.ToLower().Contains("mert") || other.name.ToLower().Contains("fake"))
         {
             currentPaid += transferRatePerSecond * Time.deltaTime;
-
             float progress = Mathf.Clamp01(currentPaid / targetCost);
-            Color lerpedColor = Color.Lerp(emptyColor, completedColor, progress);
-            UpdatePadColor(lerpedColor);
+
+            if (fillImage != null)
+            {
+                fillImage.fillAmount = progress;
+            }
+            else
+            {
+                Color lerpedColor = Color.Lerp(emptyColor, completedColor, progress);
+                UpdatePadColor(lerpedColor);
+            }
 
             if (currentPaid >= targetCost)
             {
@@ -62,15 +78,14 @@ public class UpgradeZoneController : MonoBehaviour
         }
     }
 
-    // URP ve Normal Shadera aynı anda rengi zorla uygula
     private void UpdatePadColor(Color c)
     {
-        if (padMaterialInstance != null)
+        if (_padMaterialInstance != null)
         {
-            padMaterialInstance.color = c;
-            if (padMaterialInstance.HasProperty("_BaseColor"))
+            _padMaterialInstance.color = c;
+            if (_padMaterialInstance.HasProperty("_BaseColor"))
             {
-                padMaterialInstance.SetColor("_BaseColor", c);
+                _padMaterialInstance.SetColor("_BaseColor", c);
             }
         }
     }
@@ -78,10 +93,14 @@ public class UpgradeZoneController : MonoBehaviour
     private void CompleteUpgrade()
     {
         isCompleted = true;
+        
+        if (fillImage != null) fillImage.fillAmount = 1f;
         UpdatePadColor(completedColor);
 
-        Debug.Log($"<color=green>---> [UPGRADE TAMAMLANDI] : {upgradeTitle} başarıyla açıldı! <---</color>");
+        GameLogger.Log($"[UpgradeZone] Upgrade Complete: {upgradeTitle} unlocked!", this);
+        
         OnUpgradeComplete?.Invoke();
+        OnUpgradeCompletedAction?.Invoke();
 
         Collider col = GetComponent<Collider>();
         if (col != null) col.enabled = false;

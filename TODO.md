@@ -46,6 +46,7 @@
 ## Sprint 2 — ağaç kesme
 
 - [x] **P1 / EFE:** Baltayı sağ el kemiğine bağla ve UI butonuyla Axe Attack animasyonunu tetikle.
+- [x] **P1 / EFE:** Balta butonunu yakın Terrain ağacına hasar verecek şekilde `TreeManager` sistemine bağla; sandbox içindeki devrilmiş ağaç/güdük/odun prefab referanslarını doğrula.
 - [ ] **P1 / BELİRLENECEK:** `TreeHarvestable` can, kaynak miktarı ve kesilmiş durumunu uygula.
 - [ ] **P1 / BELİRLENECEK:** Balta ekipmanı ve vuruş gücü modelini uygula.
 - [ ] **P1 / BELİRLENECEK:** Saldırı animasyon event'i ile hasar anını senkronize et.
@@ -59,9 +60,9 @@
 ## Sprint 3 — sırt çantası ve kütük taşıma
 
 - [x] **P1 / EFE:** Karakterin sırtına ahşap sepet prefabı bağla ve gelecekteki kütükler için `LogStackAnchor` hazırla.
-- [ ] **P1 / BELİRLENECEK:** `PlayerCarryInventory` kapasite ve kaynak sayacı uygula.
-- [ ] **P1 / BELİRLENECEK:** Yakındaki kütüğü otomatik veya düğmeyle toplama kararını teknik dokümana göre uygula.
-- [ ] **P1 / BELİRLENECEK:** Sırtta kütük stack noktaları ve kapasiteye bağlı görselleştirme ekle.
+- [x] **P1 / EFE:** `EfeOdunTasima` ile 6 odunluk kapasite ve kaynak sayacı uygula.
+- [x] **P1 / EFE:** 1,15 m içindeki havuz odunlarını otomatik toplama davranışını uygula.
+- [x] **P1 / EFE:** `LogStackAnchor` üzerinde kapasiteye bağlı altı odunluk görsel stack ekle.
 - [ ] **P1 / BELİRLENECEK:** Kapasite dolu geri bildirimi ekle.
 - [ ] **P1 / BELİRLENECEK:** Toplama/bırakma sırasında çoğalma, negatif miktar ve kayıp oluşmasını engelleyen testler yaz.
 - [ ] **P2 / BELİRLENECEK:** Taşınan yüke bağlı hareket/animasyon etkisini tasarıma göre ekle.
@@ -69,7 +70,7 @@
 ## Sprint 4 — kamyon yükleme ve taşıma
 
 - [ ] **P1 / BELİRLENECEK:** `TruckCargo` kapasite ve kabul edilen kaynak tiplerini uygula.
-- [ ] **P1 / BELİRLENECEK:** Oyuncu kamyon yük alanındayken kontrollü aktarım uygula.
+- [x] **P1 / EFE:** Oyuncu `Zone_Truck_Wood_Loading` alanındayken sepetteki odunları mevcut kamyon API’sine kayıpsız aktar.
 - [ ] **P1 / BELİRLENECEK:** Kamyon üzerindeki kütükleri doluluk oranına göre görselleştir.
 - [ ] **P1 / BELİRLENECEK:** Kamyon doluluk sayacı/progress UI ekle.
 - [ ] **P1 / BELİRLENECEK:** Mert'in `TruckRouteController` sistemini entegrasyon sözleşmesine bağla; görsel/rota kodunun sahipliğini koru.
@@ -130,3 +131,4 @@ Görev dağılımı gelene kadar:
 - [ ] Kullanıcının görev dağılımını `PROJECT.md` sahiplik tablosuna işle.
 - [ ] Teknik dokümanı gereksinimlere ve kabul ölçütlerine dönüştür.
 - [ ] Yalnızca kullanıcıya ait ilk P0/P1 görevini uygulamaya başla.
+- [x] `Efe_CharacterSandbox` sahnesinin harita bölümünü güncel `Mert_Artscene` içeriğiyle, Efe karakter sistemini ve kaynak sahneyi koruyarak yenile.
