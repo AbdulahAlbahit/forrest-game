@@ -33,11 +33,13 @@ public class VirtualJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, I
     public void OnPointerDown(PointerEventData eventData)
     {
         OnDrag(eventData);
+        EfeOynanisEventleri.JoystickBasildiginiYayinla(transform);
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         inputVector = Vector2.zero;
         handle.anchoredPosition = Vector2.zero;
+        EfeOynanisEventleri.JoystickBirakildiginiYayinla(transform);
     }
 }
