@@ -48,9 +48,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7948660828100032839, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -4819223349682164798, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: -3664811705211809293, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
       propertyPath: m_Name
       value: truckLv2
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2397621468118695034, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7752030738778784939, guid: b7d2b1eff6c26a246a4f2b496ea09530, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -84,6 +108,10 @@ MonoBehaviour:
   exhaustVFX: {fileID: 311818884976874912, guid: 40efb84d6a2bb0a4dbaa089d8f2931ca, type: 3}
   workshopIndex: 10
   marketIndex: 22
+  requiredWoodToDepart: 30
+  currentLoadedWood: 0
+  isAtHomePosition: 1
+  isWorkshopProcessDone: 0
   maxSpeed: 10
   acceleration: 5
   rotationSpeed: 6
@@ -147,6 +175,10 @@ PrefabInstance:
     - target: {fileID: 7769381849555734731, guid: 40efb84d6a2bb0a4dbaa089d8f2931ca, type: 3}
       propertyPath: m_Name
       value: VFX_Duman
+      objectReference: {fileID: 0}
+    - target: {fileID: 7769381849555734731, guid: 40efb84d6a2bb0a4dbaa089d8f2931ca, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
