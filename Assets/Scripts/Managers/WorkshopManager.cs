@@ -5,11 +5,12 @@ public class WorkshopManager : MonoBehaviour
 {
     public static WorkshopManager Instance { get; private set; }
 
-    [Header("Atolye Ayarlari")]
-    [SerializeField] private WorkshopUpgradeConfig config;
-
     private int mevcutKuyruk;
     private float uretimZamanlayicisi;
+
+    // Cached degerler (her frame UpgradeManager'a sormamak icin)
+    private float cachedSpeed;
+    private int cachedCapacity;
 
     /// <summary>
     /// Atolye kuyrugu degistiginde tetiklenir. (mevcutKuyruk, maksKapasite)
@@ -25,19 +26,6 @@ public class WorkshopManager : MonoBehaviour
     /// Atolye seviyesi yukseltildiginde tetiklenir. Yeni seviyeyi parametre olarak verir.
     /// </summary>
     public event Action<int> OnWorkshopUpgraded;
-
-    /// <summary>
-    /// Mevcut atolye seviyesini dogrudan bulut verisinden dondurur.
-    /// </summary>
-    public int AtolyeSeviyesi
-    {
-        get
-        {
-            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
-                return CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
-            return 1;
-        }
-    }
 
     public int MevcutKuyruk => mevcutKuyruk;
     public bool IsQueueFull => mevcutKuyruk >= GetWorkshopCapacity();
@@ -56,6 +44,68 @@ public class WorkshopManager : MonoBehaviour
 
         mevcutKuyruk = 0;
         uretimZamanlayicisi = 0f;
+        cachedSpeed = 0.5f;
+        cachedCapacity = 10;
+    }
+
+    private void OnEnable()
+    {
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+        }
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+        }
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded -= HandleItemUpgraded;
+        }
+    }
+
+    /// <summary>
+    /// Buluttan veri yuklendiginde atolye degerlerini gunceller.
+    /// </summary>
+    private void HandleDataLoaded(PlayerData data)
+    {
+        RefreshCachedValues();
+        Debug.Log($"WorkshopManager: Bulut verisi ile senkronize edildi. Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}");
+    }
+
+    /// <summary>
+    /// Herhangi bir esya yukseltildiginde, eger atolye ile ilgiliyse degerleri gunceller.
+    /// </summary>
+    private void HandleItemUpgraded(string itemId, int newLevel)
+    {
+        if (itemId == "Workshop" || itemId == "WorkshopQueue")
+        {
+            RefreshCachedValues();
+            OnWorkshopUpgraded?.Invoke(newLevel);
+            Debug.Log($"WorkshopManager: Atolye yukseltildi! Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}");
+        }
+    }
+
+    /// <summary>
+    /// UpgradeManager uzerinden atolye degerlerini yeniden hesaplar ve cache'ler.
+    /// </summary>
+    private void RefreshCachedValues()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            cachedSpeed = UpgradeManager.Instance.GetItemValue("Workshop");
+            cachedCapacity = Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue("WorkshopQueue"));
+        }
     }
 
     private void Update()
@@ -63,41 +113,33 @@ public class WorkshopManager : MonoBehaviour
         ProcessQueue();
     }
 
+    /// <summary>
+    /// Atolye uretim hizini dondurur.
+    /// </summary>
     public float GetProcessingSpeed()
     {
-        if (config == null)
+        if (UpgradeManager.Instance != null)
         {
-            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
-            return 0.5f;
+            return UpgradeManager.Instance.GetItemValue("Workshop");
         }
-
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("WorkshopManager: CloudSaveManager veya CurrentData hazir degil, varsayilan hiz donduruluyor.");
-            return config.GetLevelData(1).CraftSpeed;
-        }
-
-        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
-        return config.GetLevelData(seviye).CraftSpeed;
+        return cachedSpeed;
     }
 
+    /// <summary>
+    /// Atolye kuyruk kapasitesini dondurur.
+    /// </summary>
     public int GetWorkshopCapacity()
     {
-        if (config == null)
+        if (UpgradeManager.Instance != null)
         {
-            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
-            return 10;
+            return Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue("WorkshopQueue"));
         }
-
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("WorkshopManager: CloudSaveManager veya CurrentData hazir degil, varsayilan kapasite donduruluyor.");
-            return config.GetLevelData(1).QueueCapacity;
-        }
-
-        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
-        return config.GetLevelData(seviye).QueueCapacity;
+        return cachedCapacity;
     }
+
+    // ═══════════════════════════════════════════
+    //  Oyun Mekanikleri (Degistirilmedi)
+    // ═══════════════════════════════════════════
 
     /// <summary>
     /// Atolyeye islenmesi icin odun ekler.
@@ -179,48 +221,10 @@ public class WorkshopManager : MonoBehaviour
     public float GetProcessingProgress()
     {
         if (IsQueueEmpty) return 0f;
-        float saniyePerOdun = 1f / GetProcessingSpeed();
+        float hiz = GetProcessingSpeed();
+        if (hiz <= 0f) return 0f;
+        float saniyePerOdun = 1f / hiz;
         return Mathf.Clamp01(uretimZamanlayicisi / saniyePerOdun);
-    }
-
-    public bool UpgradeWorkshop()
-    {
-        if (config == null)
-        {
-            Debug.LogError("WorkshopManager: WorkshopUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
-            return false;
-        }
-
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogError("WorkshopManager: CloudSaveManager veya CurrentData hazir degil. Yukseltme iptal edildi!");
-            return false;
-        }
-
-        if (EconomyManager.Instance == null)
-        {
-            Debug.LogError("WorkshopManager: EconomyManager bulunamadi!");
-            return false;
-        }
-
-        int seviye = CloudSaveManager.Instance.CurrentData.AtolyeSeviyesi;
-        int cost = config.GetLevelData(seviye).UpgradeCost;
-
-        if (!EconomyManager.Instance.SpendMoney(cost))
-        {
-            Debug.LogWarning($"WorkshopManager: Atolye yukseltmek icin yeterli para yok! Gereken: {cost}");
-            return false;
-        }
-
-        PlayerData data = CloudSaveManager.Instance.CurrentData;
-        data.AtolyeSeviyesi++;
-
-        CloudSaveManager.Instance.SaveData(data);
-
-        Debug.Log($"WorkshopManager: Atolye yukseltildi! Yeni Seviye: {data.AtolyeSeviyesi}, Yeni Hiz: {GetProcessingSpeed()}/sn, Yeni Kapasite: {GetWorkshopCapacity()}");
-        OnWorkshopUpgraded?.Invoke(data.AtolyeSeviyesi);
-
-        return true;
     }
 
     private void OnDestroy()

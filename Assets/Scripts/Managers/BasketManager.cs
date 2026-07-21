@@ -5,9 +5,6 @@ public class BasketManager : MonoBehaviour
 {
     public static BasketManager Instance { get; private set; }
 
-    [Header("Sepet Ayarlari")]
-    [SerializeField] private BasketUpgradeConfig config;
-
     private int mevcutDoluluk;
     private int maksKapasite;
 
@@ -60,7 +57,7 @@ public class BasketManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         mevcutDoluluk = 0;
-        maksKapasite = config != null ? config.GetLevelData(1).BasketCapacity : 5;
+        maksKapasite = 5; // Varsayilan kapasite, UpgradeManager hazir olunca guncellenecek
     }
 
     private void OnEnable()
@@ -68,6 +65,12 @@ public class BasketManager : MonoBehaviour
         if (CloudSaveManager.Instance != null)
         {
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+        }
+
+        // UpgradeManager uzerinden sepet yukseltme event'ini dinle
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
         }
     }
 
@@ -77,25 +80,42 @@ public class BasketManager : MonoBehaviour
         {
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
         }
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded -= HandleItemUpgraded;
+        }
     }
 
     /// <summary>
-    /// Buluttan veri yuklendiginde sepet kapasitesini SepetSeviyesi'ne gore hesaplar.
+    /// Buluttan veri yuklendiginde sepet kapasitesini UpgradeManager uzerinden gunceller.
     /// </summary>
     private void HandleDataLoaded(PlayerData data)
     {
-        UpdateCapacity(data.SepetSeviyesi);
-        Debug.Log($"BasketManager: Bulut verisi ile senkronize edildi. Kapasite: {maksKapasite} (Sepet Seviye: {data.SepetSeviyesi})");
+        RefreshCapacity();
+        Debug.Log($"BasketManager: Bulut verisi ile senkronize edildi. Kapasite: {maksKapasite}");
     }
 
     /// <summary>
-    /// Sepet seviyesine gore config uzerinden maksimum kapasiteyi gunceller.
+    /// Herhangi bir esya yukseltildiginde, eger "Basket" ise kapasiteyi gunceller.
     /// </summary>
-    public void UpdateCapacity(int sepetSeviyesi)
+    private void HandleItemUpgraded(string itemId, int newLevel)
     {
-        if (config != null)
+        if (itemId == "Basket")
         {
-            maksKapasite = config.GetLevelData(sepetSeviyesi).BasketCapacity;
+            RefreshCapacity();
+            Debug.Log($"BasketManager: Sepet yukseltildi! Yeni Kapasite: {maksKapasite} (Seviye: {newLevel})");
+        }
+    }
+
+    /// <summary>
+    /// UpgradeManager uzerinden sepet kapasitesini yeniden hesaplar.
+    /// </summary>
+    private void RefreshCapacity()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            maksKapasite = Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue("Basket"));
         }
 
         // Doluluk kapasiteyi asamaz
@@ -107,64 +127,22 @@ public class BasketManager : MonoBehaviour
         OnBasketChanged?.Invoke(mevcutDoluluk, maksKapasite);
     }
 
+    /// <summary>
+    /// Sepet kapasitesini dondurur. UpgradeManager uzerinden hesaplanir.
+    /// </summary>
     public int GetBasketCapacity()
     {
-        if (config == null)
+        if (UpgradeManager.Instance != null)
         {
-            Debug.LogError("BasketManager: BasketUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
-            return 5;
+            return Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue("Basket"));
         }
 
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogWarning("BasketManager: CloudSaveManager veya CurrentData hazir degil, varsayilan kapasite donduruluyor.");
-            return config.GetLevelData(1).BasketCapacity;
-        }
-
-        int seviye = CloudSaveManager.Instance.CurrentData.SepetSeviyesi;
-        return config.GetLevelData(seviye).BasketCapacity;
+        return maksKapasite;
     }
 
-    public bool UpgradeBasket()
-    {
-        if (config == null)
-        {
-            Debug.LogError("BasketManager: BasketUpgradeConfig atanmamis! Lutfen Inspector'dan config dosyasini atayin.");
-            return false;
-        }
-
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-        {
-            Debug.LogError("BasketManager: CloudSaveManager veya CurrentData hazir degil. Yukseltme iptal edildi!");
-            return false;
-        }
-
-        if (EconomyManager.Instance == null)
-        {
-            Debug.LogError("BasketManager: EconomyManager bulunamadi!");
-            return false;
-        }
-
-        int seviye = CloudSaveManager.Instance.CurrentData.SepetSeviyesi;
-        int cost = config.GetLevelData(seviye).UpgradeCost;
-
-        if (EconomyManager.Instance.SpendMoney(cost))
-        {
-            PlayerData data = CloudSaveManager.Instance.CurrentData;
-            data.SepetSeviyesi++;
-            
-            UpdateCapacity(data.SepetSeviyesi);
-            CloudSaveManager.Instance.SaveData(data);
-
-            Debug.Log($"BasketManager: Sepet yukseltildi! Yeni Seviye: {data.SepetSeviyesi}, Yeni Kapasite: {GetBasketCapacity()}");
-            return true;
-        }
-        else
-        {
-            Debug.LogWarning($"BasketManager: Sepet yukseltmek icin yeterli para yok! Gereken: {cost}");
-            return false;
-        }
-    }
+    // ═══════════════════════════════════════════
+    //  Oyun Mekanikleri (Degistirilmedi)
+    // ═══════════════════════════════════════════
 
     /// <summary>
     /// Sepete belirtilen miktarda odun ekler.
