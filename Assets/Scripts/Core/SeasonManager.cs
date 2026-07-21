@@ -9,6 +9,8 @@ namespace ForrestGame.Core
     public class SeasonManager : MonoBehaviour
     {
         public static SeasonManager Instance;
+        
+        public static event Action<MevsimTuru> OnMevsimDegisti;
 
         [Header("Tasarım Ayarları")]
         public SeasonSettings ayarlar;
@@ -86,6 +88,8 @@ namespace ForrestGame.Core
             Debug.Log($"[Season] Mevsim Değişti: {yeniMevsim} geldi!");
 
             MevsimEfektleriniGuncelle();
+            
+            OnMevsimDegisti?.Invoke(yeniMevsim);
             
             // Yasir'in Ses Sistemine Haber Ver (Müzikleri Değiştirsin)
             if (AudioManager.Instance != null)
