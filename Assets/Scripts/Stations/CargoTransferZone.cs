@@ -68,28 +68,96 @@ public class CargoTransferZone : MonoBehaviour
         {
             mode = StationMode.TruckToWorkshop_CraftAndReturn;
         }
+        
+        StartCoroutine(CheckDistanceRoutine());
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        // Kamyon (Araç) atölye alanına (Zone) yeterince yaklaştıysa sistemi tetikle!
-        if (mode == StationMode.TruckToWorkshop_CraftAndReturn && !isCraftingInProgress)
+        TruckRouteController.OnTruckDeparture += ResetLoadingZoneInstantly;
+        WorkshopProductionManager.OnCraftingStartedGlobal += SetCraftingColor;
+        WorkshopProductionManager.OnCraftingFinishedGlobal += SetReadyColor;
+    }
+
+    private void OnDisable()
+    {
+        TruckRouteController.OnTruckDeparture -= ResetLoadingZoneInstantly;
+        WorkshopProductionManager.OnCraftingStartedGlobal -= SetCraftingColor;
+        WorkshopProductionManager.OnCraftingFinishedGlobal -= SetReadyColor;
+    }
+
+    private void ResetLoadingZoneInstantly()
+    {
+        // Kamyon gittiğinde her halükarda sıfırlansın (Yükleme veya İndirme alanı fark etmez)
+        isCraftingInProgress = false;
+        
+        if (fillImage != null) 
         {
-            if (_activeTruck == null) _activeTruck = FindObjectOfType<TruckRouteController>();
-            
-            // 8 metreyi 4 metreye düşürdük. 
-            if (_activeTruck != null && !_activeTruck.isAtHomePosition && Vector3.Distance(transform.position, _activeTruck.transform.position) < 4f)
+            fillImage.fillAmount = 0f;
+            fillImage.color = emptyColor;
+        }
+        UpdatePadColor(emptyColor);
+        
+        if (mode == StationMode.TruckToWorkshop_CraftAndReturn)
+        {
+            OnTransferProcessCompleted?.Invoke();
+        }
+    }
+
+    private void SetCraftingColor()
+    {
+        if (mode == StationMode.TruckToWorkshop_CraftAndReturn)
+        {
+            GameLogger.Log($"[Workshop Zone] Üretim Başladı! Renk SARI/TURUNCU.", this);
+            if (fillImage != null) 
             {
-                // FİLTRE: Kamyon atölyedeki işini bitirmişse (yani markete gidiyor veya eve dönüyorsa) ÇALIŞTIRMA!
-                if (!_activeTruck.isWorkshopProcessDone)
+                fillImage.fillAmount = 1f;
+                fillImage.color = craftingColor; 
+            }
+            UpdatePadColor(craftingColor);
+        }
+    }
+
+    private void SetReadyColor()
+    {
+        if (mode == StationMode.TruckToWorkshop_CraftAndReturn)
+        {
+            currentFurnitureCount += currentWoodCount;
+            currentWoodCount = 0;
+            
+            GameLogger.Log($"[Workshop Zone] Üretim Bitti! Renk TURKUAZ.", this);
+            if (fillImage != null) fillImage.color = readyColor; 
+            UpdatePadColor(readyColor); 
+
+            OnCraftingFinished?.Invoke();
+            if (OnWorkshopCraftingFinished != null) OnWorkshopCraftingFinished.Invoke();
+        }
+    }
+
+    private IEnumerator CheckDistanceRoutine()
+    {
+        while (true)
+        {
+            // Kamyon (Araç) atölye alanına (Zone) yeterince yaklaştıysa sistemi tetikle!
+            if (mode == StationMode.TruckToWorkshop_CraftAndReturn && !isCraftingInProgress)
+            {
+                if (_activeTruck == null) _activeTruck = FindObjectOfType<TruckRouteController>();
+                
+                // 8 metreyi 4 metreye düşürdük. 
+                if (_activeTruck != null && !_activeTruck.isAtHomePosition && Vector3.Distance(transform.position, _activeTruck.transform.position) < 4f)
                 {
-                    if (Time.time >= _nextTickTime)
+                    // FİLTRE: Kamyon atölyedeki işini bitirmişse (yani markete gidiyor veya eve dönüyorsa) ÇALIŞTIRMA!
+                    if (!_activeTruck.isWorkshopProcessDone)
                     {
-                        _nextTickTime = Time.time + (1f / transferRatePerSecond);
-                        ProcessTruckToWorkshopLogic();
+                        if (Time.time >= _nextTickTime)
+                        {
+                            _nextTickTime = Time.time + (1f / transferRatePerSecond);
+                            ProcessTruckToWorkshopLogic();
+                        }
                     }
                 }
             }
+            yield return new WaitForSeconds(0.2f);
         }
     }
 
@@ -161,7 +229,8 @@ public class CargoTransferZone : MonoBehaviour
         }
         else
         {
-            StartCoroutine(WorkshopCraftingRoutine());
+            // Atölye tetiklendi, renk mantığı artık eventlerle işleyecek
+            isCraftingInProgress = true;
         }
     }
 
@@ -170,63 +239,6 @@ public class CargoTransferZone : MonoBehaviour
         yield return new WaitForSeconds(delay);
         if (fillImage != null) fillImage.fillAmount = 0f;
         UpdatePadColor(emptyColor);
-    }
-
-    private IEnumerator WorkshopCraftingRoutine()
-    {
-        isCraftingInProgress = true;
-        
-        float unloadTime = 2f;
-        float craftTime = 3f;
-        float loadTime = 2f;
-
-        WorkshopProductionManager wp = FindObjectOfType<WorkshopProductionManager>();
-        if (wp != null)
-        {
-            unloadTime = wp.unloadDuration;
-            craftTime = wp.craftingDuration;
-            loadTime = wp.loadingDuration;
-        }
-
-        GameLogger.Log($"[Workshop Zone] Kamyon odunları indiriyor... ({unloadTime} sn)", this);
-        // 1. Kamyon atölyeye yanaştı, Efe kütükleri masaya koyana kadar bekle. (Bu sürede renk yeşil veya dolmaya devam eder)
-        yield return new WaitForSeconds(unloadTime);
-
-        // 2. Kütükler masaya indi, testere (Crafting) çalışmaya başladı (Renk SARI olur)
-        GameLogger.Log($"[Workshop Zone] Üretim Başladı! Renk SARI. ({craftTime} sn)", this);
-        if (fillImage != null) 
-        {
-            fillImage.fillAmount = 1f;
-            fillImage.color = craftingColor; 
-        }
-        UpdatePadColor(craftingColor);
-
-        // Testerenin işini bitirmesini bekle
-        yield return new WaitForSeconds(craftTime);
-
-        // 3. Üretim Bitti, mobilyalar hazır! (Renk TURKUAZ olur)
-        currentFurnitureCount += currentWoodCount;
-        currentWoodCount = 0;
-        
-        GameLogger.Log($"[Workshop Zone] Üretim Bitti! Renk TURKUAZ.", this);
-        if (fillImage != null) fillImage.color = readyColor; 
-        UpdatePadColor(readyColor); 
-
-        // 4. Kamyon kutuları alıp yola çıkıyor. Kamyon tamamen gittikten sonra zemini sıfırla (GRİ)
-        yield return new WaitForSeconds(loadTime + 1f); // Kamyonun hareket etme payı için 1 saniye eklendi
-        
-        isCraftingInProgress = false;
-        
-        if (fillImage != null) 
-        { 
-            fillImage.fillAmount = 0f; 
-            fillImage.color = emptyColor; // İşi bitince orjinal boş renge geri dönsün
-        }
-        UpdatePadColor(emptyColor);
-
-        OnCraftingFinished?.Invoke();
-        OnTransferProcessCompleted?.Invoke();
-        if (OnWorkshopCraftingFinished != null) OnWorkshopCraftingFinished.Invoke();
     }
 
     private void UpdatePadColor(Color c)

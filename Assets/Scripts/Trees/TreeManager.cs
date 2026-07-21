@@ -28,6 +28,7 @@ public class TreeManager : MonoBehaviour
     [Header("Wood Log Settings")]
     public int logSpawnCount = 3;
     public float logJumpForce = 5f;
+    public float logSpawnScale = 0.65f;
 
     [Header("Tree Settings")]
     public int defaultTreeHealth = 3;
@@ -77,20 +78,26 @@ public class TreeManager : MonoBehaviour
         }
 
         BuildPools();
+        StartCoroutine(RespawnRoutine());
     }
 
-    private void Update()
+    private IEnumerator RespawnRoutine()
     {
-        if (_respawnQueue.Count > 0 && respawnTime > 0f)
+        while (true)
         {
-            for (int i = _respawnQueue.Count - 1; i >= 0; i--)
+            if (_respawnQueue.Count > 0 && respawnTime > 0f)
             {
-                if (Time.time >= _respawnQueue[i].respawnAt)
+                for (int i = _respawnQueue.Count - 1; i >= 0; i--)
                 {
-                    RespawnTree(_respawnQueue[i].treeInstance);
-                    _respawnQueue.RemoveAt(i);
+                    if (Time.time >= _respawnQueue[i].respawnAt)
+                    {
+                        RespawnTree(_respawnQueue[i].treeInstance);
+                        _respawnQueue.RemoveAt(i);
+                    }
                 }
             }
+            // Saniyede 60 kez (Update) kontrol etmek yerine saniyede sadece 1 kez kontrol et!
+            yield return new WaitForSeconds(1f);
         }
     }
 
@@ -284,18 +291,41 @@ public class TreeManager : MonoBehaviour
             StartCoroutine(ShrinkAndReturn(fallen, treeTypes[typeIndex].fallenPool, disappearDelay, rb));
         }
 
-        if (woodLogPrefab != null && _logPool.Count > 0)
+        if (woodLogPrefab != null)
         {
+            // Fiziksel çarpışma (patlama) olmaması için ağacın düşmesine çok ufak bir süre tanı
+            yield return new WaitForSeconds(0.2f); 
+
             for (int i = 0; i < logSpawnCount; i++)
             {
-                if (_logPool.Count == 0) break;
-
-                GameObject log = _logPool.Dequeue();
+                GameObject log = null;
                 
-                Vector3 spawnOffset = new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(1f, 2.5f), UnityEngine.Random.Range(-0.5f, 0.5f));
+                if (_logPool.Count > 0)
+                {
+                    log = _logPool.Dequeue();
+                }
+                else
+                {
+                    // Havuz boşaldıysa yeni kütük üretip havuza dahil et (Dinamik Genişleme)
+                    log = Instantiate(woodLogPrefab);
+                    log.name = $"Pool_WoodLog_Dynamic";
+                    Rigidbody rbDynamic = log.GetComponent<Rigidbody>();
+                    if (rbDynamic != null) rbDynamic.isKinematic = true;
+                    log.SetActive(false);
+                    GameLogger.Log("[TreeManager] Log pool exhausted! Dynamically expanded the pool.", this);
+                }
+                
+                // Odunların devrilen gövdeye sıkışıp uzaya fırlamaması için yukarıdan spawn ediyoruz.
+                // Yana saçılma (X, Z) tekrar daraltıldı ki etrafa çok dağılmasın.
+                Vector3 spawnOffset = new Vector3(
+                    UnityEngine.Random.Range(-0.7f, 0.7f), 
+                    UnityEngine.Random.Range(2.0f, 3.5f), 
+                    UnityEngine.Random.Range(-0.7f, 0.7f)
+                );
+                
                 log.transform.position = pos + spawnOffset;
                 log.transform.rotation = Quaternion.Euler(UnityEngine.Random.Range(0f, 360f), UnityEngine.Random.Range(0f, 360f), UnityEngine.Random.Range(0f, 360f));
-                log.transform.localScale = Vector3.one;
+                log.transform.localScale = Vector3.one * logSpawnScale;
                 log.SetActive(true);
 
                 Rigidbody rbLog = log.GetComponent<Rigidbody>();
@@ -307,7 +337,6 @@ public class TreeManager : MonoBehaviour
 
                     Vector3 jumpDir = new Vector3(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(1.5f, 2.5f), UnityEngine.Random.Range(-1f, 1f)).normalized;
                     rbLog.AddForce(jumpDir * logJumpForce, ForceMode.Impulse);
-
                     rbLog.AddTorque(UnityEngine.Random.insideUnitSphere * (logJumpForce * 2f), ForceMode.Impulse);
                 }
 
@@ -333,7 +362,7 @@ public class TreeManager : MonoBehaviour
             yield return null;
         }
 
-        obj.transform.localScale = Vector3.one;
+        obj.transform.localScale = originalScale;
         obj.SetActive(false);
         pool.Enqueue(obj);
     }

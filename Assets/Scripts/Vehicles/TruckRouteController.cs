@@ -138,6 +138,7 @@ public class TruckRouteController : MonoBehaviour
             if (workshop != null && workshop.StartProductionCycle(this.gameObject))
             {
                 GameLogger.Log("[TruckRoute] Arrived at workshop. Waiting for production and packing...", this);
+
                 while (!isWorkshopProcessDone)
                 {
                     yield return null;
