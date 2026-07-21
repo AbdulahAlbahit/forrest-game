@@ -149,6 +149,14 @@ public class EfeOdunTasima : MonoBehaviour
 
         odun.SetActive(false);
         TasinanOdunSayisi++;
+        EfeOynanisEventleri.OdunToplandiginiYayinla(
+            transform,
+            TasinanOdunSayisi,
+            tasimaKapasitesi);
+        if (SepetDolu)
+        {
+            EfeOynanisEventleri.SepetDoldugunuYayinla(transform);
+        }
 
         int sepetSirasi = TasinanOdunSayisi - 1;
         if (odunYuvasi != null && sepetSirasi < sepetOdunuGorselleri.Count)
@@ -298,6 +306,7 @@ public class EfeOdunTasima : MonoBehaviour
     private IEnumerator OdunlariAnimasyonlaKamyonaYukle()
     {
         kamyonYuklemeAnimasyonuCalisiyor = true;
+        EfeOynanisEventleri.KamyonYuklemeBasladiginiYayinla(transform);
         int yuklenenOdun = 0;
 
         while (TasinanOdunSayisi > 0
@@ -336,6 +345,14 @@ public class EfeOdunTasima : MonoBehaviour
 
             TasinanOdunSayisi--;
             yuklenenOdun++;
+            EfeOynanisEventleri.OdunKamyonaYuklendiginiYayinla(
+                transform,
+                aktifKamyon.currentLoadedWood,
+                aktifKamyon.requiredWoodToDepart);
+            if (TasinanOdunSayisi == 0)
+            {
+                EfeOynanisEventleri.SepetBosaldiginiYayinla(transform);
+            }
             SepetGorselleriniGuncelle();
             KamyonYukGorselleriniGuncelle();
 
@@ -344,6 +361,7 @@ public class EfeOdunTasima : MonoBehaviour
         }
 
         kamyonYuklemeAnimasyonuCalisiyor = false;
+        EfeOynanisEventleri.KamyonYuklemeBittiginiYayinla(transform);
 
         if (yuklenenOdun > 0)
         {
