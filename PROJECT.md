@@ -1,6 +1,6 @@
 # Forrest Game — Proje Hafızası
 
-> Bu dosya projenin kalıcı teknik hafızasıdır. Son güncelleme: 17 Temmuz 2026.
+> Bu dosya projenin kalıcı teknik hafızasıdır. Son güncelleme: 21 Temmuz 2026.
 > Yeni bir işe başlamadan önce tüm depoyu yeniden taramak yerine önce bu dosya ve `TODO.md` okunur.
 > Son karakter güncellemesi: Balta, `Hiz` ve locomotion animasyon döngüsüyle senkronize salınır; yürüyüşte hafif, koşuda daha belirgindir ve saldırı sırasında vuruş animasyonuna bırakılır.
 > Hareket senkronu: Yürüyüş `1,75 m/sn`, koşuya geçiş `2,4 m/sn` ve tam koşu `4,6 m/sn` değerindedir. Hızlanma `12`, joystick bırakıldığındaki durma sertliği `40`, keskin yön değişimi sertliği `45`tir. Karakter yaklaşık `0,1 sn` içinde net durur; karşı yöne ani dönüşte eski yatay hız hızla kırılarak yan kayma azaltılır.
@@ -228,6 +228,7 @@ Klasör taşıma işlemi şu an yapılmamalı; aktif branch'lerde zaten büyük 
 
 ## 10. Güncelleme günlüğü
 
+- 2026-07-21: Mert'in `feature/mert-art-design` çalışmasının PR #19 ile `450a4d2` üzerinden, Efe'nin PR #18 çalışmasının da ardından `82d2bec` üzerinden `develop` branch'ine zaten merge edildiği doğrulandı. Güncel `develop` ayrı worktree'de 524 meta dosyasıyla tarandı; duplicate GUID bulunmadı ve Unity 6000.5.2f1 tam import/C# derlemesi sıfır hatayla tamamlandı. `karakter-kontrol` branch'i conflict oluşturmayan fast-forward ile `82d2bec` commitine getirildi ve GitHub'a pushlandı. On bir yerel dosya işlem öncesinde dış yedeğe ve isimli stash'e alındı; Terrain dışındaki on dosya SHA-256 karşılaştırmasıyla birebir geri yüklendi. Çalışma kopyasında Mert'in güncel `New Terrain.asset` sürümü kullanılırken önceki yerel Terrain sürümü `C:\Users\90505\forrest-game-local-backup-20260721-093113` ve güvenlik stash'inde korundu.
 - 2026-07-16: İlk kapsamlı depo incelemesi yapıldı; vizyon, branch durumu, mevcut sistemler, riskler ve MVP ölçütü kaydedildi.
 - 2026-07-16: Git remote URL'sindeki düz metin erişim anahtarı kaldırıldı.
 - 2026-07-16: Mert branch'i için merge provası yapıldı; 331 adet kayıp prefab GUID referansı nedeniyle entegrasyon durduruldu.
