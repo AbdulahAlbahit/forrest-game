@@ -1,0 +1,24 @@
+======================================
+HATA AYIKLAMA VE ONARIM RAPORU
+======================================
+
+1. Hata Tespiti (NullReferenceException):
+AxeManager.cs içerisinde yer alan 56. satırdaki Debug.Log() komutu, henüz null kontrolü yapılmadan doğrudan `CloudSaveManager.Instance.CurrentData.BaltaSeviyesi` değerine erişmeye çalışıyordu. Eğer CloudSaveManager objesi sahnede hazır değilse veya henüz CurrentData buluttan çekilmemişse bu satır oyunun çökmesine neden olur.
+Benzer şekilde, config dosyalarının (AxeUpgradeConfig, TruckUpgradeConfig) henüz atanmamış olma ihtimali kodun devamında farklı NullReferenceException hatalarına yol açabilirdi.
+
+2. Yapılan Kod Onarımları:
+- AxeManager.cs ve TruckManager.cs içindeki Get ve Upgrade metotlarına kapsamlı "Guard Clause" (Koruma Bloğu) null kontrolleri eklendi.
+- `CloudSaveManager`, `CloudSaveManager.Instance.CurrentData`, `EconomyManager` ve `config` referansları çağrılmadan önce if koşulu ile denetleniyor, eğer null iseler doğrudan `return;` edilip (ilgili duruma göre false veya default değer) işlemi durduruyor.
+- Eksik referansın ne olduğunu belirten açık `Debug.LogError` ve `Debug.LogWarning` mesajları sisteme eklendi.
+- AxeManager içindeki sorun çıkaran Debug.Log satırı güvenli alana, null check'lerin sonrasına taşındı.
+
+3. Sizin Unity Inspector Üzerinde Yapmanız Gerekenler (MANUEL KONTROL):
+Eğer hala Debug.LogError("AxeManager: AxeUpgradeConfig atanmamis!") veya TruckManager versiyonunda config hatası alıyorsanız:
+ - Unity Editörünü açın.
+ - Hiyerarşiden (Hierarchy) AxeManager'ın bağlı olduğu objeyi seçin.
+ - Inspector panelinde AxeManager scriptini bulun.
+ - "Config" adlı boş slota, Assets/Scripts/Upgrades/ içinde oluşturduğumuz "AxeUpgradeConfig" ScriptableObject dosyasını sürükleyip bırakın.
+ - Aynı işlemi TruckManager objesi için "TruckUpgradeConfig" dosyasını atayarak yapın.
+
+Eğer "CloudSaveManager veya CurrentData hazir degil" hatasını alıyorsanız:
+ - Oyunun giriş veya başlangıç sahnesinden değil, doğrudan test sahnesinden başlatılmış olmasından kaynaklı olabilir. Oyun, CloudSaveManager'ın verileri Firebase'den tam olarak çekmesine fırsat vermeden (CurrentData henüz dolmadan) yükseltme metodunu tetikliyordur. Oyun akışında verilerin dolduğuna emin olduğunuzdan sonra tetikleyin.
