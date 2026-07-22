@@ -1,5 +1,19 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!244 &-7887929567836807301
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: f4d7390ca8d73294faae2897e1cdd3ae
+  m_EffectName: Attenuation
+  m_MixLevel: 5c57cb34be4f28d40a99c67b1a40a432
+  m_Parameters: []
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
 --- !u!243 &-7095396523889078319
 AudioMixerGroupController:
   m_ObjectHideFlags: 0
@@ -93,6 +107,7 @@ AudioMixerController:
     - c38db9dc917147f4f98006532c52adb4
     - 6f8e228be380b4d42819d320ee5129e5
     - 0b38cafb68b0ae94996bd392dde9765a
+    - 4852cd77f98f7b94e8fda4d15794929e
     name: View
   m_CurrentViewIndex: 0
   m_TargetSnapshot: {fileID: 24500006}
@@ -109,6 +124,7 @@ AudioMixerGroupController:
   - {fileID: -7095396523889078319}
   - {fileID: -6761322234839365070}
   - {fileID: -1953942015547270406}
+  - {fileID: 3640153630944035910}
   m_Volume: 5f05b8f169ee69f42bba80b4284b7640
   m_Pitch: 0f7790b28b3acd34ab73670f0f42f213
   m_Send: 00000000000000000000000000000000
@@ -176,3 +192,22 @@ AudioMixerEffectController:
   m_SendTarget: {fileID: 0}
   m_EnableWetMix: 0
   m_Bypass: 0
+--- !u!243 &3640153630944035910
+AudioMixerGroupController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Vehicles
+  m_AudioMixer: {fileID: 24100000}
+  m_GroupID: 4852cd77f98f7b94e8fda4d15794929e
+  m_Children: []
+  m_Volume: ebcfda46b9babec4b8c81f35c5ef7a8c
+  m_Pitch: c6b2613238d37324c87df34e51764d52
+  m_Send: 00000000000000000000000000000000
+  m_Effects:
+  - {fileID: -7887929567836807301}
+  m_UserColorIndex: 0
+  m_Mute: 0
+  m_Solo: 0
+  m_BypassEffects: 0

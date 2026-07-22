@@ -10,8 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 8802695761205820420}
   - component: {fileID: 8138346300984487735}
+  - component: {fileID: -781825273070750688}
   - component: {fileID: -3431742011498886588}
   - component: {fileID: 638498652961130272}
+  - component: {fileID: -2002412730579837201}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -46,17 +48,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ce323411ce9dfd4ab068cf9c2cc1e40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Core.AudioManager
-  musicSource: {fileID: 638498652961130272}
+  musicSource: {fileID: -781825273070750688}
   sfxSource: {fileID: -3431742011498886588}
-  ambienceSource: {fileID: 0}
-  vehicleSource: {fileID: 0}
-  musicSounds:
-  - name: "k\u0131\u015F sesi"
-    clip: {fileID: 8300000, guid: b05e8cedebe99b04184631bcaf3c3fe6, type: 3}
-    volume: 0.253
-    pitch: 0.1
+  ambienceSource: {fileID: 638498652961130272}
+  vehicleSource: {fileID: -2002412730579837201}
+  musicSounds: []
   sfxSounds:
-  - name: "Balta vuru\u015Fu"
+  - name: BaltaVurma
     clip: {fileID: 8300000, guid: e5b3e9356629bd94f8090c61780154ee, type: 3}
     volume: 1
     pitch: 0
@@ -72,12 +70,137 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 4dddb6ec8066c80479229bf515392494, type: 3}
     volume: 1
     pitch: 0
+  - name: para sesi1
+    clip: {fileID: 8300000, guid: dd56c959a74b30f4b8549882d9ca9a36, type: 3}
+    volume: 1
+    pitch: 0
+  - name: para sesi2
+    clip: {fileID: 8300000, guid: 557517c6d0d1a4f4d906a25666fb9c1b, type: 3}
+    volume: 1
+    pitch: 0
+  - name: "seviye ge\xE7i\u015Fi"
+    clip: {fileID: 8300000, guid: f1967609f77e3d8419ced1b6791f0d7e, type: 3}
+    volume: 1
+    pitch: 0
+  - name: OdunToplama
+    clip: {fileID: 8300000, guid: e1e1ae82674da75418c7cf8f8c8a9ab3, type: 3}
+    volume: 1
+    pitch: 0
   ambienceSounds:
-  - name: "k\u0131\u015F sesi"
-    clip: {fileID: 8300000, guid: b05e8cedebe99b04184631bcaf3c3fe6, type: 3}
+  - name: IlkbaharMuzik
+    clip: {fileID: 8300000, guid: 575f92fb55641d0458393fa3e41b3c8d, type: 3}
+    volume: 1
+    pitch: 0
+  - name: KisMuzik
+    clip: {fileID: 8300000, guid: ce63ffbd71e16c74a83e0a3075c94440, type: 3}
+    volume: 1
+    pitch: 0
+  - name: YazMuzik
+    clip: {fileID: 8300000, guid: 9ffe73953329a2b419f25ebf33bd7f65, type: 3}
+    volume: 1
+    pitch: 0
+  - name: SonbaharMuzik
+    clip: {fileID: 8300000, guid: 5f42cee49bed5564187c712c69726acc, type: 3}
     volume: 1
     pitch: 0
   vehicleSounds: []
+--- !u!82 &-781825273070750688
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2419292612478867452}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: -7095396523889078319, guid: 62c86c04499ea3c46a4900d878e09e47, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!82 &-3431742011498886588
 AudioSource:
   m_ObjectHideFlags: 0
@@ -184,7 +307,104 @@ AudioSource:
   m_GameObject: {fileID: 2419292612478867452}
   m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: -7095396523889078319, guid: 62c86c04499ea3c46a4900d878e09e47, type: 2}
+  OutputAudioMixerGroup: {fileID: -1953942015547270406, guid: 62c86c04499ea3c46a4900d878e09e47, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!82 &-2002412730579837201
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2419292612478867452}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 3640153630944035910, guid: 62c86c04499ea3c46a4900d878e09e47, type: 2}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
