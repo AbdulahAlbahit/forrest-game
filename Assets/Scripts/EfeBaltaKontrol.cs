@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using ForrestGame.Core;
 
 public class EfeBaltaKontrol : MonoBehaviour
 {
@@ -87,9 +88,36 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         if (TreeManager.Instance != null)
         {
-            TreeManager.Instance.HitTreeAt(agacKonumu, agacHasari);
+            TreeManager.Instance.HitTreeAt(agacKonumu, GetEfektifBaltaHasari());
             EfeOynanisEventleri.BaltaAgacaVurdugunuYayinla(transform);
         }
+    }
+
+    private int GetEfektifBaltaHasari()
+    {
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return agacHasari;
+
+        float carpan;
+        switch (SeasonManager.Instance.aktifMevsim)
+        {
+            case MevsimTuru.Ilkbahar:
+                carpan = SeasonManager.Instance.ayarlar.ilkbaharBaltaHasari;
+                break;
+            case MevsimTuru.Yaz:
+                carpan = SeasonManager.Instance.ayarlar.yazBaltaHasari;
+                break;
+            case MevsimTuru.Sonbahar:
+                carpan = SeasonManager.Instance.ayarlar.sonbaharBaltaHasari;
+                break;
+            case MevsimTuru.Kis:
+                carpan = SeasonManager.Instance.ayarlar.kisBaltaHasari;
+                break;
+            default:
+                carpan = 1f;
+                break;
+        }
+
+        return Mathf.Max(1, Mathf.RoundToInt(agacHasari * carpan));
     }
 
     private bool EnYakinTerrainAgaciniBul(out Vector3 enYakinAgacKonumu)
