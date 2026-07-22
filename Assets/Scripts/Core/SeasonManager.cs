@@ -47,7 +47,6 @@ namespace ForrestGame.Core
             }
         }
 
-        // Oyun kapalıyken geçen zamanı hesaplar (20 dakikada bir mevsim atlatır)
         private void HesaplaCevrimdisiZaman()
         {
             string sonGirisString = PlayerPrefs.GetString("SonCikisZamani", DateTime.Now.ToString());
@@ -61,7 +60,6 @@ namespace ForrestGame.Core
 
             kalanSaniye -= (float)gecenSaniye;
 
-            // Offline iken birden fazla mevsim geçmiş olabilir
             while (kalanSaniye <= 0)
             {
                 aktifMevsim = SonrakiMevsimiBul(aktifMevsim);
@@ -71,7 +69,6 @@ namespace ForrestGame.Core
             Debug.Log($"[Season] Oyuna dönüldü. Mevsim: {aktifMevsim}. Bitmesine {(kalanSaniye/60):F1} dakika var.");
         }
 
-        // Oyuncu oyundan çıkarken zamanı kaydeder
         private void OnApplicationQuit()
         {
             PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
@@ -83,31 +80,27 @@ namespace ForrestGame.Core
         public void MevsimeGec(MevsimTuru yeniMevsim)
         {
             aktifMevsim = yeniMevsim;
-            kalanSaniye = ayarlar.mevsimSuresiDakika * 60; // 20 dk tekrar başlar
+            kalanSaniye = ayarlar.mevsimSuresiDakika * 60;
 
             Debug.Log($"[Season] Mevsim Değişti: {yeniMevsim} geldi!");
 
             MevsimEfektleriniGuncelle();
             
             OnMevsimDegisti?.Invoke(yeniMevsim);
-            
-            // Yasir'in Ses Sistemine Haber Ver (Müzikleri Değiştirsin)
+
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayMusic(yeniMevsim.ToString() + "Muzik"); // Örn: "KisMuzik" isimli sesi çalar
             }
         }
 
-        // YASİR'İN GÖRSELLERİNİN ÇAKIŞMASINI ENGELLEYEN SİSTEM
         private void MevsimEfektleriniGuncelle()
         {
-            // ÖNCE BÜTÜN MEVSİMLERİ KAPATIYORUZ (KAPKARANLIK OLUYOR)
             if (ilkbaharVFX != null) ilkbaharVFX.SetActive(false);
             if (yazVFX != null) yazVFX.SetActive(false);
             if (sonbaharVFX != null) sonbaharVFX.SetActive(false);
             if (kisVFX != null) kisVFX.SetActive(false);
 
-            // SONRA SADECE ŞUANKİ MEVSİMİ AÇIYORUZ (ÇAKIŞMA İMKANSIZLAŞIYOR)
             switch (aktifMevsim)
             {
                 case MevsimTuru.Ilkbahar: if (ilkbaharVFX != null) ilkbaharVFX.SetActive(true); break;

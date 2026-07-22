@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using ForrestGame.Utils;
+using ForrestGame.Core;
 
 public class TreeManager : MonoBehaviour
 {
@@ -173,22 +174,42 @@ public class TreeManager : MonoBehaviour
             int typeIndex = GetTreeTypeIndex(hitTree.prototypeIndex);
             RemoveTreeFromTerrain(treeIndex);
 
-            if (respawnTime > 0f)
+            float efektifRespawnSuresi = GetEfektifRespawnSuresi();
+
+            if (efektifRespawnSuresi > 0f)
             {
                 _respawnQueue.Add(new RespawnData
                 {
                     treeInstance = hitTree,
-                    respawnAt = Time.time + respawnTime
+                    respawnAt = Time.time + efektifRespawnSuresi
                 });
             }
 
-            StartCoroutine(SpawnFelledVisuals(treeWorldPos, typeIndex));
-            
+            StartCoroutine(SpawnFelledVisuals(treeWorldPos, typeIndex, efektifRespawnSuresi));
+
             OnTreeFelled?.Invoke(treeWorldPos);
             OnTreeFelledAction?.Invoke(treeWorldPos);
 
-            GameLogger.Log($"[TreeManager] Tree Felled! Type: {typeIndex}. Respawn in {respawnTime}s.", this);
+            GameLogger.Log($"[TreeManager] Tree Felled! Type: {typeIndex}. Respawn in {efektifRespawnSuresi}s.", this);
         }
+    }
+
+    private float GetEfektifRespawnSuresi()
+    {
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return respawnTime;
+
+        float carpan = 1f;
+        switch (SeasonManager.Instance.aktifMevsim)
+        {
+            case MevsimTuru.Ilkbahar:
+                carpan = SeasonManager.Instance.ayarlar.ilkbaharAgacBuyumeHizi;
+                break;
+            case MevsimTuru.Kis:
+                carpan = SeasonManager.Instance.ayarlar.kisAgacBuyumeHizi;
+                break;
+        }
+
+        return carpan > 0f ? respawnTime / carpan : respawnTime;
     }
 
     private int GetTreeTypeIndex(int prototypeIndex)
@@ -251,7 +272,7 @@ public class TreeManager : MonoBehaviour
         GameLogger.Log("[TreeManager] Tree respawned on terrain.", this);
     }
 
-    private IEnumerator SpawnFelledVisuals(Vector3 pos, int typeIndex)
+    private IEnumerator SpawnFelledVisuals(Vector3 pos, int typeIndex, float efektifRespawnSuresi)
     {
         if (_stumpPool.Count > 0)
         {
@@ -261,7 +282,7 @@ public class TreeManager : MonoBehaviour
             stump.transform.rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
             stump.SetActive(true);
 
-            StartCoroutine(ShrinkAndReturn(stump, _stumpPool, respawnTime > 0 ? respawnTime - 0.5f : disappearDelay));
+            StartCoroutine(ShrinkAndReturn(stump, _stumpPool, efektifRespawnSuresi > 0 ? efektifRespawnSuresi - 0.5f : disappearDelay));
         }
 
         if (typeIndex < treeTypes.Length && treeTypes[typeIndex].fallenPool.Count > 0)

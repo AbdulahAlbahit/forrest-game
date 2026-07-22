@@ -17,6 +17,7 @@ public class EfeKarakterKontrol : MonoBehaviour
     [Min(0f)] [SerializeField] private float suBacakDerinligi = 1.25f;
     [Min(0.1f)] [SerializeField] private float suYukseklikDuzeltmeHizi = 5f;
     [Min(0.1f)] [SerializeField] private float suIcindekiAzamiSure = 5f;
+    [Range(0.1f, 1f)] [SerializeField] private float suHareketHiziCarpani = 0.3f;
 
     [Header("Mobil Kontrol")]
     public VirtualJoystick joystick;
@@ -42,11 +43,14 @@ public class EfeKarakterKontrol : MonoBehaviour
     private float suIcindeGecenSure;
     private bool ilkZeminTemasiGoruldu;
     private bool suModuAktif;
+    private bool oncekiHareketEdiyor;
+    private bool oncekiKosuyor;
     private Vector3 baslangicKonumu;
     private Quaternion baslangicDonusu;
 
     private static readonly int HizParametresi = Animator.StringToHash("Hiz");
     private const float SenkronYurumeUstHizi = 1.75f;
+    private const float KosuKlibiDogalHizi = 4.23f;
 
     void Awake()
     {
@@ -75,6 +79,8 @@ public class EfeKarakterKontrol : MonoBehaviour
             : Vector2.zero;
         float girdiMiktari = joystickGirdisi.magnitude;
         bool hareketEdiyor = girdiMiktari > hareketEsigi;
+        bool kosuyor = hareketEdiyor && girdiMiktari >= kosuEsigi;
+        HareketOlaylariniYayinla(hareketEdiyor, kosuyor);
 
         Vector3 hedefYatayHiz = Vector3.zero;
         float animatorHizi = 0f;
@@ -107,13 +113,20 @@ public class EfeKarakterKontrol : MonoBehaviour
                 float yurumeOrani = Mathf.InverseLerp(hareketEsigi, kosuEsigi, girdiMiktari);
                 float senkronYurumeHizi = Mathf.Min(yuruHizi, SenkronYurumeUstHizi);
                 hedefHareketHizi = Mathf.Lerp(senkronYurumeHizi * 0.55f, senkronYurumeHizi, yurumeOrani);
-                animatorHizi = Mathf.Lerp(0.2f, 0.5f, yurumeOrani);
+                // Blend Tree'deki Mert yürüyüş klibini ara/bozuk pozlara karıştırmadan doğrudan oynat.
+                animatorHizi = 0.5f;
             }
             else
             {
-                float kosmaOrani = Mathf.InverseLerp(kosuEsigi, 1f, girdiMiktari);
-                hedefHareketHizi = Mathf.Lerp(kosuyaGecisHizi, kosuHizi, kosmaOrani);
-                animatorHizi = Mathf.Lerp(0.5f, 1f, kosmaOrani);
+                // Running klibinin doğal kök hızı kullanılarak ayakların zeminde kayması engellenir.
+                hedefHareketHizi = Mathf.Min(kosuHizi, KosuKlibiDogalHizi);
+                // Koşu bölgesinde Mert koşu klibi saf haliyle kullanılır.
+                animatorHizi = 1f;
+            }
+
+            if (suModuAktif)
+            {
+                hedefHareketHizi *= suHareketHiziCarpani;
             }
 
             hedefYatayHiz = hareketYonu * hedefHareketHizi;
@@ -147,6 +160,8 @@ public class EfeKarakterKontrol : MonoBehaviour
         if (!suModuAktif && SuyaGercektenGirdiMi())
         {
             suModuAktif = true;
+            yatayHiz = Vector3.ClampMagnitude(yatayHiz, kosuHizi * suHareketHiziCarpani);
+            EfeOynanisEventleri.SuyaGirdiginiYayinla(transform);
         }
 
         if (suModuAktif && AktifSuAlaniGecerliMi())
@@ -205,10 +220,16 @@ public class EfeKarakterKontrol : MonoBehaviour
     {
         if (other == aktifSuAlani)
         {
+            bool sudanCikiyor = suModuAktif;
             aktifSuAlani = null;
             suModuAktif = false;
             suIcindeGecenSure = 0f;
             dikeyHiz = -2f;
+
+            if (sudanCikiyor)
+            {
+                EfeOynanisEventleri.SudanCiktiginiYayinla(transform);
+            }
         }
     }
 
@@ -273,6 +294,32 @@ public class EfeKarakterKontrol : MonoBehaviour
         {
             animator.SetFloat(HizParametresi, 0f);
         }
+
+        EfeOynanisEventleri.SudanKurtarildiginiYayinla(transform);
+    }
+
+    private void HareketOlaylariniYayinla(bool hareketEdiyor, bool kosuyor)
+    {
+        if (hareketEdiyor && !oncekiHareketEdiyor)
+        {
+            EfeOynanisEventleri.HareketBasladiginiYayinla(transform);
+        }
+        else if (!hareketEdiyor && oncekiHareketEdiyor)
+        {
+            EfeOynanisEventleri.HareketBittiginiYayinla(transform);
+        }
+
+        if (kosuyor && !oncekiKosuyor)
+        {
+            EfeOynanisEventleri.KosuBasladiginiYayinla(transform);
+        }
+        else if (!kosuyor && oncekiKosuyor)
+        {
+            EfeOynanisEventleri.KosuBittiginiYayinla(transform);
+        }
+
+        oncekiHareketEdiyor = hareketEdiyor;
+        oncekiKosuyor = kosuyor;
     }
 
     void OnValidate()
@@ -284,6 +331,7 @@ public class EfeKarakterKontrol : MonoBehaviour
         suBacakDerinligi = Mathf.Max(0f, suBacakDerinligi);
         suYukseklikDuzeltmeHizi = Mathf.Max(0.1f, suYukseklikDuzeltmeHizi);
         suIcindekiAzamiSure = Mathf.Max(0.1f, suIcindekiAzamiSure);
+        suHareketHiziCarpani = Mathf.Clamp(suHareketHiziCarpani, 0.1f, 1f);
         kosuEsigi = Mathf.Max(kosuEsigi, hareketEsigi + 0.1f);
     }
 }

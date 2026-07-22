@@ -1,17 +1,18 @@
 using System.Collections;
 using UnityEngine;
+using ForrestGame.Core;
 
 public class EfeBaltaKontrol : MonoBehaviour
 {
     [Header("Balta Saldırısı")]
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject balta;
-    [Min(0.1f)] [SerializeField] private float saldiriBeklemeSuresi = 0.65f;
+    [Min(0.1f)] [SerializeField] private float saldiriBeklemeSuresi = 0.95f;
 
     [Header("Ağaç Etkileşimi")]
     [Min(0.5f)] [SerializeField] private float agacEtkilesimMesafesi = 3f;
     [Min(1)] [SerializeField] private int agacHasari = 1;
-    [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.3f;
+    [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.42f;
 
     [Header("Saldırı Dengeli Ayak Duruşu")]
     [Min(0f)] [SerializeField] private float sagAyakIleriMesafesi = 0.17f;
@@ -65,6 +66,7 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         animator.ResetTrigger(SaldirParametresi);
         animator.SetTrigger(SaldirParametresi);
+        EfeOynanisEventleri.BaltaSallandiginiYayinla(transform);
 
         if (yakindaAgacVar)
         {
@@ -86,8 +88,36 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         if (TreeManager.Instance != null)
         {
-            TreeManager.Instance.HitTreeAt(agacKonumu, agacHasari);
+            TreeManager.Instance.HitTreeAt(agacKonumu, GetEfektifBaltaHasari());
+            EfeOynanisEventleri.BaltaAgacaVurdugunuYayinla(transform);
         }
+    }
+
+    private int GetEfektifBaltaHasari()
+    {
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return agacHasari;
+
+        float carpan;
+        switch (SeasonManager.Instance.aktifMevsim)
+        {
+            case MevsimTuru.Ilkbahar:
+                carpan = SeasonManager.Instance.ayarlar.ilkbaharBaltaHasari;
+                break;
+            case MevsimTuru.Yaz:
+                carpan = SeasonManager.Instance.ayarlar.yazBaltaHasari;
+                break;
+            case MevsimTuru.Sonbahar:
+                carpan = SeasonManager.Instance.ayarlar.sonbaharBaltaHasari;
+                break;
+            case MevsimTuru.Kis:
+                carpan = SeasonManager.Instance.ayarlar.kisBaltaHasari;
+                break;
+            default:
+                carpan = 1f;
+                break;
+        }
+
+        return Mathf.Max(1, Mathf.RoundToInt(agacHasari * carpan));
     }
 
     private bool EnYakinTerrainAgaciniBul(out Vector3 enYakinAgacKonumu)
@@ -162,35 +192,37 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void OnAnimatorIK(int layerIndex)
     {
-        if (animator == null || layerIndex != 0)
+        if (animator == null)
         {
             return;
         }
 
         float durusAgirligi = SaldiriDurusAgirliginiHesapla();
-        animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, durusAgirligi);
-        animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, durusAgirligi);
-
-        if (durusAgirligi <= 0f)
+        if (layerIndex == 0)
         {
-            return;
+            animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, durusAgirligi);
+            animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, durusAgirligi);
+
+            if (durusAgirligi > 0f)
+            {
+                Vector3 ileri = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+                Vector3 sag = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+
+                Vector3 solAyakHedefi = transform.position
+                                       - ileri * solAyakGeriMesafesi
+                                       - sag * ayakYanalMesafesi;
+                Vector3 sagAyakHedefi = transform.position
+                                       + ileri * sagAyakIleriMesafesi
+                                       + sag * ayakYanalMesafesi;
+
+                solAyakHedefi.y = ZeminYuksekliginiBul(solAyakHedefi) + solAyakZeminOfseti;
+                sagAyakHedefi.y = ZeminYuksekliginiBul(sagAyakHedefi) + sagAyakZeminOfseti;
+
+                animator.SetIKPosition(AvatarIKGoal.LeftFoot, solAyakHedefi);
+                animator.SetIKPosition(AvatarIKGoal.RightFoot, sagAyakHedefi);
+            }
         }
 
-        Vector3 ileri = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-        Vector3 sag = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
-
-        Vector3 solAyakHedefi = transform.position
-                               - ileri * solAyakGeriMesafesi
-                               - sag * ayakYanalMesafesi;
-        Vector3 sagAyakHedefi = transform.position
-                               + ileri * sagAyakIleriMesafesi
-                               + sag * ayakYanalMesafesi;
-
-        solAyakHedefi.y = ZeminYuksekliginiBul(solAyakHedefi) + solAyakZeminOfseti;
-        sagAyakHedefi.y = ZeminYuksekliginiBul(sagAyakHedefi) + sagAyakZeminOfseti;
-
-        animator.SetIKPosition(AvatarIKGoal.LeftFoot, solAyakHedefi);
-        animator.SetIKPosition(AvatarIKGoal.RightFoot, sagAyakHedefi);
     }
 
     private float SaldiriDurusAgirliginiHesapla()
