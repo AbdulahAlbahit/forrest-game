@@ -162,6 +162,17 @@ public class WorkshopManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Test amaciyla veya kapasiteden bagimsiz dogrudan odun bakiyesi ekler.
+    /// </summary>
+    public void AddWood(int amount)
+    {
+        if (amount <= 0) return;
+        mevcutKuyruk += amount;
+        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+        Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {mevcutKuyruk}");
+    }
+
+    /// <summary>
     /// Arayuz (UI) tarafindan cagrilarak belirtilen tariften uretim baslatir.
     /// </summary>
     public void StartProduction(RecipeConfig recipe, int amount)
@@ -186,8 +197,9 @@ public class WorkshopManager : MonoBehaviour
 
             Debug.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim siparisi alindi. Dusulen Odun: {requiredWood}");
             
-            // Arayuz guncellemesi
+            // Arayuz guncellemesi ve Bulut Kaydi
             OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+            CloudSaveManager.Instance.SaveData(data);
         }
         else
         {
@@ -256,6 +268,9 @@ public class WorkshopManager : MonoBehaviour
 
         float gercekUretimSuresi = currentRecipe.BaseProductionTime / hizCarpani;
         
+        // BUG FIX: Surenin sifir olup aninda tukenmesini engelle
+        if (gercekUretimSuresi <= 0.1f) gercekUretimSuresi = 0.1f;
+
         // 4. Zamanlayiciyi calistir
         uretimZamanlayicisi += Time.deltaTime;
 
