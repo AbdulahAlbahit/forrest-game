@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bc18dda94ef4624aa4980988641fecc, type: 3}
   m_Name: sandalyedata
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
-  ItemID: 
-  RequiredWood: 0
-  BaseProductionTime: 0
-  BaseSalePrice: 0
+  ItemID: sandalye
+  RequiredWood: 10
+  BaseProductionTime: 1
+  BaseSalePrice: 250

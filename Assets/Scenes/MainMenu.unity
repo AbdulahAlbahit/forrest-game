@@ -152,7 +152,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SystemTester
   testRegionId: 1
+  testRegionConfig: {fileID: 0}
   testItemId: Axe
+  testRecipe: {fileID: 11400000, guid: 45412913ce52b8c4d84bb3ab47c65779, type: 2}
+  testWoodAmount: 50
+  testDeliveryAmount: 5
 --- !u!4 &61426463
 Transform:
   m_ObjectHideFlags: 0
@@ -180,6 +184,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34cf888a97ae5b64cb2c207c181a8054, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkshopManager
+  tumTarifler:
+  - {fileID: 11400000, guid: 45412913ce52b8c4d84bb3ab47c65779, type: 2}
 --- !u!114 &61426468
 MonoBehaviour:
   m_ObjectHideFlags: 0
