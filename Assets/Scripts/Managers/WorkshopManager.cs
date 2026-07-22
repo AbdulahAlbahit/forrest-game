@@ -287,17 +287,22 @@ public class WorkshopManager : MonoBehaviour
             int readyAmount = data.ReadyForTruck.Get(aktifUretilenItem, 0);
             data.ReadyForTruck.Set(aktifUretilenItem, readyAmount + 1);
 
-            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk: {newAmount})");
+            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk Kaldi: {newAmount})");
 
-            // Eski sistem efektleri vs. icin (isterseniz kullanin)
             OnWoodProcessed?.Invoke();
-
-            // Yeni sistem kamyon teslimati icin eventi firlat
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);
             
-            // Bulut Kaydi ile Firestore senkronizasyonu
+            // Bulut Kaydi
             CloudSaveManager.Instance.SaveData(data);
+
+            // Zamanlayici sifirla
             uretimZamanlayicisi = 0f;
+
+            // Bu urunden siparish bittiyse bir sonraki urune gec
+            if (newAmount <= 0)
+            {
+                aktifUretilenItem = "";
+            }
         }
     }
 

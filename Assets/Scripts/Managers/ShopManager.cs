@@ -42,6 +42,9 @@ namespace ForrestGame.Managers
 
             data.ShopInventory.Set(itemId, newStock);
             OnStockChanged?.Invoke(itemId, newStock);
+            // Stok degisince aninda buluta kaydet
+            CloudSaveManager.Instance.SaveData(data);
+            Debug.Log($"ShopManager: {itemId} stoku {currentStock} -> {newStock} (buluta kaydedildi)");
         }
 
         public bool TryRemoveStock(string itemId, int amount)
@@ -68,6 +71,9 @@ namespace ForrestGame.Managers
                 int newStock = currentStock - amount;
                 data.ShopInventory.Set(itemId, newStock);
                 OnStockChanged?.Invoke(itemId, newStock);
+                // Stok dusunce aninda buluta kaydet
+                CloudSaveManager.Instance.SaveData(data);
+                Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
                 return true;
             }
 
