@@ -281,20 +281,19 @@ public class WorkshopManager : MonoBehaviour
             int currentAmount = data.WorkshopQueue.Get(aktifUretilenItem, 0);
             int newAmount = Mathf.Max(0, currentAmount - 1);
             data.WorkshopQueue.Set(aktifUretilenItem, newAmount);
-            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kalan siparis: {newAmount})");
+            
+            // Fabrika Bandı: Üretilen malı Kamyon Bekleyenler'e (ReadyForTruck) ekle
+            if (data.ReadyForTruck == null) data.ReadyForTruck = new SerializableDict();
+            int readyAmount = data.ReadyForTruck.Get(aktifUretilenItem, 0);
+            data.ReadyForTruck.Set(aktifUretilenItem, readyAmount + 1);
+
+            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk: {newAmount})");
 
             // Eski sistem efektleri vs. icin (isterseniz kullanin)
             OnWoodProcessed?.Invoke();
 
             // Yeni sistem kamyon teslimati icin eventi firlat
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);
-            
-            // TEST ICIN GECICI COZUM (Kamyon henuz hazir degilse dogrudan dukkana ekle)
-            if (ForrestGame.Managers.ShopManager.Instance != null)
-            {
-                ForrestGame.Managers.ShopManager.Instance.AddStock(aktifUretilenItem, 1);
-                Debug.Log($"WorkshopManager: {aktifUretilenItem} dogrudan dukkan stoguna eklendi.");
-            }
             
             // Bulut Kaydi ile Firestore senkronizasyonu
             CloudSaveManager.Instance.SaveData(data);

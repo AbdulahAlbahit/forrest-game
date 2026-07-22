@@ -199,21 +199,21 @@ public class SystemTester : MonoBehaviour
         if (ShopManager.Instance != null && testRecipe != null && CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             PlayerData data = CloudSaveManager.Instance.CurrentData;
-            if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
+            if (data.ReadyForTruck == null) data.ReadyForTruck = new SerializableDict();
 
-            int mevcutUretilmis = data.WorkshopQueue.Get(testRecipe.ItemID, 0);
+            int mevcutHazir = data.ReadyForTruck.Get(testRecipe.ItemID, 0);
 
-            if (mevcutUretilmis >= testDeliveryAmount)
+            if (mevcutHazir >= testDeliveryAmount)
             {
-                data.WorkshopQueue.Set(testRecipe.ItemID, mevcutUretilmis - testDeliveryAmount);
+                data.ReadyForTruck.Set(testRecipe.ItemID, mevcutHazir - testDeliveryAmount);
                 ShopManager.Instance.AddStock(testRecipe.ItemID, testDeliveryAmount);
                 CloudSaveManager.Instance.SaveData(data);
                 
-                Debug.Log($"[Test] Kamyon atolyeden {testDeliveryAmount} adet {testRecipe.ItemID} alip dukkana teslim etti!");
+                Debug.Log($"[Test] Kamyon {testDeliveryAmount} adet {testRecipe.ItemID} alip dukkana teslim etti! Kalan: {mevcutHazir - testDeliveryAmount}");
             }
             else
             {
-                Debug.LogWarning($"[Test] Atolyede yeterli urun yok (Istenen: {testDeliveryAmount}, Mevcut: {mevcutUretilmis}), kamyon bos dondu!");
+                Debug.LogWarning($"[Test] Kapida hazir bekleyen yeterli urun yok (Istenen: {testDeliveryAmount}, Hazir: {mevcutHazir}), kamyon bos dondu!");
             }
         }
         else
