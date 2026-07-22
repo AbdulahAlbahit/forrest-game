@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b17bcf40f3caa641a1cb6da16a62bda, type: 3}
   m_Name: SeasonSettings
   m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Data.SeasonSettings
-  mevsimSuresiDakika: 20
+  mevsimSuresiDakika: 1
   ilkbaharAgacBuyumeHizi: 1.2
   ilkbaharBaltaHasari: 1
-  yazOduncuHizi: 1.1
+  yazUretimHizi: 1.2
   yazBaltaHasari: 1
   sonbaharAltinCarpani: 1.15
   sonbaharBaltaHasari: 1

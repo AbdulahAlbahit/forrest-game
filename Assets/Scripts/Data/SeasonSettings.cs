@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace ForrestGame.Data
 {
@@ -14,7 +15,8 @@ namespace ForrestGame.Data
         public float ilkbaharBaltaHasari = 1.0f;
 
         [Header("Yaz (Summer) Etkileri")]
-        public float yazUretimHizi = 1.20f;
+        [FormerlySerializedAs("yazUretimHizi")]
+        public float summerProductionSpeed = 1.20f;
         public float yazBaltaHasari = 1.0f;
 
         [Header("Sonbahar (Autumn) Etkileri")]

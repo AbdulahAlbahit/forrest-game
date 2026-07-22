@@ -80,15 +80,15 @@ public class EconomyManager : MonoBehaviour
             return;
         }
 
-        int efektifMiktar = Mathf.RoundToInt(amount * GetMevsimAltinCarpani());
+        int effectiveAmount = Mathf.RoundToInt(amount * GetSeasonGoldMultiplier());
 
-        CloudSaveManager.Instance.CurrentData.Para += efektifMiktar;
+        CloudSaveManager.Instance.CurrentData.Para += effectiveAmount;
         OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
 
-        Debug.Log($"EconomyManager: {efektifMiktar} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+        Debug.Log($"EconomyManager: {effectiveAmount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
     }
 
-    private float GetMevsimAltinCarpani()
+    private float GetSeasonGoldMultiplier()
     {
         if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return 1f;
         if (SeasonManager.Instance.aktifMevsim == MevsimTuru.Sonbahar) return SeasonManager.Instance.ayarlar.sonbaharAltinCarpani;
