@@ -50,6 +50,7 @@ public class EfeKarakterKontrol : MonoBehaviour
 
     private static readonly int HizParametresi = Animator.StringToHash("Hiz");
     private const float SenkronYurumeUstHizi = 1.75f;
+    private const float KosuKlibiDogalHizi = 4.23f;
 
     void Awake()
     {
@@ -112,13 +113,15 @@ public class EfeKarakterKontrol : MonoBehaviour
                 float yurumeOrani = Mathf.InverseLerp(hareketEsigi, kosuEsigi, girdiMiktari);
                 float senkronYurumeHizi = Mathf.Min(yuruHizi, SenkronYurumeUstHizi);
                 hedefHareketHizi = Mathf.Lerp(senkronYurumeHizi * 0.55f, senkronYurumeHizi, yurumeOrani);
-                animatorHizi = Mathf.Lerp(0.2f, 0.5f, yurumeOrani);
+                // Blend Tree'deki Mert yürüyüş klibini ara/bozuk pozlara karıştırmadan doğrudan oynat.
+                animatorHizi = 0.5f;
             }
             else
             {
-                float kosmaOrani = Mathf.InverseLerp(kosuEsigi, 1f, girdiMiktari);
-                hedefHareketHizi = Mathf.Lerp(kosuyaGecisHizi, kosuHizi, kosmaOrani);
-                animatorHizi = Mathf.Lerp(0.5f, 1f, kosmaOrani);
+                // Running klibinin doğal kök hızı kullanılarak ayakların zeminde kayması engellenir.
+                hedefHareketHizi = Mathf.Min(kosuHizi, KosuKlibiDogalHizi);
+                // Koşu bölgesinde Mert koşu klibi saf haliyle kullanılır.
+                animatorHizi = 1f;
             }
 
             if (suModuAktif)
