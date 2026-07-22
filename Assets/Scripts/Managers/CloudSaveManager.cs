@@ -176,6 +176,17 @@ public class CloudSaveManager : MonoBehaviour
         {
             playerDict["ItemLevels"] = data.ItemLevels.ToDictionary();
         }
+        
+        // Yeni Sistem: ShopInventory ve WorkshopQueue yaz
+        if (data.ShopInventory != null)
+        {
+            playerDict["ShopInventory"] = data.ShopInventory.ToDictionary();
+        }
+        
+        if (data.WorkshopQueue != null)
+        {
+            playerDict["WorkshopQueue"] = data.WorkshopQueue.ToDictionary();
+        }
 
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
         {
@@ -262,6 +273,19 @@ public class CloudSaveManager : MonoBehaviour
                 {
                     data.ItemLevels.FromDictionary(itemLevelsRaw);
                     Debug.Log($"CloudSaveManager: ItemLevels yuklendi ({itemLevelsRaw.Count} esya).");
+                }
+
+                // Yeni Sistem: ShopInventory ve WorkshopQueue yukleme
+                data.ShopInventory = new SerializableDict();
+                if (dict.ContainsKey("ShopInventory") && dict["ShopInventory"] is Dictionary<string, object> shopInventoryRaw)
+                {
+                    data.ShopInventory.FromDictionary(shopInventoryRaw);
+                }
+
+                data.WorkshopQueue = new SerializableDict();
+                if (dict.ContainsKey("WorkshopQueue") && dict["WorkshopQueue"] is Dictionary<string, object> workshopQueueRaw)
+                {
+                    data.WorkshopQueue.FromDictionary(workshopQueueRaw);
                 }
 
                 // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
