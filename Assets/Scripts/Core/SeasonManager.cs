@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using System;
+using System.Collections;
 using ForrestGame.Data;
 
 namespace ForrestGame.Core
@@ -26,6 +28,29 @@ namespace ForrestGame.Core
         public GameObject sonbaharVFX;
         public GameObject kisVFX;
 
+        [Header("Snow Tree Materials (Using SH_MevsimAgac)")]
+        [FormerlySerializedAs("agacKarMateryalleri")]
+        public Material[] snowTreeMaterials;
+
+        [Tooltip("How many seconds the snow amount takes to smoothly transition between 0 and 1")]
+        [FormerlySerializedAs("karGecisSuresiSaniye")]
+        public float snowTransitionDuration = 5f;
+
+        [Header("Winter Approach Preview")]
+        [Tooltip("How many minutes before Kis begins that light snow starts falling")]
+        public float transitionDurationMinutes = 5f;
+        [Range(0f, 1f)]
+        [Tooltip("Snow amount cap during the pre-winter preview window (full snow only starts once Kis officially begins)")]
+        public float lightSnowCapDuringTransition = 0.15f;
+        [Range(0f, 1f)]
+        [Tooltip("Snow particle intensity scale during the pre-winter preview window")]
+        public float lightSnowIntensityDuringTransition = 0.25f;
+
+        private static readonly int SnowAmountID = Shader.PropertyToID("_KarMiktari");
+        private float currentSnowAmount;
+        private Coroutine snowTransitionCoroutine;
+        private bool winterPreviewStarted;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -41,13 +66,38 @@ namespace ForrestGame.Core
         {
             kalanSaniye -= Time.deltaTime;
 
+            UpdateWinterPreview();
+
             if (kalanSaniye <= 0)
             {
                 MevsimeGec(SonrakiMevsimiBul(aktifMevsim));
             }
         }
 
-        // Oyun kapalıyken geçen zamanı hesaplar (20 dakikada bir mevsim atlatır)
+        private void UpdateWinterPreview()
+        {
+            if (aktifMevsim == MevsimTuru.Kis) return;
+            if (SonrakiMevsimiBul(aktifMevsim) != MevsimTuru.Kis) return;
+
+            float transitionSeconds = transitionDurationMinutes * 60f;
+            if (kalanSaniye > transitionSeconds) return;
+
+            if (!winterPreviewStarted)
+            {
+                winterPreviewStarted = true;
+                if (kisVFX != null)
+                {
+                    kisVFX.SetActive(true);
+                    SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
+                    if (snowStorm != null) snowStorm.SetIntensityScale(lightSnowIntensityDuringTransition);
+                }
+            }
+
+            float progress = 1f - Mathf.Clamp01(kalanSaniye / transitionSeconds);
+            currentSnowAmount = progress * lightSnowCapDuringTransition;
+            ApplySnowAmount(currentSnowAmount);
+        }
+
         private void HesaplaCevrimdisiZaman()
         {
             string sonGirisString = PlayerPrefs.GetString("SonCikisZamani", DateTime.Now.ToString());
@@ -61,7 +111,6 @@ namespace ForrestGame.Core
 
             kalanSaniye -= (float)gecenSaniye;
 
-            // Offline iken birden fazla mevsim geçmiş olabilir
             while (kalanSaniye <= 0)
             {
                 aktifMevsim = SonrakiMevsimiBul(aktifMevsim);
@@ -71,7 +120,6 @@ namespace ForrestGame.Core
             Debug.Log($"[Season] Oyuna dönüldü. Mevsim: {aktifMevsim}. Bitmesine {(kalanSaniye/60):F1} dakika var.");
         }
 
-        // Oyuncu oyundan çıkarken zamanı kaydeder
         private void OnApplicationQuit()
         {
             PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
@@ -80,40 +128,108 @@ namespace ForrestGame.Core
             PlayerPrefs.Save();
         }
 
+        [ContextMenu("Test: Go To Winter")]
+        private void TestGoToWinter()
+        {
+            MevsimeGec(MevsimTuru.Kis);
+        }
+
+        [ContextMenu("Test: Go To Summer")]
+        private void TestGoToSummer()
+        {
+            MevsimeGec(MevsimTuru.Yaz);
+        }
+
+        [ContextMenu("Test: Reset Season Save")]
+        private void TestResetSeasonSave()
+        {
+            PlayerPrefs.DeleteKey("SonCikisZamani");
+            PlayerPrefs.DeleteKey("AktifMevsim");
+            PlayerPrefs.DeleteKey("KalanMevsimSaniyesi");
+            PlayerPrefs.Save();
+            Debug.Log("[Season] Saved season state cleared. Next Play will start from Ilkbahar.");
+        }
+
         public void MevsimeGec(MevsimTuru yeniMevsim)
         {
             aktifMevsim = yeniMevsim;
-            kalanSaniye = ayarlar.mevsimSuresiDakika * 60; // 20 dk tekrar başlar
+            kalanSaniye = ayarlar.mevsimSuresiDakika * 60;
+            winterPreviewStarted = false;
 
             Debug.Log($"[Season] Mevsim Değişti: {yeniMevsim} geldi!");
 
             MevsimEfektleriniGuncelle();
             
             OnMevsimDegisti?.Invoke(yeniMevsim);
-            
-            // Yasir'in Ses Sistemine Haber Ver (Müzikleri Değiştirsin)
+
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayMusic(yeniMevsim.ToString() + "Muzik"); // Örn: "KisMuzik" isimli sesi çalar
             }
         }
 
-        // YASİR'İN GÖRSELLERİNİN ÇAKIŞMASINI ENGELLEYEN SİSTEM
         private void MevsimEfektleriniGuncelle()
         {
-            // ÖNCE BÜTÜN MEVSİMLERİ KAPATIYORUZ (KAPKARANLIK OLUYOR)
             if (ilkbaharVFX != null) ilkbaharVFX.SetActive(false);
             if (yazVFX != null) yazVFX.SetActive(false);
             if (sonbaharVFX != null) sonbaharVFX.SetActive(false);
             if (kisVFX != null) kisVFX.SetActive(false);
 
-            // SONRA SADECE ŞUANKİ MEVSİMİ AÇIYORUZ (ÇAKIŞMA İMKANSIZLAŞIYOR)
             switch (aktifMevsim)
             {
                 case MevsimTuru.Ilkbahar: if (ilkbaharVFX != null) ilkbaharVFX.SetActive(true); break;
                 case MevsimTuru.Yaz: if (yazVFX != null) yazVFX.SetActive(true); break;
                 case MevsimTuru.Sonbahar: if (sonbaharVFX != null) sonbaharVFX.SetActive(true); break;
-                case MevsimTuru.Kis: if (kisVFX != null) kisVFX.SetActive(true); break;
+                case MevsimTuru.Kis:
+                    if (kisVFX != null)
+                    {
+                        kisVFX.SetActive(true);
+                        SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
+                        if (snowStorm != null) snowStorm.SetIntensityScale(1f);
+                    }
+                    break;
+            }
+
+            float targetSnowAmount = aktifMevsim == MevsimTuru.Kis ? 1f : 0f;
+
+            if (snowTransitionCoroutine != null)
+            {
+                StopCoroutine(snowTransitionCoroutine);
+            }
+            snowTransitionCoroutine = StartCoroutine(TransitionSnowAmount(targetSnowAmount));
+        }
+
+        private IEnumerator TransitionSnowAmount(float targetSnowAmount)
+        {
+            float startSnowAmount = currentSnowAmount;
+            float elapsed = 0f;
+
+            while (elapsed < snowTransitionDuration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / snowTransitionDuration);
+                currentSnowAmount = Mathf.Lerp(startSnowAmount, targetSnowAmount, progress);
+                ApplySnowAmount(currentSnowAmount);
+                yield return null;
+            }
+
+            currentSnowAmount = targetSnowAmount;
+            ApplySnowAmount(currentSnowAmount);
+        }
+
+        private void ApplySnowAmount(float snowAmount)
+        {
+            if (snowTreeMaterials != null)
+            {
+                foreach (Material mat in snowTreeMaterials)
+                {
+                    if (mat != null) mat.SetFloat(SnowAmountID, snowAmount);
+                }
+            }
+
+            if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
+            {
+                Terrain.activeTerrain.terrainData.RefreshPrototypes();
             }
         }
 
