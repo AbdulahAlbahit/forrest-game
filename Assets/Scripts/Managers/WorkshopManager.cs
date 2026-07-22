@@ -207,6 +207,8 @@ public class WorkshopManager : MonoBehaviour
         }
     }
 
+    private float debugLogTimer = 0f;
+
     /// <summary>
     /// WorkshopQueue icindeki siparisleri tek tek tarife gore uretir.
     /// </summary>
@@ -263,16 +265,22 @@ public class WorkshopManager : MonoBehaviour
         }
 
         // 3. Uretim suresi hesaplamasi
-        float hizCarpani = GetProcessingSpeed(); // Ornegin 1.5 hiz ise uretim daha kisa surer
+        float hizCarpani = GetProcessingSpeed();
         if (hizCarpani <= 0f) hizCarpani = 1f;
 
         float gercekUretimSuresi = currentRecipe.BaseProductionTime / hizCarpani;
-        
-        // BUG FIX: Surenin sifir olup aninda tukenmesini engelle
         if (gercekUretimSuresi <= 0.1f) gercekUretimSuresi = 0.1f;
 
         // 4. Zamanlayiciyi calistir
         uretimZamanlayicisi += Time.deltaTime;
+
+        // Her 2 saniyede bir timer durumunu logla
+        debugLogTimer += Time.deltaTime;
+        if (debugLogTimer >= 2f)
+        {
+            debugLogTimer = 0f;
+            Debug.Log($"[Workshop Timer] {aktifUretilenItem}: {uretimZamanlayicisi:F2} / {gercekUretimSuresi:F2} sn (Hiz:{hizCarpani:F2})");
+        }
 
         if (uretimZamanlayicisi >= gercekUretimSuresi)
         {
