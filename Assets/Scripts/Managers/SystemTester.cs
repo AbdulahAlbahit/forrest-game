@@ -4,7 +4,10 @@ using ForrestGame.Managers;
 public class SystemTester : MonoBehaviour
 {
     [Header("Bolge Test Ayarlari")]
+    [Tooltip("Acilacak bolgenin RegionID'si (Inspector'dan girin).")]
     public int testRegionId = 1;
+    [Tooltip("RegionConfig asset'ini buraya suruklerin - bolge adini dinamik okumak icin.")]
+    public RegionConfig testRegionConfig;
 
     [Header("Upgrade Test Ayarlari")]
     [Tooltip("Test edilecek esyanin ItemID'si (Axe, Basket, Truck, Workshop, WorkshopQueue vb.)")]
@@ -116,48 +119,76 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test: Secili Bolgeyi Ac (Config)")]
     public void TestUnlockSelectedRegion()
     {
+        if (CloudSaveManager.Instance?.CurrentData == null)
+        {
+            Debug.LogError("[Test Bolge] CloudSaveManager veya CurrentData hazir degil!");
+            return;
+        }
         if (RegionManager.Instance == null)
         {
-            Debug.LogError($"[Test Bolge] RegionManager bulunamadi!");
+            Debug.LogError("[Test Bolge] RegionManager bulunamadi!");
             return;
         }
 
-        if (EconomyManager.Instance == null)
+        // RegionID'den bolge adini oku (Config varsa)
+        string regionName = null;
+        if (testRegionConfig != null)
         {
-            Debug.LogError($"[Test Bolge] EconomyManager bulunamadi!");
-            return;
+            RegionData regionData = testRegionConfig.GetRegionData(testRegionId);
+            regionName = regionData.RegionName;
         }
 
-        int maliyet = RegionManager.Instance.GetRegionCost(testRegionId);
-        Debug.Log($"Bolge {testRegionId} acilis testi baslatildi. Config'den okunan maliyet: {maliyet}");
-
-        bool basarili = RegionManager.Instance.UnlockRegion(testRegionId);
-        if (basarili)
+        if (string.IsNullOrEmpty(regionName))
         {
-            Debug.Log($"[Test Bolge] Bolge {testRegionId} kilidi acildi! Kalan Para: {EconomyManager.Instance.MevcutPara}");
+            Debug.LogWarning($"[Test Bolge] RegionConfig'den ID={testRegionId} bolgesi okunamadi. RegionManager.UnlockRegion(int) ile devam ediliyor.");
         }
         else
         {
-            Debug.LogWarning($"[Test Bolge] Bolge {testRegionId} acilamadi. (Onceden acildi veya para yetersiz - Mevcut: {EconomyManager.Instance.MevcutPara})");
+            Debug.Log($"[Test Bolge] Acilacak bolge: '{regionName}' (ID={testRegionId})");
+        }
+
+        // RegionManager iceride SaveData'yi cagiriyor
+        bool basarili = RegionManager.Instance.UnlockRegion(testRegionId);
+        if (basarili)
+        {
+            string ad = regionName ?? $"ID:{testRegionId}";
+            Debug.Log($"[Test Bolge] '{ad}' kilidi acildi ve aninda Firestore'a kaydedildi!");
+        }
+        else
+        {
+            Debug.LogWarning($"[Test Bolge] Bolge ID={testRegionId} acilamadi. (Zaten acik, para yetersiz veya config eksik)");
         }
     }
 
     [ContextMenu("Test: Bolgelerin Durumunu Kontrol Et")]
     public void TestCheckRegionStatus()
     {
-        if (RegionManager.Instance != null)
-        {
-            bool bolge1 = RegionManager.Instance.IsRegionUnlocked("Bolge 1");
-            bool bolge2 = RegionManager.Instance.IsRegionUnlocked("Bolge_2");
-            bool bolge3 = RegionManager.Instance.IsRegionUnlocked("Bolge_3");
+        if (RegionManager.Instance == null) { Debug.LogError("[Test Durum] RegionManager bulunamadi!"); return; }
+        if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test Durum] CurrentData null!"); return; }
 
-            Debug.Log($"[Test Durum] Bolge 1 Acik Mi: {bolge1}");
-            Debug.Log($"[Test Durum] Bolge 2 Acik Mi: {bolge2}");
-            Debug.Log($"[Test Durum] Bolge 3 Acik Mi: {bolge3}");
-        }
-        else
+        var acilanBolgeler = CloudSaveManager.Instance.CurrentData.AcilanBolgeler;
+
+        if (acilanBolgeler == null || acilanBolgeler.Count == 0)
         {
-            Debug.LogError("[Test Durum] RegionManager bulunamadi!");
+            Debug.Log("[Test Durum] Hic acilmis bolge yok.");
+            return;
+        }
+
+        Debug.Log($"[Test Durum] Acik Bolge Sayisi: {acilanBolgeler.Count}");
+        foreach (string bolge in acilanBolgeler)
+        {
+            Debug.Log($"[Test Durum]   ✓ {bolge}");
+        }
+
+        // Secili test bolgesi kontrol
+        if (testRegionConfig != null)
+        {
+            RegionData rd = testRegionConfig.GetRegionData(testRegionId);
+            if (!string.IsNullOrEmpty(rd.RegionName))
+            {
+                bool acikMi = RegionManager.Instance.IsRegionUnlocked(rd.RegionName);
+                Debug.Log($"[Test Durum] Secili bolge '{rd.RegionName}' acik mi: {acikMi}");
+            }
         }
     }
 
