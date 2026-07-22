@@ -1,4 +1,5 @@
 using UnityEngine;
+using ForrestGame.Managers;
 
 public class SystemTester : MonoBehaviour
 {
@@ -8,6 +9,9 @@ public class SystemTester : MonoBehaviour
     [Header("Upgrade Test Ayarlari")]
     [Tooltip("Test edilecek esyanin ItemID'si (Axe, Basket, Truck, Workshop, WorkshopQueue vb.)")]
     public string testItemId = "Axe";
+
+    [Header("Uretim ve Dukkan Test Ayarlari")]
+    public RecipeConfig testRecipe;
 
     // ═══════════════════════════════════════════
     //  Ekonomi Testleri
@@ -152,6 +156,77 @@ public class SystemTester : MonoBehaviour
         else
         {
             Debug.LogError("[Test Durum] RegionManager bulunamadi!");
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  Atolye ve Dukkan Testleri (YENI SİSTEM)
+    // ═══════════════════════════════════════════
+
+    [ContextMenu("Test 1: Odun Ekle")]
+    public void TestAddWoodToWorkshop()
+    {
+        if (WorkshopManager.Instance != null)
+        {
+            for(int i = 0; i < 50; i++)
+            {
+                WorkshopManager.Instance.AddWoodToQueue();
+            }
+            Debug.Log($"[Test] Atolyeye 50 odun eklendi. Guncel Atolye Odun Bakiyesi: {WorkshopManager.Instance.MevcutKuyruk}");
+        }
+        else
+        {
+            Debug.LogError("[Test] WorkshopManager bulunamadi!");
+        }
+    }
+
+    [ContextMenu("Test 2: Atolyede Uretim Baslat")]
+    public void TestStartProduction()
+    {
+        if (WorkshopManager.Instance != null && testRecipe != null)
+        {
+            WorkshopManager.Instance.StartProduction(testRecipe, 1);
+            Debug.Log($"[Test] {testRecipe.ItemID} uretimi baslatilmaya calisildi.");
+        }
+        else
+        {
+            Debug.LogError("[Test] WorkshopManager veya testRecipe bulunamadi! (Inspector'dan testRecipe atayin)");
+        }
+    }
+
+    [ContextMenu("Test 3: Kamyon Teslimati (Dukkana Ekle)")]
+    public void TestShopDelivery()
+    {
+        if (ShopManager.Instance != null && testRecipe != null)
+        {
+            ShopManager.Instance.AddStock(testRecipe.ItemID, 5);
+            Debug.Log($"[Test] Dukkana 5 adet {testRecipe.ItemID} eklendi.");
+        }
+        else
+        {
+            Debug.LogError("[Test] ShopManager veya testRecipe bulunamadi!");
+        }
+    }
+
+    [ContextMenu("Test 4: NPC Satisi (Stok Dus ve Para Ekle)")]
+    public void TestNPCSell()
+    {
+        if (ShopManager.Instance != null && testRecipe != null && EconomyManager.Instance != null)
+        {
+            bool sold = ShopManager.Instance.TryRemoveStock(testRecipe.ItemID, 1);
+            if (sold)
+            {
+                EconomyManager.Instance.AddMoney(testRecipe.BaseSalePrice);
+                Debug.Log($"[Test] 1 {testRecipe.ItemID} satildi! {testRecipe.BaseSalePrice} para kazanildi.");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test] Satis basarisiz. (Stokta yeterli {testRecipe.ItemID} yok)");
+            }
+        }
+        else
+        {
+            Debug.LogError("[Test] ShopManager, EconomyManager veya testRecipe bulunamadi!");
         }
     }
 }
