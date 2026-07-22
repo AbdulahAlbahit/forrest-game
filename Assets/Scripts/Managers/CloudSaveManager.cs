@@ -174,7 +174,31 @@ public class CloudSaveManager : MonoBehaviour
         // ItemLevels sozlugunu Firestore'a yaz
         if (data.ItemLevels != null)
         {
-            playerDict["ItemLevels"] = data.ItemLevels.ToDictionary();
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.ItemLevels.keys) dict[key] = data.ItemLevels.Get(key);
+            playerDict["ItemLevels"] = dict;
+        }
+        
+        // Yeni Sistem: ShopInventory, WorkshopQueue ve ReadyForTruck yaz
+        if (data.ShopInventory != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.ShopInventory.keys) dict[key] = data.ShopInventory.Get(key);
+            playerDict["ShopInventory"] = dict;
+        }
+        
+        if (data.WorkshopQueue != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.WorkshopQueue.keys) dict[key] = data.WorkshopQueue.Get(key);
+            playerDict["WorkshopQueue"] = dict;
+        }
+
+        if (data.ReadyForTruck != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.ReadyForTruck.keys) dict[key] = data.ReadyForTruck.Get(key);
+            playerDict["ReadyForTruck"] = dict;
         }
 
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
@@ -262,6 +286,25 @@ public class CloudSaveManager : MonoBehaviour
                 {
                     data.ItemLevels.FromDictionary(itemLevelsRaw);
                     Debug.Log($"CloudSaveManager: ItemLevels yuklendi ({itemLevelsRaw.Count} esya).");
+                }
+
+                // Yeni Sistem: ShopInventory, WorkshopQueue ve ReadyForTruck yukleme
+                data.ShopInventory = new SerializableDict();
+                if (dict.ContainsKey("ShopInventory") && dict["ShopInventory"] is Dictionary<string, object> shopInventoryRaw)
+                {
+                    data.ShopInventory.FromDictionary(shopInventoryRaw);
+                }
+
+                data.WorkshopQueue = new SerializableDict();
+                if (dict.ContainsKey("WorkshopQueue") && dict["WorkshopQueue"] is Dictionary<string, object> workshopQueueRaw)
+                {
+                    data.WorkshopQueue.FromDictionary(workshopQueueRaw);
+                }
+
+                data.ReadyForTruck = new SerializableDict();
+                if (dict.ContainsKey("ReadyForTruck") && dict["ReadyForTruck"] is Dictionary<string, object> readyForTruckRaw)
+                {
+                    data.ReadyForTruck.FromDictionary(readyForTruckRaw);
                 }
 
                 // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)

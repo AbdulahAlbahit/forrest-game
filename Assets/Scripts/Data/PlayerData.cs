@@ -20,6 +20,11 @@ public class PlayerData
     // --- Acilan Bolgeler ---
     public List<string> AcilanBolgeler;
 
+    // --- Yeni Core System Verileri ---
+    public SerializableDict ShopInventory;
+    public SerializableDict WorkshopQueue;
+    public SerializableDict ReadyForTruck;
+
     public PlayerData()
     {
         Para = 0;
@@ -32,6 +37,10 @@ public class PlayerData
         OyunSuresi = 0f;
 
         AcilanBolgeler = new List<string>();
+        
+        ShopInventory = new SerializableDict();
+        WorkshopQueue = new SerializableDict();
+        ReadyForTruck = new SerializableDict();
     }
 
     /// <summary>
