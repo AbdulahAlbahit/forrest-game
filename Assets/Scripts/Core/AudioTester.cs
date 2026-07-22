@@ -18,7 +18,7 @@ namespace ForrestGame.Core
             // 'M' tuşuna basınca Müzik Çalar
             if (Keyboard.current.mKey.wasPressedThisFrame)
             {
-                AudioManager.Instance.PlayMusic("yağmur"); 
+                AudioManager.Instance.PlayMusic("kış sesi"); 
                 Debug.Log("yağmur sesi çalışıyor.");
             }
 
@@ -46,13 +46,13 @@ namespace ForrestGame.Core
             // 3. SES: 'Space' (Boşluk) tuşuna basınca
             if (Keyboard.current.spaceKey.wasPressedThisFrame)
             {
-                AudioManager.Instance.PlaySFX("KamyonKornasi"); // İsmi kafama göre yazdım, kendi isminle değiştir.
+                AudioManager.Instance.PlaySFX("button0"); // İsmi kafama göre yazdım, kendi isminle değiştir.
             }
 
             // 4. SES: 'W' tuşuna basınca (Örnek olarak ekledim)
             if (Keyboard.current.wKey.wasPressedThisFrame)
             {
-                AudioManager.Instance.PlaySFX("TestereSesi"); 
+                AudioManager.Instance.PlaySFX("button1"); 
             }
 
             /* 

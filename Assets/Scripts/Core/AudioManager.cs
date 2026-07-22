@@ -23,10 +23,16 @@ namespace ForrestGame.Core
         public AudioSource musicSource;
         [Tooltip("Balta, buton gibi kısa ses efektlerini çalan kaynak")]
         public AudioSource sfxSource;
+        [Tooltip("Yağmur, rüzgar gibi sürekli doğa seslerini çalan kaynak")]
+        public AudioSource ambienceSource;
+        [Tooltip("Kamyon, motor gibi sürekli araç seslerini çalan kaynak")]
+        public AudioSource vehicleSource;
 
         [Header("Sound Arrays (Ses Listeleri)")]
         public Sound[] musicSounds;
         public Sound[] sfxSounds;
+        public Sound[] ambienceSounds;
+        public Sound[] vehicleSounds;
 
         private void Awake()
         {
@@ -80,11 +86,59 @@ namespace ForrestGame.Core
         }
 
         /// <summary>
+        /// Arka plan doğa/hava durumu (Ambiyans) sesini çalmak için kullanılır.
+        /// </summary>
+        public void PlayAmbience(string name)
+        {
+            Sound s = Array.Find(ambienceSounds, x => x.name == name);
+            if (s == null)
+            {
+                Debug.LogWarning("Ambiyans Bulunamadı: " + name);
+                return;
+            }
+
+            ambienceSource.clip = s.clip;
+            ambienceSource.volume = s.volume;
+            ambienceSource.pitch = s.pitch;
+            ambienceSource.loop = true;
+            ambienceSource.Play();
+        }
+
+        /// <summary>
+        /// Araç motoru gibi sürekli sesleri çalmak için kullanılır.
+        /// </summary>
+        public void PlayVehicle(string name)
+        {
+            Sound s = Array.Find(vehicleSounds, x => x.name == name);
+            if (s == null)
+            {
+                Debug.LogWarning("Araç Sesi Bulunamadı: " + name);
+                return;
+            }
+
+            vehicleSource.clip = s.clip;
+            vehicleSource.volume = s.volume;
+            vehicleSource.pitch = s.pitch;
+            vehicleSource.loop = true;
+            vehicleSource.Play();
+        }
+
+        /// <summary>
         /// Çalan müziği durdurur.
         /// </summary>
         public void StopMusic()
         {
             musicSource.Stop();
+        }
+
+        public void StopAmbience()
+        {
+            if(ambienceSource != null) ambienceSource.Stop();
+        }
+
+        public void StopVehicle()
+        {
+            if(vehicleSource != null) vehicleSource.Stop();
         }
     }
 }
