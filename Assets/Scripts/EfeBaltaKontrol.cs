@@ -88,36 +88,36 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         if (TreeManager.Instance != null)
         {
-            TreeManager.Instance.HitTreeAt(agacKonumu, GetEfektifBaltaHasari());
+            TreeManager.Instance.HitTreeAt(agacKonumu, GetEffectiveAxeDamage());
             EfeOynanisEventleri.BaltaAgacaVurdugunuYayinla(transform);
         }
     }
 
-    private int GetEfektifBaltaHasari()
+    private int GetEffectiveAxeDamage()
     {
         if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return agacHasari;
 
-        float carpan;
+        float multiplier;
         switch (SeasonManager.Instance.aktifMevsim)
         {
             case MevsimTuru.Ilkbahar:
-                carpan = SeasonManager.Instance.ayarlar.ilkbaharBaltaHasari;
+                multiplier = SeasonManager.Instance.ayarlar.ilkbaharBaltaHasari;
                 break;
             case MevsimTuru.Yaz:
-                carpan = SeasonManager.Instance.ayarlar.yazBaltaHasari;
+                multiplier = SeasonManager.Instance.ayarlar.yazBaltaHasari;
                 break;
             case MevsimTuru.Sonbahar:
-                carpan = SeasonManager.Instance.ayarlar.sonbaharBaltaHasari;
+                multiplier = SeasonManager.Instance.ayarlar.sonbaharBaltaHasari;
                 break;
             case MevsimTuru.Kis:
-                carpan = SeasonManager.Instance.ayarlar.kisBaltaHasari;
+                multiplier = SeasonManager.Instance.ayarlar.kisBaltaHasari;
                 break;
             default:
-                carpan = 1f;
+                multiplier = 1f;
                 break;
         }
 
-        return Mathf.Max(1, Mathf.RoundToInt(agacHasari * carpan));
+        return Mathf.Max(1, Mathf.RoundToInt(agacHasari * multiplier));
     }
 
     private bool EnYakinTerrainAgaciniBul(out Vector3 enYakinAgacKonumu)

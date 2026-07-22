@@ -290,11 +290,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!82 &616280041 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: 7662191885529424382, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-  m_PrefabInstance: {fileID: 8004704820958558169}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1270344622
 GameObject:
   m_ObjectHideFlags: 0
@@ -432,7 +427,7 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!1001 &8004704820958558169
+--- !u!1001 &1453252033
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -443,62 +438,6 @@ PrefabInstance:
     - target: {fileID: 2419292612478867452, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
       propertyPath: m_Name
       value: AudioManager
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSource
-      value: 
-      objectReference: {fileID: 616280041}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.size
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: musicSounds.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[0].clip
-      value: 
-      objectReference: {fileID: 8300000, guid: e7013d42d34bb8a47804423c857de763, type: 3}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[0].name
-      value: "A\u011Fa\xE7 y\u0131k\u0131lma"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[1].clip
-      value: 
-      objectReference: {fileID: 8300000, guid: e5b3e9356629bd94f8090c61780154ee, type: 3}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[1].name
-      value: "Balta vuru\u015Fu"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[0].pitch
-      value: 1.03
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[1].pitch
-      value: 1.01
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: musicSounds.Array.data[0].clip
-      value: 
-      objectReference: {fileID: 8300000, guid: 054ce55e9b0a68f4883a1f04b5f2135f, type: 3}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: musicSounds.Array.data[0].name
-      value: "ya\u011Fmur"
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[0].volume
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: sfxSounds.Array.data[1].volume
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
-      propertyPath: musicSounds.Array.data[0].volume
-      value: 0.372
       objectReference: {fileID: 0}
     - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -551,5 +490,5 @@ SceneRoots:
   m_Roots:
   - {fileID: 1270344625}
   - {fileID: 401255887}
-  - {fileID: 8004704820958558169}
   - {fileID: 244368222}
+  - {fileID: 1453252033}

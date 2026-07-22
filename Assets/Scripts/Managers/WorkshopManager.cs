@@ -121,14 +121,14 @@ public class WorkshopManager : MonoBehaviour
 
     public float GetProcessingSpeed()
     {
-        float temelHiz = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue("Workshop") : cachedSpeed;
-        return temelHiz * GetMevsimUretimCarpani();
+        float baseSpeed = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue("Workshop") : cachedSpeed;
+        return baseSpeed * GetSeasonProductionMultiplier();
     }
 
-    private float GetMevsimUretimCarpani()
+    private float GetSeasonProductionMultiplier()
     {
         if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return 1f;
-        if (SeasonManager.Instance.aktifMevsim == MevsimTuru.Yaz) return SeasonManager.Instance.ayarlar.yazUretimHizi;
+        if (SeasonManager.Instance.aktifMevsim == MevsimTuru.Yaz) return SeasonManager.Instance.ayarlar.summerProductionSpeed;
         return 1f;
     }
 
