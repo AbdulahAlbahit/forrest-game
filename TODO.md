@@ -42,6 +42,10 @@
 - [ ] **P2 / BELİRLENECEK:** Mobil joystick'i farklı çözünürlük, safe area ve DPI değerlerinde test et.
 - [ ] **P2 / BELİRLENECEK:** Kamera engel/duvar arkasında kalma davranışını belirle.
 - [ ] **P2 / BELİRLENECEK:** Boş `PlayerMovement.cs` dosyasını referans kontrolünden sonra kaldır.
+- [x] **P2 / EFE:** Karaktere İlkbahar/Yaz/Sonbahar/Kış kıyafet yuvalarını ve ekip mevsim kodundan bağımsız `EfeMevsimKiyafetleri` geçiş API'sini ekle.
+- [x] **P2 / EFE:** CC0 lisanslı Quaternius Ultimate Modular Men resmi Humanoid Rig modellerini ayrı geçerli Avatar'larla karaktere bağla; kısa kollu yaz, gömlekli ilkbahar, hafif dış giyim sonbahar ve kalın koruyucu kış setlerini dört kıyafet yuvasına yerleştir.
+- [x] **P2 / EFE:** Mevsim geçişlerinde karakter kimliğini sabitle; dört kıyafette de aynı sakalsız, açık tenli erkek baş/yüz/saç modelini kullan ve yalnızca kıyafeti değiştir.
+- [ ] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
 
 ## Sprint 2 — ağaç kesme
 
