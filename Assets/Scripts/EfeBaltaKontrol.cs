@@ -6,12 +6,12 @@ public class EfeBaltaKontrol : MonoBehaviour
     [Header("Balta Saldırısı")]
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject balta;
-    [Min(0.1f)] [SerializeField] private float saldiriBeklemeSuresi = 0.65f;
+    [Min(0.1f)] [SerializeField] private float saldiriBeklemeSuresi = 0.95f;
 
     [Header("Ağaç Etkileşimi")]
     [Min(0.5f)] [SerializeField] private float agacEtkilesimMesafesi = 3f;
     [Min(1)] [SerializeField] private int agacHasari = 1;
-    [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.3f;
+    [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.42f;
 
     [Header("Saldırı Dengeli Ayak Duruşu")]
     [Min(0f)] [SerializeField] private float sagAyakIleriMesafesi = 0.17f;
@@ -19,16 +19,6 @@ public class EfeBaltaKontrol : MonoBehaviour
     [Min(0f)] [SerializeField] private float ayakYanalMesafesi = 0.11f;
     [Range(0.01f, 0.25f)] [SerializeField] private float durusaGecisSuresi = 0.1f;
     [Range(0.01f, 0.3f)] [SerializeField] private float durustanCikisSuresi = 0.15f;
-
-    [Header("Saldiri Gorsel Cesitliligi")]
-    [Range(0f, 35f)] [SerializeField] private float yanalVurusDonusAcisi = 24f;
-    [Range(0f, 20f)] [SerializeField] private float yanalVurusYatisAcisi = 10f;
-    [Range(0f, 25f)] [SerializeField] private float usttenVurusEgilmeAcisi = 16f;
-    [Range(0f, 25f)] [SerializeField] private float baltaYanalVurguAcisi = 14f;
-    [Range(0f, 30f)] [SerializeField] private float baltaUsttenVurguAcisi = 18f;
-    [Range(0f, 0.6f)] [SerializeField] private float yanalElVurusOfseti = 0.38f;
-    [Range(0f, 0.8f)] [SerializeField] private float usttenElVurusOfseti = 0.55f;
-    [Range(0f, 1f)] [SerializeField] private float elVurusIkAgirligi = 0.85f;
 
     private static readonly int SaldirParametresi = Animator.StringToHash("Saldir");
     private static readonly int HizParametresi = Animator.StringToHash("Hiz");
@@ -49,8 +39,6 @@ public class EfeBaltaKontrol : MonoBehaviour
     private bool baltaBaslangicPozuHazir;
     private int saldiriKatmaniIndexi = -1;
     private float saldiriKatmaniAgirligi;
-    private Transform ustGovdeKemigi;
-    private int saldiriCesidi = -1;
 
     public void BaltaSalla()
     {
@@ -67,7 +55,6 @@ public class EfeBaltaKontrol : MonoBehaviour
             AgacaDon(agacKonumu);
         }
 
-        saldiriCesidi = (saldiriCesidi + 1) % 3;
         SaldiriAyakDurusunuBaslat();
 
         if (saldiriKatmaniIndexi >= 0)
@@ -208,57 +195,6 @@ public class EfeBaltaKontrol : MonoBehaviour
             }
         }
 
-        int elIkKatmani = saldiriKatmaniIndexi >= 0 ? saldiriKatmaniIndexi : 0;
-        if (layerIndex == elIkKatmani)
-        {
-            SaldiriElYolunuUygula(durusAgirligi);
-        }
-    }
-
-    private void SaldiriElYolunuUygula(float durusAgirligi)
-    {
-        Transform sagEl = animator.GetBoneTransform(HumanBodyBones.RightHand);
-        if (sagEl == null || saldiriCesidi < 0 || durusAgirligi <= 0f)
-        {
-            animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 0f);
-            animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0f);
-            return;
-        }
-
-        float gecenSure = Time.time - durusBaslangicZamani;
-        float ilerleme = Mathf.Clamp01(gecenSure / saldiriBeklemeSuresi);
-        float yolVurgusu = Mathf.Sin(ilerleme * Mathf.PI) * durusAgirligi;
-        float ikAgirligi = yolVurgusu * elVurusIkAgirligi;
-        Vector3 hedefElKonumu = sagEl.position;
-
-        switch (saldiriCesidi)
-        {
-            case 0:
-                hedefElKonumu -= transform.right * yanalElVurusOfseti;
-                hedefElKonumu += transform.up * 0.06f;
-                break;
-            case 1:
-                hedefElKonumu += transform.right * yanalElVurusOfseti;
-                hedefElKonumu += transform.up * 0.06f;
-                break;
-            default:
-                Transform sagOmuz = animator.GetBoneTransform(HumanBodyBones.RightShoulder);
-                if (sagOmuz == null)
-                {
-                    sagOmuz = animator.GetBoneTransform(HumanBodyBones.RightUpperArm);
-                }
-
-                hedefElKonumu = sagOmuz != null
-                    ? sagOmuz.position
-                      + transform.up * usttenElVurusOfseti
-                      + transform.forward * 0.08f
-                    : hedefElKonumu + transform.up * (usttenElVurusOfseti + 0.25f);
-                break;
-        }
-
-        animator.SetIKPositionWeight(AvatarIKGoal.RightHand, ikAgirligi);
-        animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 0f);
-        animator.SetIKPosition(AvatarIKGoal.RightHand, hedefElKonumu);
     }
 
     private float SaldiriDurusAgirliginiHesapla()
@@ -316,16 +252,6 @@ public class EfeBaltaKontrol : MonoBehaviour
         if (animator != null)
         {
             saldiriKatmaniIndexi = animator.GetLayerIndex("Upper Body Attack");
-            ustGovdeKemigi = animator.GetBoneTransform(HumanBodyBones.UpperChest);
-            if (ustGovdeKemigi == null)
-            {
-                ustGovdeKemigi = animator.GetBoneTransform(HumanBodyBones.Chest);
-            }
-            if (ustGovdeKemigi == null)
-            {
-                ustGovdeKemigi = animator.GetBoneTransform(HumanBodyBones.Spine);
-            }
-
             if (saldiriKatmaniIndexi >= 0)
             {
                 animator.SetLayerWeight(saldiriKatmaniIndexi, 0f);
@@ -383,67 +309,6 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         balta.transform.localPosition = baltaBaslangicLocalPozisyonu + mevcutBaltaPozisyonOfseti;
         balta.transform.localRotation = baltaBaslangicLocalDonusu * mevcutBaltaDonusOfseti;
-        SaldiriCesitliliginiUygula();
-    }
-
-    private void SaldiriCesitliliginiUygula()
-    {
-        if (ustGovdeKemigi == null || saldiriCesidi < 0)
-        {
-            return;
-        }
-
-        float gecenSure = Time.time - durusBaslangicZamani;
-        if (gecenSure < 0f || gecenSure >= saldiriBeklemeSuresi)
-        {
-            return;
-        }
-
-        float ilerleme = Mathf.Clamp01(gecenSure / saldiriBeklemeSuresi);
-        float hareketVurgusu = Mathf.Sin(ilerleme * Mathf.PI)
-                              * SaldiriDurusAgirliginiHesapla();
-        float yatayDonus = 0f;
-        float yanalYatis = 0f;
-        float ileriEgilme = 0f;
-        float baltaYatayVurgusu = 0f;
-        float baltaUstVurgusu = 0f;
-
-        switch (saldiriCesidi)
-        {
-            case 0:
-                yatayDonus = -yanalVurusDonusAcisi;
-                yanalYatis = yanalVurusYatisAcisi;
-                baltaYatayVurgusu = -baltaYanalVurguAcisi;
-                break;
-            case 1:
-                yatayDonus = yanalVurusDonusAcisi;
-                yanalYatis = -yanalVurusYatisAcisi;
-                baltaYatayVurgusu = baltaYanalVurguAcisi;
-                break;
-            default:
-                ileriEgilme = -usttenVurusEgilmeAcisi;
-                baltaUstVurgusu = -baltaUsttenVurguAcisi;
-                break;
-        }
-
-        Quaternion govdeVurgusu = Quaternion.AngleAxis(
-                                      yatayDonus * hareketVurgusu,
-                                      transform.up)
-                                  * Quaternion.AngleAxis(
-                                      ileriEgilme * hareketVurgusu,
-                                      transform.right)
-                                  * Quaternion.AngleAxis(
-                                      yanalYatis * hareketVurgusu,
-                                      transform.forward);
-        ustGovdeKemigi.rotation = govdeVurgusu * ustGovdeKemigi.rotation;
-
-        Quaternion baltaVurgusu = Quaternion.AngleAxis(
-                                      baltaYatayVurgusu * hareketVurgusu,
-                                      transform.up)
-                                  * Quaternion.AngleAxis(
-                                      baltaUstVurgusu * hareketVurgusu,
-                                      transform.right);
-        balta.transform.rotation = baltaVurgusu * balta.transform.rotation;
     }
 
     private void OnDisable()
@@ -475,13 +340,5 @@ public class EfeBaltaKontrol : MonoBehaviour
         ayakYanalMesafesi = Mathf.Max(0f, ayakYanalMesafesi);
         durusaGecisSuresi = Mathf.Clamp(durusaGecisSuresi, 0.01f, saldiriBeklemeSuresi);
         durustanCikisSuresi = Mathf.Clamp(durustanCikisSuresi, 0.01f, saldiriBeklemeSuresi);
-        yanalVurusDonusAcisi = Mathf.Clamp(yanalVurusDonusAcisi, 0f, 35f);
-        yanalVurusYatisAcisi = Mathf.Clamp(yanalVurusYatisAcisi, 0f, 20f);
-        usttenVurusEgilmeAcisi = Mathf.Clamp(usttenVurusEgilmeAcisi, 0f, 25f);
-        baltaYanalVurguAcisi = Mathf.Clamp(baltaYanalVurguAcisi, 0f, 25f);
-        baltaUsttenVurguAcisi = Mathf.Clamp(baltaUsttenVurguAcisi, 0f, 30f);
-        yanalElVurusOfseti = Mathf.Clamp(yanalElVurusOfseti, 0f, 0.6f);
-        usttenElVurusOfseti = Mathf.Clamp(usttenElVurusOfseti, 0f, 0.8f);
-        elVurusIkAgirligi = Mathf.Clamp01(elVurusIkAgirligi);
     }
 }
