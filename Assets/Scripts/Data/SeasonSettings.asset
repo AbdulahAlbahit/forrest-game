@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b17bcf40f3caa641a1cb6da16a62bda, type: 3}
+  m_Name: SeasonSettings
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Data.SeasonSettings
+  mevsimSuresiDakika: 20
+  ilkbaharAgacBuyumeHizi: 1.2
+  ilkbaharBaltaHasari: 1
+  yazOduncuHizi: 1.1
+  yazBaltaHasari: 1
+  sonbaharAltinCarpani: 1.15
+  sonbaharBaltaHasari: 1
+  kisBaltaHasari: 0.75
+  kisAgacBuyumeHizi: 0.8

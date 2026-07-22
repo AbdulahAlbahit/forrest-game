@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ForrestGame.Core;
 
 public class WorkshopManager : MonoBehaviour
 {
@@ -118,11 +119,15 @@ public class WorkshopManager : MonoBehaviour
     /// </summary>
     public float GetProcessingSpeed()
     {
-        if (UpgradeManager.Instance != null)
-        {
-            return UpgradeManager.Instance.GetItemValue("Workshop");
-        }
-        return cachedSpeed;
+        float temelHiz = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue("Workshop") : cachedSpeed;
+        return temelHiz * GetMevsimUretimCarpani();
+    }
+
+    private float GetMevsimUretimCarpani()
+    {
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return 1f;
+        if (SeasonManager.Instance.aktifMevsim == MevsimTuru.Yaz) return SeasonManager.Instance.ayarlar.yazUretimHizi;
+        return 1f;
     }
 
     /// <summary>

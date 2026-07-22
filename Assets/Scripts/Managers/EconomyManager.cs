@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ForrestGame.Core;
 
 public class EconomyManager : MonoBehaviour
 {
@@ -79,10 +80,19 @@ public class EconomyManager : MonoBehaviour
             return;
         }
 
-        CloudSaveManager.Instance.CurrentData.Para += amount;
+        int efektifMiktar = Mathf.RoundToInt(amount * GetMevsimAltinCarpani());
+
+        CloudSaveManager.Instance.CurrentData.Para += efektifMiktar;
         OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
-        
-        Debug.Log($"EconomyManager: {amount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+
+        Debug.Log($"EconomyManager: {efektifMiktar} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+    }
+
+    private float GetMevsimAltinCarpani()
+    {
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return 1f;
+        if (SeasonManager.Instance.aktifMevsim == MevsimTuru.Sonbahar) return SeasonManager.Instance.ayarlar.sonbaharAltinCarpani;
+        return 1f;
     }
 
     /// <summary>
