@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c3981ed0af485d4ab5a93de4d1efc4d, type: 3}
   m_Name: Axe
   m_EditorClassIdentifier: Assembly-CSharp::ItemUpgradeConfig
-  ItemID: NewItem
+  ItemID: Axe
   Category: 0
   Effect: 0
   BasePrice: 50
