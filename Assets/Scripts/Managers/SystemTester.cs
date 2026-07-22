@@ -182,13 +182,27 @@ public class SystemTester : MonoBehaviour
         int readyQ    = d.ReadyForTruck  != null ? d.ReadyForTruck.Get(itemId, 0)  : -1;
         int shopQ     = d.ShopInventory  != null ? d.ShopInventory.Get(itemId, 0)  : -1;
 
+        // tumTarifler kontrolu - COKCA ONEMLI
+        bool tarifVar = false;
+        if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+        {
+            foreach (var r in WorkshopManager.Instance.tumTarifler)
+            {
+                if (r != null && r.ItemID == itemId) { tarifVar = true; break; }
+            }
+        }
+
         Debug.Log($"[DIAGNOZ] === {itemId} DURUM RAPORU ==="
             + $"\n  Atolye Odun Bakiyesi : {WorkshopManager.Instance.MevcutKuyruk}"
             + $"\n  WorkshopQueue (uretim sirasi) : {workshopQ}"
             + $"\n  ReadyForTruck (kamyon bekliyor) : {readyQ}"
             + $"\n  ShopInventory (dukkan stok) : {shopQ}"
             + $"\n  RecipeConfig RequiredWood : {testRecipe.RequiredWood}"
-            + $"\n  RecipeConfig BaseProductionTime : {testRecipe.BaseProductionTime}s");
+            + $"\n  RecipeConfig BaseProductionTime : {testRecipe.BaseProductionTime}s"
+            + $"\n  WorkshopManager.tumTarifler'de bu tarif var mi: {tarifVar}");
+
+        if (!tarifVar)
+            Debug.LogError($"[DIAGNOZ] !!! KRITIK: WorkshopManager Inspector'unda 'Tum Tarifler' dizisine '{itemId}' RecipeConfig'ini SURUKLE! Yoksa uretim sessizce iptal ediliyor.");
     }
 
     // ADIM 1: Atolyenin odun deposuna odun ekle (bellekte tutulur)
