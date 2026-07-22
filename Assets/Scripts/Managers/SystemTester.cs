@@ -12,6 +12,7 @@ public class SystemTester : MonoBehaviour
 
     [Header("Uretim ve Dukkan Test Ayarlari")]
     public RecipeConfig testRecipe;
+    public int testWoodAmount = 50;
 
     // ═══════════════════════════════════════════
     //  Ekonomi Testleri
@@ -168,11 +169,8 @@ public class SystemTester : MonoBehaviour
     {
         if (WorkshopManager.Instance != null)
         {
-            for(int i = 0; i < 50; i++)
-            {
-                WorkshopManager.Instance.AddWoodToQueue();
-            }
-            Debug.Log($"[Test] Atolyeye 50 odun eklendi. Guncel Atolye Odun Bakiyesi: {WorkshopManager.Instance.MevcutKuyruk}");
+            WorkshopManager.Instance.AddWood(testWoodAmount);
+            Debug.Log($"[Test] Atolyeye {testWoodAmount} odun eklendi. Guncel Atolye Odun Bakiyesi: {WorkshopManager.Instance.MevcutKuyruk}");
         }
         else
         {
