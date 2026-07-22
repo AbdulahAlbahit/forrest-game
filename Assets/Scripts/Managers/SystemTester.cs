@@ -13,6 +13,7 @@ public class SystemTester : MonoBehaviour
     [Header("Uretim ve Dukkan Test Ayarlari")]
     public RecipeConfig testRecipe;
     public int testWoodAmount = 50;
+    public int testDeliveryAmount = 5;
 
     // ═══════════════════════════════════════════
     //  Ekonomi Testleri
@@ -195,14 +196,29 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 3: Kamyon Teslimati (Dukkana Ekle)")]
     public void TestShopDelivery()
     {
-        if (ShopManager.Instance != null && testRecipe != null)
+        if (ShopManager.Instance != null && testRecipe != null && CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
-            ShopManager.Instance.AddStock(testRecipe.ItemID, 5);
-            Debug.Log($"[Test] Dukkana 5 adet {testRecipe.ItemID} eklendi.");
+            PlayerData data = CloudSaveManager.Instance.CurrentData;
+            if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
+
+            int mevcutUretilmis = data.WorkshopQueue.Get(testRecipe.ItemID, 0);
+
+            if (mevcutUretilmis >= testDeliveryAmount)
+            {
+                data.WorkshopQueue.Set(testRecipe.ItemID, mevcutUretilmis - testDeliveryAmount);
+                ShopManager.Instance.AddStock(testRecipe.ItemID, testDeliveryAmount);
+                CloudSaveManager.Instance.SaveData(data);
+                
+                Debug.Log($"[Test] Kamyon atolyeden {testDeliveryAmount} adet {testRecipe.ItemID} alip dukkana teslim etti!");
+            }
+            else
+            {
+                Debug.LogWarning($"[Test] Atolyede yeterli urun yok (Istenen: {testDeliveryAmount}, Mevcut: {mevcutUretilmis}), kamyon bos dondu!");
+            }
         }
         else
         {
-            Debug.LogError("[Test] ShopManager veya testRecipe bulunamadi!");
+            Debug.LogError("[Test] ShopManager, testRecipe veya CloudSaveManager bulunamadi!");
         }
     }
 
