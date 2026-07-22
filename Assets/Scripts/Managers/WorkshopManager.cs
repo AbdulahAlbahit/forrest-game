@@ -264,23 +264,26 @@ public class WorkshopManager : MonoBehaviour
             uretimZamanlayicisi -= gercekUretimSuresi;
 
             int currentAmount = data.WorkshopQueue.Get(aktifUretilenItem, 0);
-            if (currentAmount > 0)
+            int newAmount = Mathf.Max(0, currentAmount - 1);
+            data.WorkshopQueue.Set(aktifUretilenItem, newAmount);
+            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kalan siparis: {newAmount})");
+
+            // Eski sistem efektleri vs. icin (isterseniz kullanin)
+            OnWoodProcessed?.Invoke();
+
+            // Yeni sistem kamyon teslimati icin eventi firlat
+            OnProductionFinished?.Invoke(aktifUretilenItem, 1);
+            
+            // TEST ICIN GECICI COZUM (Kamyon henuz hazir degilse dogrudan dukkana ekle)
+            if (ForrestGame.Managers.ShopManager.Instance != null)
             {
-                data.WorkshopQueue.Set(aktifUretilenItem, currentAmount - 1);
-                Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kalan siparis: {currentAmount - 1})");
-
-                // Eski sistem efektleri vs. icin (isterseniz kullanin)
-                OnWoodProcessed?.Invoke();
-
-                // Yeni sistem kamyon teslimati icin eventi firlat
-                OnProductionFinished?.Invoke(aktifUretilenItem, 1);
+                ForrestGame.Managers.ShopManager.Instance.AddStock(aktifUretilenItem, 1);
+                Debug.Log($"WorkshopManager: {aktifUretilenItem} dogrudan dukkan stoguna eklendi.");
             }
-
-            if (data.WorkshopQueue.Get(aktifUretilenItem, 0) <= 0)
-            {
-                aktifUretilenItem = "";
-                uretimZamanlayicisi = 0f;
-            }
+            
+            // Bulut Kaydi ile Firestore senkronizasyonu
+            CloudSaveManager.Instance.SaveData(data);
+            uretimZamanlayicisi = 0f;
         }
     }
 
