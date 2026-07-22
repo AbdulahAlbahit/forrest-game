@@ -30,6 +30,8 @@ public class WorkshopProductionManager : MonoBehaviour
     // SFX Actions for AudioManager
     public static event Action OnHammerStrike;
     public static event Action OnProductionSuccess;
+    public static event Action OnCraftingStartedGlobal;
+    public static event Action OnCraftingFinishedGlobal;
 
     private bool _isProducing = false;
 
@@ -73,13 +75,54 @@ public class WorkshopProductionManager : MonoBehaviour
 
         SnapToPoint(smallLogStack, workshopTableTop);
         SnapToPoint(largeLogStack, workshopTableTop);
-
         Transform targetBoxPoint = (boxSpawnPoint != null) ? boxSpawnPoint : workshopTableTop;
         SnapToPoint(normalBoxes, targetBoxPoint);
         SnapToPoint(largeBoxes, targetBoxPoint);
 
+        // 1. KAMYONDAN MASAYA TEK TEK UÇAN ODUNLAR (Efe'nin sistemine benzer)
+        TruckRouteController truckController = truck != null ? truck.GetComponent<TruckRouteController>() : null;
+        GameObject logPrefab = TreeManager.Instance != null ? TreeManager.Instance.woodLogPrefab : null;
+        Transform startPoint = truckCargoPoint != null ? truckCargoPoint : (truck != null ? truck.transform : null);
+        Transform endPoint = workshopTableTop;
+
+        if (truckController != null && truckController.currentLoadedWood > 0 && logPrefab != null && startPoint != null && endPoint != null)
+        {
+            int totalLogs = truckController.currentLoadedWood;
+            float timePerLog = unloadDuration / totalLogs;
+            float flightDuration = Mathf.Clamp(timePerLog * 1.5f, 0.2f, 0.5f); // Her birinin havada kalma süresi
+
+            for (int i = 0; i < totalLogs; i++)
+            {
+                // Kamyonun kasasındaki odun sayısını 1 düşür (Efe'nin scripti anında 1 tane görseli silecek)
+                truckController.currentLoadedWood--;
+
+                // Havada uçacak sahte bir kütük oluştur
+                GameObject flyingLog = Instantiate(logPrefab, startPoint.position, startPoint.rotation);
+                
+                // Kütük fiziksel olarak düşmesin diye Rigidbody'sini sil
+                Rigidbody rb = flyingLog.GetComponent<Rigidbody>();
+                if (rb != null) Destroy(rb);
+                
+                // Çarpışmaları engelle
+                foreach (Collider col in flyingLog.GetComponentsInChildren<Collider>()) col.enabled = false;
+
+                // Uçuşu başlat ve ulaştığında yok et
+                StartCoroutine(AnimateBoxFlight(flyingLog, startPoint, endPoint, flightDuration, true));
+
+                // Bir sonraki kütüğün fırlaması için biraz bekle
+                yield return new WaitForSeconds(timePerLog);
+            }
+        }
+        else
+        {
+            // Eğer prefab yoksa veya sistem eksikse eski usül toptan sil
+            if (truckController != null) truckController.currentLoadedWood = 0;
+            yield return new WaitForSeconds(unloadDuration);
+        }
+
+        // Tüm odunlar uçtuktan sonra masadaki küçük yığın görünür olsun
         if (smallLogStack) smallLogStack.SetActive(true);
-        yield return new WaitForSeconds(unloadDuration * 0.5f);
+        yield return new WaitForSeconds(0.5f); // Yığın oluştuktan sonra yarım saniye es payı
 
         if (smallLogStack) smallLogStack.SetActive(false);
         if (largeLogStack) largeLogStack.SetActive(true);
@@ -93,6 +136,7 @@ public class WorkshopProductionManager : MonoBehaviour
         }
 
         GameLogger.Log("[WorkshopProduction] Crafting started.", this);
+        OnCraftingStartedGlobal?.Invoke();
 
         float elapsed = 0f;
         float sfxTimer = 0f;
@@ -118,17 +162,18 @@ public class WorkshopProductionManager : MonoBehaviour
         if (largeLogStack) largeLogStack.SetActive(false);
 
         OnProductionSuccess?.Invoke();
+        OnCraftingFinishedGlobal?.Invoke();
         GameLogger.Log("[WorkshopProduction] Crafting finished. Animating box flight.", this);
 
         if (normalBoxes) 
         {
             normalBoxes.SetActive(true);
-            Transform startPoint = (boxSpawnPoint != null) ? boxSpawnPoint : workshopTableTop;
+            Transform boxStartPoint = (boxSpawnPoint != null) ? boxSpawnPoint : workshopTableTop;
             Transform targetTruckCargo = (truckCargoPoint != null) ? truckCargoPoint : (truck != null ? truck.transform : null);
             
-            if (startPoint != null && targetTruckCargo != null) 
+            if (boxStartPoint != null && targetTruckCargo != null) 
             {
-                yield return StartCoroutine(AnimateBoxFlight(normalBoxes, startPoint, targetTruckCargo, 0.75f));
+                yield return StartCoroutine(AnimateBoxFlight(normalBoxes, boxStartPoint, targetTruckCargo, 0.75f));
             } 
             else 
             {
@@ -164,7 +209,7 @@ public class WorkshopProductionManager : MonoBehaviour
         GameLogger.Log("[WorkshopProduction] Cycle complete. Truck departing.", this);
     }
 
-    private IEnumerator AnimateBoxFlight(GameObject box, Transform startTransform, Transform endTransform, float duration) 
+    private IEnumerator AnimateBoxFlight(GameObject box, Transform startTransform, Transform endTransform, float duration, bool destroyAtEnd = false) 
     {
         float elapsed = 0f;
         Vector3 startPos = startTransform.position;
@@ -177,6 +222,8 @@ public class WorkshopProductionManager : MonoBehaviour
 
         while (elapsed < duration) 
         {
+            if (box == null) yield break; // Safety check
+
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
 
@@ -190,7 +237,11 @@ public class WorkshopProductionManager : MonoBehaviour
             yield return null;
         }
 
-        box.transform.position = endPos;
-        box.transform.rotation = endRot;
+        if (box != null)
+        {
+            box.transform.position = endPos;
+            box.transform.rotation = endRot;
+            if (destroyAtEnd) Destroy(box);
+        }
     }
 }

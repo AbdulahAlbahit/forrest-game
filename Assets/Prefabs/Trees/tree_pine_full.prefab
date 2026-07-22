@@ -64,6 +64,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: tree_pine_full
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 5e409b0b53a21b544a1e41d1fab1c878, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

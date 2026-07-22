@@ -38,58 +38,75 @@ namespace ForrestGame.CameraControl
                 // Oyun başladığında orjinal (opak) materyalleri hafızaya al
                 _originalMaterials = targetRenderer.materials;
             }
+
+            StartCoroutine(FadeCheckRoutine());
         }
 
-        private void Update()
+        private System.Collections.IEnumerator FadeCheckRoutine()
         {
-            // Hata tespiti için zorunlu alanlar yoksa çalışmayı durdur
-            if (player == null || _camera == null || targetRenderer == null) return;
-            if (transparentMaterials == null || transparentMaterials.Length == 0) return;
-
-            Vector3 camPos = _camera.position;
-            Vector3 targetPos = player.position + Vector3.up * 1f; // Göğüs hizası
-            Vector3 dir = targetPos - camPos;
-            float distToPlayer = dir.magnitude;
-            
-            bool isBlocking = false;
-
-            Ray ray = new Ray(camPos, dir.normalized);
-            float hitDistance;
-
-            // Kameradan çıkan ışın, duvarın görsel sınırlarına (kutusuna) değiyor mu?
-            if (targetRenderer.bounds.IntersectRay(ray, out hitDistance))
+            while (true)
             {
-                // Değiyorsa, bu duvar oyuncudan daha mı YAKINDA? (Yani araya mı girmiş)
-                if (hitDistance < distToPlayer)
+                // Hata tespiti için zorunlu alanlar yoksa çalışmayı durdur
+                if (player == null || _camera == null || targetRenderer == null) 
                 {
-                    isBlocking = true;
+                    yield return new WaitForSeconds(0.1f);
+                    continue;
                 }
-            }
-
-            // Eğer engelliyorsak ve henüz saydamlaşmadıysak
-            if (isBlocking && !_isFaded)
-            {
-                _isFaded = true;
                 
-                if (transparentMaterials.Length == _originalMaterials.Length)
+                if (transparentMaterials == null || transparentMaterials.Length == 0)
                 {
-                    targetRenderer.materials = transparentMaterials;
+                    yield return new WaitForSeconds(0.1f);
+                    continue;
                 }
-                else
+
+                Vector3 camPos = _camera.position;
+                Vector3 targetPos = player.position + Vector3.up * 1f; // Göğüs hizası
+                Vector3 dir = targetPos - camPos;
+                float distToPlayer = dir.magnitude;
+                
+                bool isBlocking = false;
+
+                Ray ray = new Ray(camPos, dir.normalized);
+                float hitDistance;
+
+                // Kameradan çıkan ışın, duvarın görsel sınırlarına (kutusuna) değiyor mu?
+                if (targetRenderer.bounds.IntersectRay(ray, out hitDistance))
                 {
-                    Material[] newMats = new Material[_originalMaterials.Length];
-                    for (int i = 0; i < newMats.Length; i++)
+                    // Değiyorsa, bu duvar oyuncudan daha mı YAKINDA? (Yani araya mı girmiş)
+                    if (hitDistance < distToPlayer)
                     {
-                        newMats[i] = transparentMaterials[0];
+                        isBlocking = true;
                     }
-                    targetRenderer.materials = newMats;
                 }
-            }
-            // Artık engellemiyorsak ve saydamsak
-            else if (!isBlocking && _isFaded)
-            {
-                _isFaded = false;
-                targetRenderer.materials = _originalMaterials;
+
+                // Eğer engelliyorsak ve henüz saydamlaşmadıysak
+                if (isBlocking && !_isFaded)
+                {
+                    _isFaded = true;
+                    
+                    if (transparentMaterials.Length == _originalMaterials.Length)
+                    {
+                        targetRenderer.materials = transparentMaterials;
+                    }
+                    else
+                    {
+                        Material[] newMats = new Material[_originalMaterials.Length];
+                        for (int i = 0; i < newMats.Length; i++)
+                        {
+                            newMats[i] = transparentMaterials[0];
+                        }
+                        targetRenderer.materials = newMats;
+                    }
+                }
+                // Artık engellemiyorsak ve saydamsak
+                else if (!isBlocking && _isFaded)
+                {
+                    _isFaded = false;
+                    targetRenderer.materials = _originalMaterials;
+                }
+
+                // Saniyede 10 kere kontrol etmek Raycast yükünü devasa oranda azaltır
+                yield return new WaitForSeconds(0.1f);
             }
         }
     }
