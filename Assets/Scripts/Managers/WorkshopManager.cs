@@ -11,8 +11,7 @@ public class WorkshopManager : MonoBehaviour
     [Tooltip("Uretilebilecek tum tarifleri buraya surukleyin.")]
     public RecipeConfig[] tumTarifler;
 
-    // Eskiden odunlar dogrudan uretiliyordu, simdi mevcutKuyruk "Ham Odun Bakiyesi" olarak calisiyor.
-    private int mevcutKuyruk; 
+    // Odunlar dogrudan PlayerData uzerinden okunur ve guncellenir.
     
     // Uretim surecleri
     private float uretimZamanlayicisi;
@@ -42,9 +41,17 @@ public class WorkshopManager : MonoBehaviour
     /// </summary>
     public event Action<int> OnWorkshopUpgraded;
 
-    public int MevcutKuyruk => mevcutKuyruk;
-    public bool IsQueueFull => mevcutKuyruk >= GetWorkshopCapacity();
-    public bool IsQueueEmpty => mevcutKuyruk <= 0;
+    public int MevcutKuyruk 
+    {
+        get 
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                return CloudSaveManager.Instance.CurrentData.WorkshopRawWood;
+            return 0;
+        }
+    }
+    public bool IsQueueFull => MevcutKuyruk >= GetWorkshopCapacity();
+    public bool IsQueueEmpty => MevcutKuyruk <= 0;
 
     private void Awake()
     {
@@ -57,26 +64,30 @@ public class WorkshopManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        mevcutKuyruk = 0;
         uretimZamanlayicisi = 0f;
         cachedSpeed = 0.5f;
         cachedCapacity = 10;
     }
 
-    private void OnEnable()
+    private void Start()
     {
         if (CloudSaveManager.Instance != null)
         {
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+            if (CloudSaveManager.Instance.CurrentData != null)
+            {
+                HandleDataLoaded(CloudSaveManager.Instance.CurrentData);
+            }
         }
 
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
+            RefreshCachedValues();
         }
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         if (CloudSaveManager.Instance != null)
         {
@@ -92,9 +103,8 @@ public class WorkshopManager : MonoBehaviour
     private void HandleDataLoaded(PlayerData data)
     {
         RefreshCachedValues();
-        mevcutKuyruk = data.WorkshopRawWood;
-        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
-        Debug.Log($"WorkshopManager: Bulut verisi ile senkronize edildi. Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}, Odun: {mevcutKuyruk}");
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+        Debug.Log($"WorkshopManager: Bulut verisi ile senkronize edildi. Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}, Odun: {MevcutKuyruk}");
     }
 
     private void HandleItemUpgraded(string itemId, int newLevel)
@@ -152,18 +162,20 @@ public class WorkshopManager : MonoBehaviour
     /// </summary>
     public bool AddWoodToQueue()
     {
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("WorkshopManager: Bulut verisi hazir degil, odun eklenemiyor.");
+            return false;
+        }
+
         if (IsQueueFull)
         {
             Debug.LogWarning("WorkshopManager: Kapasite dolu! Odun eklenemiyor.");
             return false;
         }
 
-        mevcutKuyruk++;
-        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
-        {
-            CloudSaveManager.Instance.CurrentData.WorkshopRawWood = mevcutKuyruk;
-        }
-        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+        CloudSaveManager.Instance.CurrentData.WorkshopRawWood++;
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         return true;
     }
 
@@ -173,13 +185,16 @@ public class WorkshopManager : MonoBehaviour
     public void AddWood(int amount)
     {
         if (amount <= 0) return;
-        mevcutKuyruk += amount;
-        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+        
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
-            CloudSaveManager.Instance.CurrentData.WorkshopRawWood = mevcutKuyruk;
+            Debug.LogWarning("WorkshopManager: Bulut verisi hazir degil, odun eklenemiyor.");
+            return;
         }
-        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
-        Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {mevcutKuyruk}");
+
+        CloudSaveManager.Instance.CurrentData.WorkshopRawWood += amount;
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+        Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {MevcutKuyruk}");
     }
 
     /// <summary>
@@ -201,18 +216,16 @@ public class WorkshopManager : MonoBehaviour
         int requiredWood = recipe.RequiredWood * amount;
 
         // 2. Odun bakiyesi kontrolu
-        if (mevcutKuyruk < requiredWood)
+        if (MevcutKuyruk < requiredWood)
         {
-            Debug.LogWarning($"WorkshopManager: Yetersiz odun bakiyesi! Gereken: {requiredWood}, Mevcut: {mevcutKuyruk}");
+            Debug.LogWarning($"WorkshopManager: Yetersiz odun bakiyesi! Gereken: {requiredWood}, Mevcut: {MevcutKuyruk}");
             NotificationManager.Instance?.SendNotification("Yetersiz odun!");
             return false;
         }
 
         // 3. Kontroller gecti, islemi onayla ve odunu dus
-        mevcutKuyruk -= requiredWood;
-        
         PlayerData data = CloudSaveManager.Instance.CurrentData;
-        data.WorkshopRawWood = mevcutKuyruk; // Firebase verisini de guncelle
+        data.WorkshopRawWood -= requiredWood; // Firebase verisini de guncelle
 
         if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
 
@@ -223,7 +236,7 @@ public class WorkshopManager : MonoBehaviour
         Debug.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim siparisi alindi. Dusulen Odun: {requiredWood}");
         
         // Arayuz guncellemesi (Bulut kaydi otomatik donguye birakildi)
-        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         
         return true;
     }
