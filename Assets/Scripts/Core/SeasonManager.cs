@@ -32,6 +32,33 @@ namespace ForrestGame.Core
         [FormerlySerializedAs("agacKarMateryalleri")]
         public Material[] snowTreeMaterials;
 
+        [Header("Terrain Snow Blend")]
+        [Tooltip("Terrain'deki toprak (ground) Terrain Layer'inin index'i.")]
+        public int groundTerrainLayerIndex = 0;
+        [Tooltip("Terrain'deki kar (snow) Terrain Layer'inin index'i.")]
+        public int snowTerrainLayerIndex = 1;
+        [Tooltip("Terrain'deki karsiz yol (road) Terrain Layer'inin index'i.")]
+        public int roadTerrainLayerIndex = 2;
+        [Tooltip("Terrain'deki karli yol (roadSnow) Terrain Layer'inin index'i.")]
+        public int roadSnowTerrainLayerIndex = 3;
+
+        private float lastAppliedTerrainSnowAmount = -1f;
+
+        [Header("Directional Light Renk Gecisi")]
+        [Tooltip("Sahnedeki gunes/ay isigi (Directional Light).")]
+        public Light directionalLight;
+        public Color ilkbaharLightColor = Color.white;
+        public Color yazLightColor = new Color(1f, 0.968f, 0.780f); // #FFF7C7
+        public Color sonbaharLightColor = Color.white;
+        public Color kisLightColor = new Color(0.69f, 0.74f, 0.80f); // #B0BDCC daha soluk/soguk, gri-mavi kis isigi
+        public float ilkbaharLightIntensity = 1f;
+        public float yazLightIntensity = 1f;
+        public float sonbaharLightIntensity = 1f;
+        public float kisLightIntensity = 0.7f; // kapali/kararmis hava hissi
+        public float lightColorTransitionDuration = 5f;
+
+        private Coroutine lightColorTransitionCoroutine;
+
         [Tooltip("How many seconds the snow amount takes to smoothly transition between 0 and 1")]
         [FormerlySerializedAs("karGecisSuresiSaniye")]
         public float snowTransitionDuration = 5f;
@@ -197,6 +224,58 @@ namespace ForrestGame.Core
                 StopCoroutine(snowTransitionCoroutine);
             }
             snowTransitionCoroutine = StartCoroutine(TransitionSnowAmount(targetSnowAmount));
+
+            if (directionalLight != null)
+            {
+                if (lightColorTransitionCoroutine != null)
+                {
+                    StopCoroutine(lightColorTransitionCoroutine);
+                }
+                lightColorTransitionCoroutine = StartCoroutine(TransitionLight(GetLightColorForSeason(aktifMevsim), GetLightIntensityForSeason(aktifMevsim)));
+            }
+        }
+
+        private Color GetLightColorForSeason(MevsimTuru mevsim)
+        {
+            switch (mevsim)
+            {
+                case MevsimTuru.Ilkbahar: return ilkbaharLightColor;
+                case MevsimTuru.Yaz: return yazLightColor;
+                case MevsimTuru.Sonbahar: return sonbaharLightColor;
+                case MevsimTuru.Kis: return kisLightColor;
+                default: return Color.white;
+            }
+        }
+
+        private float GetLightIntensityForSeason(MevsimTuru mevsim)
+        {
+            switch (mevsim)
+            {
+                case MevsimTuru.Ilkbahar: return ilkbaharLightIntensity;
+                case MevsimTuru.Yaz: return yazLightIntensity;
+                case MevsimTuru.Sonbahar: return sonbaharLightIntensity;
+                case MevsimTuru.Kis: return kisLightIntensity;
+                default: return 1f;
+            }
+        }
+
+        private IEnumerator TransitionLight(Color targetColor, float targetIntensity)
+        {
+            Color startColor = directionalLight.color;
+            float startIntensity = directionalLight.intensity;
+            float elapsed = 0f;
+
+            while (elapsed < lightColorTransitionDuration)
+            {
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / lightColorTransitionDuration);
+                directionalLight.color = Color.Lerp(startColor, targetColor, progress);
+                directionalLight.intensity = Mathf.Lerp(startIntensity, targetIntensity, progress);
+                yield return null;
+            }
+
+            directionalLight.color = targetColor;
+            directionalLight.intensity = targetIntensity;
         }
 
         private IEnumerator TransitionSnowAmount(float targetSnowAmount)
@@ -229,8 +308,53 @@ namespace ForrestGame.Core
 
             if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
             {
-                Terrain.activeTerrain.terrainData.RefreshPrototypes();
+                TerrainData terrainData = Terrain.activeTerrain.terrainData;
+                terrainData.RefreshPrototypes();
+
+                if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
+                {
+                    lastAppliedTerrainSnowAmount = snowAmount;
+                    ApplyTerrainSnowBlend(terrainData, snowAmount);
+                }
             }
+        }
+
+        private void ApplyTerrainSnowBlend(TerrainData terrainData, float snowAmount)
+        {
+            int layerCount = terrainData.alphamapLayers;
+            bool blendGround = groundTerrainLayerIndex < layerCount && snowTerrainLayerIndex < layerCount;
+            bool blendRoad = roadTerrainLayerIndex < layerCount && roadSnowTerrainLayerIndex < layerCount;
+
+            if (!blendGround && !blendRoad)
+            {
+                return;
+            }
+
+            int width = terrainData.alphamapWidth;
+            int height = terrainData.alphamapHeight;
+            float[,,] alphamaps = terrainData.GetAlphamaps(0, 0, width, height);
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (blendGround)
+                    {
+                        float groundPlusSnow = alphamaps[y, x, groundTerrainLayerIndex] + alphamaps[y, x, snowTerrainLayerIndex];
+                        alphamaps[y, x, snowTerrainLayerIndex] = groundPlusSnow * snowAmount;
+                        alphamaps[y, x, groundTerrainLayerIndex] = groundPlusSnow * (1f - snowAmount);
+                    }
+
+                    if (blendRoad)
+                    {
+                        float roadPlusRoadSnow = alphamaps[y, x, roadTerrainLayerIndex] + alphamaps[y, x, roadSnowTerrainLayerIndex];
+                        alphamaps[y, x, roadSnowTerrainLayerIndex] = roadPlusRoadSnow * snowAmount;
+                        alphamaps[y, x, roadTerrainLayerIndex] = roadPlusRoadSnow * (1f - snowAmount);
+                    }
+                }
+            }
+
+            terrainData.SetAlphamaps(0, 0, alphamaps);
         }
 
         private MevsimTuru SonrakiMevsimiBul(MevsimTuru suanki)

@@ -45,7 +45,7 @@
 - [x] **P2 / EFE:** Karaktere İlkbahar/Yaz/Sonbahar/Kış kıyafet yuvalarını ve ekip mevsim kodundan bağımsız `EfeMevsimKiyafetleri` geçiş API'sini ekle.
 - [x] **P2 / EFE:** CC0 lisanslı Quaternius Ultimate Modular Men resmi Humanoid Rig modellerini ayrı geçerli Avatar'larla karaktere bağla; kısa kollu yaz, gömlekli ilkbahar, hafif dış giyim sonbahar ve kalın koruyucu kış setlerini dört kıyafet yuvasına yerleştir.
 - [x] **P2 / EFE:** Mevsim geçişlerinde karakter kimliğini sabitle; dört kıyafette de aynı sakalsız, açık tenli erkek baş/yüz/saç modelini kullan ve yalnızca kıyafeti değiştir.
-- [ ] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
+- [x] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
 
 ## Sprint 2 — ağaç kesme
 
