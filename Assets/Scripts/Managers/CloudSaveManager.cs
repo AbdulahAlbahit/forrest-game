@@ -62,7 +62,6 @@ public class CloudSaveManager : MonoBehaviour
         }
         else
         {
-            // FirebaseAuthManager henuz hazir degil, hazir olana kadar bekle
             StartCoroutine(WaitForAuthManager());
         }
     }
@@ -86,6 +85,14 @@ public class CloudSaveManager : MonoBehaviour
         {
             FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
             isSubscribed = true;
+        }
+
+        // RACE CONDITION FIX: Abonelik aninda kullanici ZATEN login olmussa
+        // event bir daha ateslenmeyecek. Bu durumda HandleLoginSuccess'i dogrudan cagir.
+        if (FirebaseAuthManager.Instance.IsLoggedIn)
+        {
+            Debug.Log("CloudSaveManager: Giris zaten tamamlanmis, dogrudan Firestore baslatiliyor.");
+            HandleLoginSuccess();
         }
     }
 
