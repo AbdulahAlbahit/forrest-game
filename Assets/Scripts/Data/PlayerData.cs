@@ -25,6 +25,9 @@ public class PlayerData
     public SerializableDict WorkshopQueue;
     public SerializableDict ReadyForTruck;
 
+    // --- Gorev (Quest) Verileri ---
+    public SerializableDict ActiveQuests;
+
     public PlayerData()
     {
         Para = 0;
@@ -41,6 +44,7 @@ public class PlayerData
         ShopInventory = new SerializableDict();
         WorkshopQueue = new SerializableDict();
         ReadyForTruck = new SerializableDict();
+        ActiveQuests = new SerializableDict();
     }
 
     /// <summary>

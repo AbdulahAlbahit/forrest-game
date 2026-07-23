@@ -9,6 +9,8 @@ namespace ForrestGame.Managers
 
         // Event: ItemID ve Yeni Stok Miktari
         public static event Action<string, int> OnStockChanged;
+        // Event: ItemID ve Satilan Miktar
+        public static event Action<string, int> OnItemSold;
 
         private void Awake()
         {
@@ -75,6 +77,7 @@ namespace ForrestGame.Managers
                 CloudSaveManager.Instance.SaveData(data);
                 Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
                 NotificationManager.Instance?.SendNotification($"{itemId} satıldı!");
+                OnItemSold?.Invoke(itemId, amount);
                 return true;
             }
 
