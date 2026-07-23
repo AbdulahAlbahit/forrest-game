@@ -204,36 +204,51 @@ public class SystemTester : MonoBehaviour
         if (CloudSaveManager.Instance.CurrentData == null) { Debug.LogError("[DIAGNOZ] CurrentData NULL - Firebase login oldu mu?"); return; }
         if (WorkshopManager.Instance == null) { Debug.LogError("[DIAGNOZ] WorkshopManager YOK!"); return; }
         if (ShopManager.Instance == null) { Debug.LogError("[DIAGNOZ] ShopManager YOK!"); return; }
-        if (testRecipe == null) { Debug.LogError("[DIAGNOZ] testRecipe atanmamis! Inspector'dan sandalye asset'ini sur."); return; }
 
         PlayerData d = CloudSaveManager.Instance.CurrentData;
-        string itemId = testRecipe.ItemID;
 
-        int workshopQ = d.WorkshopQueue  != null ? d.WorkshopQueue.Get(itemId, 0)  : -1;
-        int readyQ    = d.ReadyForTruck  != null ? d.ReadyForTruck.Get(itemId, 0)  : -1;
-        int shopQ     = d.ShopInventory  != null ? d.ShopInventory.Get(itemId, 0)  : -1;
+        Debug.Log($"[DIAGNOZ] === GENEL DURUM RAPORU ===");
+        Debug.Log($"  Atolye Ham Odun Bakiyesi : {WorkshopManager.Instance.MevcutKuyruk}");
 
-        // tumTarifler kontrolu - COKCA ONEMLI
-        bool tarifVar = false;
-        if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+        LogDict("WorkshopQueue (Uretim Sirasi)", d.WorkshopQueue);
+        LogDict("ReadyForTruck (Kamyon Bekliyor)", d.ReadyForTruck);
+        LogDict("ShopInventory (Dukkan Stok)", d.ShopInventory);
+
+        if (testRecipe != null)
         {
-            foreach (var r in WorkshopManager.Instance.tumTarifler)
+            string itemId = testRecipe.ItemID;
+            bool tarifVar = false;
+            if (WorkshopManager.Instance.tumTarifler != null)
             {
-                if (r != null && r.ItemID == itemId) { tarifVar = true; break; }
+                foreach (var r in WorkshopManager.Instance.tumTarifler)
+                {
+                    if (r != null && r.ItemID == itemId) { tarifVar = true; break; }
+                }
             }
+            if (!tarifVar)
+                Debug.LogError($"[DIAGNOZ] !!! KRITIK: WorkshopManager Inspector'unda 'Tum Tarifler' dizisine '{itemId}' RecipeConfig'ini SURUKLE! Yoksa uretim sessizce iptal ediliyor.");
         }
+        else
+        {
+            Debug.LogWarning("[DIAGNOZ] testRecipe atanmamis, test icin atayin.");
+        }
+    }
 
-        Debug.Log($"[DIAGNOZ] === {itemId} DURUM RAPORU ==="
-            + $"\n  Atolye Odun Bakiyesi : {WorkshopManager.Instance.MevcutKuyruk}"
-            + $"\n  WorkshopQueue (uretim sirasi) : {workshopQ}"
-            + $"\n  ReadyForTruck (kamyon bekliyor) : {readyQ}"
-            + $"\n  ShopInventory (dukkan stok) : {shopQ}"
-            + $"\n  RecipeConfig RequiredWood : {testRecipe.RequiredWood}"
-            + $"\n  RecipeConfig BaseProductionTime : {testRecipe.BaseProductionTime}s"
-            + $"\n  WorkshopManager.tumTarifler'de bu tarif var mi: {tarifVar}");
-
-        if (!tarifVar)
-            Debug.LogError($"[DIAGNOZ] !!! KRITIK: WorkshopManager Inspector'unda 'Tum Tarifler' dizisine '{itemId}' RecipeConfig'ini SURUKLE! Yoksa uretim sessizce iptal ediliyor.");
+    private void LogDict(string title, SerializableDict dict)
+    {
+        if (dict == null || dict.keys.Count == 0)
+        {
+            Debug.Log($"  {title} : BOS");
+            return;
+        }
+        string s = $"  {title} : ";
+        var map = dict.ToDictionary();
+        foreach (var kvp in map)
+        {
+            if (System.Convert.ToInt32(kvp.Value) > 0)
+                s += $"[{kvp.Key}: {kvp.Value}] ";
+        }
+        Debug.Log(s);
     }
 
     // ADIM 1: Atolyenin odun deposuna odun ekle (bellekte tutulur)
@@ -281,31 +296,35 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 3: Kamyon Teslimati (Dukkana Ekle)")]
     public void TestTruckDelivery()
     {
-        if (testRecipe == null) { Debug.LogError("[Test 3] testRecipe atanmamis!"); return; }
         if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test 3] CurrentData null!"); return; }
         if (ShopManager.Instance == null) { Debug.LogError("[Test 3] ShopManager bulunamadi!"); return; }
 
-        string itemId = testRecipe.ItemID;
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
         if (data.ReadyForTruck == null) data.ReadyForTruck = new SerializableDict();
 
-        int hazirMiktar = data.ReadyForTruck.Get(itemId, 0);
-        int workshopSira = data.WorkshopQueue != null ? data.WorkshopQueue.Get(itemId, 0) : 0;
+        var readyDict = data.ReadyForTruck.ToDictionary();
+        bool anyLoaded = false;
 
-        Debug.Log($"[Test 3] Kamyon geldi! ReadyForTruck={hazirMiktar}, WorkshopQueue={workshopSira}");
-
-        if (hazirMiktar > 0)
+        foreach (var kvp in readyDict)
         {
-            // ReadyForTruck'tan temizle
-            data.ReadyForTruck.Set(itemId, 0);
-            // Dukkana ekle (AddStock iceride SaveData cagiriyor)
-            ShopManager.Instance.AddStock(itemId, hazirMiktar);
-            Debug.Log($"[Test 3] Kamyon {hazirMiktar} adet {itemId} alip dukkana teslim etti!");
+            string itemId = kvp.Key;
+            int hazirMiktar = System.Convert.ToInt32(kvp.Value);
+            
+            if (hazirMiktar > 0)
+            {
+                // ReadyForTruck'tan temizle
+                data.ReadyForTruck.Set(itemId, 0);
+                // Dukkana ekle (AddStock iceride SaveData cagiriyor)
+                ShopManager.Instance.AddStock(itemId, hazirMiktar);
+                Debug.Log($"[Test 3] Kamyon {hazirMiktar} adet '{itemId}' alip dukkana teslim etti!");
+                anyLoaded = true;
+            }
         }
-        else
+
+        if (!anyLoaded)
         {
-            Debug.LogWarning($"[Test 3] ReadyForTruck'ta {itemId} yok! Once 'Test 2: Uretim Baslat' cagir ve atolye uretmesini bekle.");
+            Debug.LogWarning($"[Test 3] ReadyForTruck bombos! Kamyona yuklenecek hazir urun yok. Once 'Test 2: Uretim Baslat' cagir ve atolye uretmesini bekle.");
         }
     }
 
@@ -313,26 +332,48 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 4: NPC Satisi (Stok Dus ve Para Ekle)")]
     public void TestNPCSell()
     {
-        if (ShopManager.Instance == null || testRecipe == null || EconomyManager.Instance == null)
+        if (ShopManager.Instance == null || EconomyManager.Instance == null)
         {
-            Debug.LogError("[Test 4] ShopManager, EconomyManager veya testRecipe bulunamadi!");
+            Debug.LogError("[Test 4] ShopManager veya EconomyManager bulunamadi!");
             return;
         }
         if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test 4] CurrentData null!"); return; }
 
-        string itemId = testRecipe.ItemID;
-        int shopStok = CloudSaveManager.Instance.CurrentData.ShopInventory?.Get(itemId, 0) ?? 0;
-        Debug.Log($"[Test 4] NPC geldi. Dukkan stok: {shopStok} {itemId}");
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        if (data.ShopInventory == null) data.ShopInventory = new SerializableDict();
 
-        bool sold = ShopManager.Instance.TryRemoveStock(itemId, 1);
-        if (sold)
+        var shopDict = data.ShopInventory.ToDictionary();
+        bool anySold = false;
+
+        foreach (var kvp in shopDict)
         {
-            EconomyManager.Instance.AddMoney(testRecipe.BaseSalePrice);
-            Debug.Log($"[Test 4] BASARILI: 1 {itemId} satildi! +{testRecipe.BaseSalePrice} para. Kalan stok: {CloudSaveManager.Instance.CurrentData.ShopInventory.Get(itemId, 0)}");
+            string itemId = kvp.Key;
+            int shopStok = System.Convert.ToInt32(kvp.Value);
+
+            if (shopStok > 0)
+            {
+                int price = 100;
+                if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+                {
+                    foreach (var r in WorkshopManager.Instance.tumTarifler)
+                    {
+                        if (r != null && r.ItemID == itemId) { price = r.BaseSalePrice; break; }
+                    }
+                }
+
+                bool sold = ShopManager.Instance.TryRemoveStock(itemId, 1);
+                if (sold)
+                {
+                    EconomyManager.Instance.AddMoney(price);
+                    Debug.Log($"[Test 4] BASARILI: 1 adet '{itemId}' satildi! +{price} para. Kalan stok: {data.ShopInventory.Get(itemId, 0)}");
+                    anySold = true;
+                }
+            }
         }
-        else
+
+        if (!anySold)
         {
-            Debug.LogWarning($"[Test 4] Satis basarisiz: Dukkan stokta {itemId} yok (Mevcut: {shopStok}). Once Test 3 ile kamyonu calistir.");
+            Debug.LogWarning($"[Test 4] Satis basarisiz: Dukkan stokta hicbir urun yok! Once Test 3 ile kamyonu calistir.");
         }
     }
 }
