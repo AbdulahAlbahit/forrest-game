@@ -1,10 +1,26 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ForrestGame.Managers
 {
+    /// <summary>
+    /// Tum gorevlerin ilerleme takibini ve otomatik odullendirme islemini yonetir.
+    /// 
+    /// KULLANIM (Unity Inspector):
+    /// 1. Bu component'in 'Tum Gorevler' listesine istedigin QuestConfig asset'lerini surukle.
+    /// 2. Player oyunda bir seyler yaptiginda (orn: masa sattigi an) QuestManager otomatik kontrol eder.
+    /// 3. Bir gorevin hedefine ulasilirsa Para ve XP aninda hesaba yatar, gorev CompletedQuests listesine kaydedilir.
+    /// 
+    /// YENI GOREV EKLEMEK ICIN:
+    /// Assets > Create > ForrestGame > Quest Config ile yeni bir asset olustur, doldurup bu listeye ekle.
+    /// </summary>
     public class QuestManager : MonoBehaviour
     {
         public static QuestManager Instance { get; private set; }
+
+        [Header("Tum Gorevler")]
+        [Tooltip("Oyundaki tum QuestConfig asset'lerini buraya surukle.")]
+        public List<QuestConfig> tumGorevler;
 
         private void Awake()
         {
@@ -28,28 +44,125 @@ namespace ForrestGame.Managers
             ShopManager.OnItemSold -= HandleItemSold;
         }
 
+        /// <summary>
+        /// ShopManager'dan bir satis eventi geldiginde calisir.
+        /// Ilerlemeyi gunceller, ardindan tum gorevleri tamamlanma acisindan kontrol eder.
+        /// </summary>
         private void HandleItemSold(string itemId, int amount)
         {
-            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
+            if (CloudSaveManager.Instance?.CurrentData == null) return;
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;
-            
+
             if (data.ActiveQuests == null)
-            {
                 data.ActiveQuests = new SerializableDict();
+            if (data.CompletedQuests == null)
+                data.CompletedQuests = new System.Collections.Generic.List<string>();
+
+            // Sayaci guncelle
+            string questKey = $"satilan_{itemId.ToLower()}";
+            int currentProgress = data.ActiveQuests.Get(questKey, 0);
+            int newProgress = currentProgress + amount;
+            data.ActiveQuests.Set(questKey, newProgress);
+
+            Debug.Log($"QuestManager: [{questKey}] ilerleme: {currentProgress} -> {newProgress}");
+
+            // Tamamlanan gorev var mi kontrol et ve otomatik odullendir
+            bool anyCompleted = CheckAndRewardQuests(data);
+
+            // Her durumda kaydet (ilerleme degisti)
+            CloudSaveManager.Instance.SaveData(data);
+        }
+
+        /// <summary>
+        /// Tum gorevleri tarar. Henuz tamamlanmamis ve hedefine ulasmi? gorevleri
+        /// otomatik olarak oduller ve CompletedQuests listesine ekler.
+        /// </summary>
+        private bool CheckAndRewardQuests(PlayerData data)
+        {
+            if (tumGorevler == null || tumGorevler.Count == 0)
+            {
+                Debug.LogWarning("QuestManager: 'Tum Gorevler' listesi bos! Inspector'dan QuestConfig'leri surukle.");
+                return false;
             }
 
-            // Guncellenecek gorev sayacinin anahtari
-            string questKey = $"satilan_{itemId.ToLower()}";
-            
-            // Mevcut ilerlemeyi al ve arttir
-            int currentProgress = data.ActiveQuests.Get(questKey, 0);
-            data.ActiveQuests.Set(questKey, currentProgress + amount);
+            bool anyCompleted = false;
 
-            Debug.Log($"QuestManager: Gorev ilerlemesi guncellendi -> {questKey}: {currentProgress + amount}");
+            foreach (QuestConfig quest in tumGorevler)
+            {
+                if (quest == null) continue;
 
-            // Aninda buluta kaydet
-            CloudSaveManager.Instance.SaveData(data);
+                // Zaten tamamlanmis mi?
+                if (data.CompletedQuests.Contains(quest.QuestID)) continue;
+
+                // Bu gorevin izledigi sayaci al
+                int progress = data.ActiveQuests.Get(quest.TargetKey, 0);
+
+                // Hedef doldu mu?
+                if (progress >= quest.TargetAmount)
+                {
+                    // ODULLENDIRME
+                    AwardQuest(quest, data);
+                    anyCompleted = true;
+                }
+            }
+
+            return anyCompleted;
+        }
+
+        /// <summary>
+        /// Belirtilen gorevi tamamlanmis olarak isaretler ve oduller verir.
+        /// </summary>
+        private void AwardQuest(QuestConfig quest, PlayerData data)
+        {
+            // CompletedQuests'e ekle (bir daha verilmesin)
+            data.CompletedQuests.Add(quest.QuestID);
+
+            // Para ver
+            if (quest.RewardGold > 0 && EconomyManager.Instance != null)
+            {
+                EconomyManager.Instance.AddMoney(quest.RewardGold);
+            }
+
+            // XP ver
+            if (quest.RewardXP > 0 && XPManager.Instance != null)
+            {
+                XPManager.Instance.AddXP(quest.RewardXP);
+            }
+
+            // Bildirim gonder
+            NotificationManager.Instance?.SendNotification(
+                $"Gorev Tamamlandi: {quest.QuestName}! +{quest.RewardGold} Altin, +{quest.RewardXP} XP"
+            );
+
+            Debug.Log($"QuestManager: [TAMAMLANDI] '{quest.QuestName}' (ID: {quest.QuestID}) " +
+                      $"| Odul: +{quest.RewardGold} Altin, +{quest.RewardXP} XP");
+        }
+
+        /// <summary>
+        /// Belirtilen gorevin mevcut ilerlemesini yuzde olarak dondurur (0.0 - 1.0).
+        /// UI paneli icin kullanilabilir.
+        /// </summary>
+        public float GetQuestProgress(string questId)
+        {
+            if (CloudSaveManager.Instance?.CurrentData == null) return 0f;
+            if (tumGorevler == null) return 0f;
+
+            QuestConfig quest = tumGorevler.Find(q => q != null && q.QuestID == questId);
+            if (quest == null) return 0f;
+
+            int progress = CloudSaveManager.Instance.CurrentData.ActiveQuests.Get(quest.TargetKey, 0);
+            return Mathf.Clamp01((float)progress / quest.TargetAmount);
+        }
+
+        /// <summary>
+        /// Belirtilen gorevin tamamlanip tamamlanmadigini dondurur.
+        /// UI paneli icin kullanilabilir.
+        /// </summary>
+        public bool IsQuestCompleted(string questId)
+        {
+            var data = CloudSaveManager.Instance?.CurrentData;
+            return data?.CompletedQuests != null && data.CompletedQuests.Contains(questId);
         }
     }
 }

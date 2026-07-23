@@ -27,7 +27,10 @@ public class PlayerData
     public SerializableDict ReadyForTruck;
 
     // --- Gorev (Quest) Verileri ---
+    /// <summary>Gorev ilerleme sayaclari. Ornek: ActiveQuests["satilan_masa"] = 4</summary>
     public SerializableDict ActiveQuests;
+    /// <summary>Odulu alinmis gorev ID'lerinin listesi. Ornek: ["q_ilk_masa", "q_buyuk_satis"]</summary>
+    public List<string> CompletedQuests;
 
     public PlayerData()
     {
@@ -47,6 +50,7 @@ public class PlayerData
         WorkshopQueue = new SerializableDict();
         ReadyForTruck = new SerializableDict();
         ActiveQuests = new SerializableDict();
+        CompletedQuests = new List<string>();
     }
 
     /// <summary>

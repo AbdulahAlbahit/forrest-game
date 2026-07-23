@@ -216,6 +216,12 @@ public class CloudSaveManager : MonoBehaviour
             playerDict["ActiveQuests"] = dict;
         }
 
+        // CompletedQuests listesini yaz
+        if (data.CompletedQuests != null)
+        {
+            playerDict["CompletedQuests"] = data.CompletedQuests;
+        }
+
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
@@ -329,6 +335,14 @@ public class CloudSaveManager : MonoBehaviour
                     data.ActiveQuests.FromDictionary(activeQuestsRaw);
                 }
 
+                // CompletedQuests listesini yukle
+                data.CompletedQuests = new System.Collections.Generic.List<string>();
+                if (dict.ContainsKey("CompletedQuests") && dict["CompletedQuests"] is System.Collections.Generic.List<object> completedRaw)
+                {
+                    foreach (object id in completedRaw)
+                        data.CompletedQuests.Add(id.ToString());
+                }
+
                 // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
                 // Eger eski alanlar varsa ve ItemLevels'da karsiligi yoksa, aktarim yap
                 if (dict.ContainsKey("BaltaSeviyesi") && !data.ItemLevels.ContainsKey("Axe"))
@@ -431,6 +445,7 @@ public class CloudSaveManager : MonoBehaviour
                     if (localData.WorkshopQueue == null) localData.WorkshopQueue = new SerializableDict();
                     if (localData.ReadyForTruck == null) localData.ReadyForTruck = new SerializableDict();
                     if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
+                    if (localData.CompletedQuests == null) localData.CompletedQuests = new System.Collections.Generic.List<string>();
 
                     CurrentData = localData;
                     Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
