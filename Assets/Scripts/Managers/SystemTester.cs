@@ -284,12 +284,19 @@ public class SystemTester : MonoBehaviour
             return;
         }
 
-        WorkshopManager.Instance.StartProduction(testRecipe, 1);
+        bool basarili = WorkshopManager.Instance.TryStartProduction(testRecipe, 1);
 
-        // Sonucu hemen goster
-        PlayerData d = CloudSaveManager.Instance.CurrentData;
-        int sirada = d.WorkshopQueue != null ? d.WorkshopQueue.Get(testRecipe.ItemID, 0) : 0;
-        Debug.Log($"[Test 2] Siparis verildi! WorkshopQueue[{testRecipe.ItemID}] = {sirada}. Atölye zamanlayici caliştıgında uretilecek.");
+        if (basarili)
+        {
+            // Sonucu hemen goster
+            PlayerData d = CloudSaveManager.Instance.CurrentData;
+            int sirada = d.WorkshopQueue != null ? d.WorkshopQueue.Get(testRecipe.ItemID, 0) : 0;
+            Debug.Log($"[Test 2] Siparis verildi! WorkshopQueue[{testRecipe.ItemID}] = {sirada}. Atölye zamanlayici caliştıgında uretilecek.");
+        }
+        else
+        {
+            Debug.LogWarning("[Test 2] Siparis verilemedi (TryStartProduction false dondu).");
+        }
     }
 
     // ADIM 3: Uretim bitti, ReadyForTruck'taki mallari al, dukkana ekle

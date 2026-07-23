@@ -167,6 +167,7 @@ public class CloudSaveManager : MonoBehaviour
             { "OyuncuSeviyesi", data.OyuncuSeviyesi },
             { "MevsimZamani", data.MevsimZamani },
             { "OyunSuresi", data.OyunSuresi },
+            { "WorkshopRawWood", data.WorkshopRawWood },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp }
         };
@@ -260,9 +261,10 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("XP")) data.XP = Convert.ToInt32(dict["XP"]);
                 if (dict.ContainsKey("OyuncuSeviyesi")) data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
 
-                // Zaman verileri
+                // Zaman ve Kaynak verileri
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
                 if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
+                if (dict.ContainsKey("WorkshopRawWood")) data.WorkshopRawWood = Convert.ToInt32(dict["WorkshopRawWood"]);
 
                 // Acilan Bolgeler
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
@@ -404,11 +406,11 @@ public class CloudSaveManager : MonoBehaviour
 
                 if (localData != null)
                 {
-                    // ItemLevels null olabilir (eski lokal kayit)
-                    if (localData.ItemLevels == null)
-                    {
-                        localData.ItemLevels = new SerializableDict();
-                    }
+                    if (localData.ItemLevels == null) localData.ItemLevels = new SerializableDict();
+                    if (localData.ShopInventory == null) localData.ShopInventory = new SerializableDict();
+                    if (localData.WorkshopQueue == null) localData.WorkshopQueue = new SerializableDict();
+                    if (localData.ReadyForTruck == null) localData.ReadyForTruck = new SerializableDict();
+                    if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
 
                     CurrentData = localData;
                     Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");

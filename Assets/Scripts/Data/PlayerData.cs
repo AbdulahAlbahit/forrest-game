@@ -21,6 +21,7 @@ public class PlayerData
     public List<string> AcilanBolgeler;
 
     // --- Yeni Core System Verileri ---
+    public int WorkshopRawWood;
     public SerializableDict ShopInventory;
     public SerializableDict WorkshopQueue;
     public SerializableDict ReadyForTruck;
@@ -41,6 +42,7 @@ public class PlayerData
 
         AcilanBolgeler = new List<string>();
         
+        WorkshopRawWood = 0;
         ShopInventory = new SerializableDict();
         WorkshopQueue = new SerializableDict();
         ReadyForTruck = new SerializableDict();
