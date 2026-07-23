@@ -116,6 +116,7 @@ public class EconomyManager : MonoBehaviour
         if (CloudSaveManager.Instance.CurrentData.Para < amount)
         {
             Debug.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+            NotificationManager.Instance?.SendNotification($"Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
             return false;
         }
 

@@ -74,6 +74,7 @@ namespace ForrestGame.Managers
                 // Stok dusunce aninda buluta kaydet
                 CloudSaveManager.Instance.SaveData(data);
                 Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
+                NotificationManager.Instance?.SendNotification($"{itemId} satıldı!");
                 return true;
             }
 

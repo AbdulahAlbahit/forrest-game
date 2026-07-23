@@ -296,6 +296,7 @@ public class WorkshopManager : MonoBehaviour
             data.ReadyForTruck.Set(aktifUretilenItem, readyAmount + 1);
 
             Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk Kaldi: {newAmount})");
+            NotificationManager.Instance?.SendNotification($"{aktifUretilenItem} üretimi tamamlandı!");
 
             OnWoodProcessed?.Invoke();
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);
