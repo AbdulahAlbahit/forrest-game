@@ -202,6 +202,13 @@ public class CloudSaveManager : MonoBehaviour
             playerDict["ReadyForTruck"] = dict;
         }
 
+        if (data.ActiveQuests != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.ActiveQuests.keys) dict[key] = data.ActiveQuests.Get(key);
+            playerDict["ActiveQuests"] = dict;
+        }
+
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
@@ -307,6 +314,12 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("ReadyForTruck") && dict["ReadyForTruck"] is Dictionary<string, object> readyForTruckRaw)
                 {
                     data.ReadyForTruck.FromDictionary(readyForTruckRaw);
+                }
+
+                data.ActiveQuests = new SerializableDict();
+                if (dict.ContainsKey("ActiveQuests") && dict["ActiveQuests"] is Dictionary<string, object> activeQuestsRaw)
+                {
+                    data.ActiveQuests.FromDictionary(activeQuestsRaw);
                 }
 
                 // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
