@@ -38,6 +38,14 @@ public class TruckRouteController : MonoBehaviour
     public static event Action OnTruckDeparture;
     public static event Action OnMarketSale;
 
+    /// <summary>
+    /// Atolyeye varan kamyonu harici bir secim sistemi devralmak isterse true dondurur.
+    /// Hicbir dinleyici yoksa veya tum dinleyiciler false dondururse eski otomatik
+    /// uretim akisi degismeden calisir.
+    /// </summary>
+    public delegate bool WorkshopSelectionRequestHandler(TruckRouteController truck);
+    public static event WorkshopSelectionRequestHandler OnWorkshopSelectionRequested;
+
     [Header("Wheels")]
     public List<Transform> wheels = new List<Transform>();
 
@@ -114,6 +122,26 @@ public class TruckRouteController : MonoBehaviour
         return true;
     }
 
+    private bool TryHandOffToWorkshopSelection()
+    {
+        WorkshopSelectionRequestHandler handlers = OnWorkshopSelectionRequested;
+        if (handlers == null) return false;
+
+        foreach (WorkshopSelectionRequestHandler handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                if (handler(this)) return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+        }
+
+        return false;
+    }
+
     private IEnumerator RunRouteLoop()
     {
         while (true)
@@ -132,10 +160,24 @@ public class TruckRouteController : MonoBehaviour
             yield return StartCoroutine(DriveToPoints(1, workshopIndex, true));
             
             OnTruckArrival?.Invoke();
-            
+
             isWorkshopProcessDone = false;
             WorkshopProductionManager workshop = FindObjectOfType<WorkshopProductionManager>();
-            if (workshop != null && workshop.StartProductionCycle(this.gameObject))
+            bool selectionSystemClaimed = TryHandOffToWorkshopSelection();
+
+            if (selectionSystemClaimed)
+            {
+                GameLogger.Log("[TruckRoute] Workshop selection system took control. Waiting for player choice and production...", this);
+
+                while (!isWorkshopProcessDone)
+                {
+                    yield return null;
+                }
+
+                GameLogger.Log("[TruckRoute] Selected package loaded! Departing to market.", this);
+                OnTruckDeparture?.Invoke();
+            }
+            else if (workshop != null && workshop.StartProductionCycle(this.gameObject))
             {
                 GameLogger.Log("[TruckRoute] Arrived at workshop. Waiting for production and packing...", this);
 
