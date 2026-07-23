@@ -48,6 +48,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 48a1d8f8214974b41b150bcef213c58a, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e48c0c1c0d59b9749a1990f5e425d79b, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 48a1d8f8214974b41b150bcef213c58a, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 386094920598ded4fad9d89239a91e86, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 48a1d8f8214974b41b150bcef213c58a, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 39d2d760beb510e4fa0a6274da66b485, type: 2}
     - target: {fileID: 919132149155446097, guid: 48a1d8f8214974b41b150bcef213c58a, type: 3}
       propertyPath: m_Name
       value: rock_largeD
