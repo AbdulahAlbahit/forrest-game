@@ -62,7 +62,6 @@ public class CloudSaveManager : MonoBehaviour
         }
         else
         {
-            // FirebaseAuthManager henuz hazir degil, hazir olana kadar bekle
             StartCoroutine(WaitForAuthManager());
         }
     }
@@ -86,6 +85,14 @@ public class CloudSaveManager : MonoBehaviour
         {
             FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
             isSubscribed = true;
+        }
+
+        // RACE CONDITION FIX: Abonelik aninda kullanici ZATEN login olmussa
+        // event bir daha ateslenmeyecek. Bu durumda HandleLoginSuccess'i dogrudan cagir.
+        if (FirebaseAuthManager.Instance.IsLoggedIn)
+        {
+            Debug.Log("CloudSaveManager: Giris zaten tamamlanmis, dogrudan Firestore baslatiliyor.");
+            HandleLoginSuccess();
         }
     }
 
@@ -167,6 +174,7 @@ public class CloudSaveManager : MonoBehaviour
             { "OyuncuSeviyesi", data.OyuncuSeviyesi },
             { "MevsimZamani", data.MevsimZamani },
             { "OyunSuresi", data.OyunSuresi },
+            { "WorkshopRawWood", data.WorkshopRawWood },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp }
         };
@@ -199,6 +207,19 @@ public class CloudSaveManager : MonoBehaviour
             Dictionary<string, object> dict = new Dictionary<string, object>();
             foreach(string key in data.ReadyForTruck.keys) dict[key] = data.ReadyForTruck.Get(key);
             playerDict["ReadyForTruck"] = dict;
+        }
+
+        if (data.ActiveQuests != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.ActiveQuests.keys) dict[key] = data.ActiveQuests.Get(key);
+            playerDict["ActiveQuests"] = dict;
+        }
+
+        // CompletedQuests listesini yaz
+        if (data.CompletedQuests != null)
+        {
+            playerDict["CompletedQuests"] = data.CompletedQuests;
         }
 
         GetPlayerDocument().SetAsync(playerDict).ContinueWithOnMainThread(task =>
@@ -260,9 +281,10 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("XP")) data.XP = Convert.ToInt32(dict["XP"]);
                 if (dict.ContainsKey("OyuncuSeviyesi")) data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
 
-                // Zaman verileri
+                // Zaman ve Kaynak verileri
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
                 if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
+                if (dict.ContainsKey("WorkshopRawWood")) data.WorkshopRawWood = Convert.ToInt32(dict["WorkshopRawWood"]);
 
                 // Acilan Bolgeler
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
@@ -305,6 +327,20 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("ReadyForTruck") && dict["ReadyForTruck"] is Dictionary<string, object> readyForTruckRaw)
                 {
                     data.ReadyForTruck.FromDictionary(readyForTruckRaw);
+                }
+
+                data.ActiveQuests = new SerializableDict();
+                if (dict.ContainsKey("ActiveQuests") && dict["ActiveQuests"] is Dictionary<string, object> activeQuestsRaw)
+                {
+                    data.ActiveQuests.FromDictionary(activeQuestsRaw);
+                }
+
+                // CompletedQuests listesini yukle
+                data.CompletedQuests = new System.Collections.Generic.List<string>();
+                if (dict.ContainsKey("CompletedQuests") && dict["CompletedQuests"] is System.Collections.Generic.List<object> completedRaw)
+                {
+                    foreach (object id in completedRaw)
+                        data.CompletedQuests.Add(id.ToString());
                 }
 
                 // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
@@ -404,11 +440,12 @@ public class CloudSaveManager : MonoBehaviour
 
                 if (localData != null)
                 {
-                    // ItemLevels null olabilir (eski lokal kayit)
-                    if (localData.ItemLevels == null)
-                    {
-                        localData.ItemLevels = new SerializableDict();
-                    }
+                    if (localData.ItemLevels == null) localData.ItemLevels = new SerializableDict();
+                    if (localData.ShopInventory == null) localData.ShopInventory = new SerializableDict();
+                    if (localData.WorkshopQueue == null) localData.WorkshopQueue = new SerializableDict();
+                    if (localData.ReadyForTruck == null) localData.ReadyForTruck = new SerializableDict();
+                    if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
+                    if (localData.CompletedQuests == null) localData.CompletedQuests = new System.Collections.Generic.List<string>();
 
                     CurrentData = localData;
                     Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
