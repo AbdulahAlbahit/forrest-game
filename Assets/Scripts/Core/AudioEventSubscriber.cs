@@ -14,6 +14,10 @@ namespace ForrestGame.Audio
             // Olayları Dinlemeye Başla (Radyo Alıcısını Aç)
             EfeOynanisEventleri.BaltaSallandi += OnBaltaSallandi;
             EfeOynanisEventleri.BaltaAgacaVurdu += OnBaltaAgacaVurdu;
+            
+            // TODO: Efe kendi koduna "AgacYikildi" anonsunu eklediğinde aşağıdaki satırın başındaki // işaretlerini sil.
+            // EfeOynanisEventleri.AgacYikildi += OnAgacYikildi;
+            
             EfeOynanisEventleri.OdunToplandi += OnOdunToplandi;
             EfeOynanisEventleri.SepetDoldu += OnSepetDoldu;
             
@@ -23,6 +27,18 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketBasladi += OnHareketBasladi;
             EfeOynanisEventleri.KosuBasladi += OnKosuBasladi;
+
+            // --- LOOP SESLERİ İÇİN DİNLEYİCİLER (Hazır olduğunda başlarındaki // silinecek) ---
+            // TODO: Mevsim ve oyun yöneticisi (SeasonManager vb.) eventleri yazdığında aktif et:
+            // OyunEventleri.OyunBasladi += OnOyunBasladi;
+            // MevsimEventleri.KisBasladi += OnKisBasladi;
+            // MevsimEventleri.YazBasladi += OnYazBasladi;
+            // MevsimEventleri.SonbaharBasladi += OnSonbaharBasladi;
+            // MevsimEventleri.IlkbaharBasladi += OnIlkbaharBasladi;
+            
+            // TODO: Efe araba/kamyon motoru için event yazdığında aktif et:
+            // EfeOynanisEventleri.KamyonCalisti += OnKamyonCalisti;
+            // EfeOynanisEventleri.KamyonDurdu += OnKamyonDurdu;
         }
 
         private void OnDisable()
@@ -30,6 +46,10 @@ namespace ForrestGame.Audio
             // Olayları Dinlemeyi Bırak (Hata çıkmasını önlemek için Alıcıyı Kapat)
             EfeOynanisEventleri.BaltaSallandi -= OnBaltaSallandi;
             EfeOynanisEventleri.BaltaAgacaVurdu -= OnBaltaAgacaVurdu;
+            
+            // TODO: Efe eventi eklediğinde burayı da aktif et.
+            // EfeOynanisEventleri.AgacYikildi -= OnAgacYikildi;
+            
             EfeOynanisEventleri.OdunToplandi -= OnOdunToplandi;
             EfeOynanisEventleri.SepetDoldu -= OnSepetDoldu;
             
@@ -39,6 +59,15 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketBasladi -= OnHareketBasladi;
             EfeOynanisEventleri.KosuBasladi -= OnKosuBasladi;
+
+            // OyunEventleri.OyunBasladi -= OnOyunBasladi;
+            // MevsimEventleri.KisBasladi -= OnKisBasladi;
+            // MevsimEventleri.YazBasladi -= OnYazBasladi;
+            // MevsimEventleri.SonbaharBasladi -= OnSonbaharBasladi;
+            // MevsimEventleri.IlkbaharBasladi -= OnIlkbaharBasladi;
+            
+            // EfeOynanisEventleri.KamyonCalisti -= OnKamyonCalisti;
+            // EfeOynanisEventleri.KamyonDurdu -= OnKamyonDurdu;
         }
 
         #region Ses Çalma Metotları
@@ -53,6 +82,12 @@ namespace ForrestGame.Audio
         {
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("BaltaVurma");
+        }
+
+        private void OnAgacYikildi(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("AgacDusme");
         }
 
         private void OnOdunToplandi(Transform kaynak, int mevcut, int kapasite)
@@ -87,8 +122,6 @@ namespace ForrestGame.Audio
 
         private void OnHareketBasladi(Transform kaynak)
         {
-            // Yürüme ayak sesini sürekli olarak çalmak için Ambiyans/Araç kaynağı gibi loop bir kaynak kullanılabilir.
-            // Şimdilik kısa bir ses ise PlaySFX ile de çalınabilir.
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("YurumeSesi");
         }
@@ -97,6 +130,50 @@ namespace ForrestGame.Audio
         {
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("KosmaSesi");
+        }
+
+        #endregion
+
+        #region Loop (Döngü) Müzik ve Motor Sesleri
+        
+        // Sesin türü ne olursa olsun (SFX, Loop Müzik, Motor Sesi) buradan çağırabiliriz.
+        // AudioManager zaten PlayMusic ve PlayVehicle fonksiyonlarında "loop=true" yapıyor.
+
+        private void OnOyunBasladi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("ArkaPlanMuzik");
+        }
+
+        private void OnKisBasladi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("KisMuzik");
+        }
+
+        private void OnYazBasladi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("YazMuzik");
+        }
+
+        private void OnSonbaharBasladi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("SonbaharMuzik");
+        }
+
+        private void OnIlkbaharBasladi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("IlkbaharMuzik");
+        }
+
+        private void OnKamyonCalisti(Transform kaynak)
+        {
+            // Motor sesini başlatır ve sonsuza kadar döngüye alır (loop)
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayVehicle("ArabaMotoru");
+        }
+
+        private void OnKamyonDurdu(Transform kaynak)
+        {
+            // Motoru durdurur
+            if (AudioManager.Instance != null) AudioManager.Instance.StopVehicle();
         }
 
         #endregion

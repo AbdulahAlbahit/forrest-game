@@ -52,22 +52,30 @@ MonoBehaviour:
   sfxSource: {fileID: -3431742011498886588}
   ambienceSource: {fileID: 638498652961130272}
   vehicleSource: {fileID: -2002412730579837201}
-  musicSounds: []
+  musicSounds:
+  - name: ArkaPlan
+    clip: {fileID: 8300000, guid: e13495aa3a7ee33409487b4ad431f297, type: 3}
+    volume: 1
+    pitch: 1.08
   sfxSounds:
+  - name: Button0
+    clip: {fileID: 8300000, guid: 73148831c81eba2469d76ee64820d7c1, type: 3}
+    volume: 1
+    pitch: 0
+  - name: Button1
+    clip: {fileID: 8300000, guid: 4dddb6ec8066c80479229bf515392494, type: 3}
+    volume: 1
+    pitch: 0
+  - name: BaltaSallama
+    clip: {fileID: 8300000, guid: a88d0b0d33ad7254db297c47e7d7eb90, type: 3}
+    volume: 1
+    pitch: 0
   - name: BaltaVurma
     clip: {fileID: 8300000, guid: e5b3e9356629bd94f8090c61780154ee, type: 3}
     volume: 1
     pitch: 0
-  - name: "A\u011Fa\xE7 y\u0131k\u0131lma"
+  - name: AgacDusme
     clip: {fileID: 8300000, guid: e7013d42d34bb8a47804423c857de763, type: 3}
-    volume: 1
-    pitch: 0
-  - name: button0
-    clip: {fileID: 8300000, guid: 73148831c81eba2469d76ee64820d7c1, type: 3}
-    volume: 1
-    pitch: 0
-  - name: button1
-    clip: {fileID: 8300000, guid: 4dddb6ec8066c80479229bf515392494, type: 3}
     volume: 1
     pitch: 0
   - name: para sesi1
@@ -78,19 +86,39 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 557517c6d0d1a4f4d906a25666fb9c1b, type: 3}
     volume: 1
     pitch: 0
-  - name: "seviye ge\xE7i\u015Fi"
+  - name: SeviyeGecisi
     clip: {fileID: 8300000, guid: f1967609f77e3d8419ced1b6791f0d7e, type: 3}
     volume: 1
     pitch: 0
   - name: OdunToplama
-    clip: {fileID: 8300000, guid: e1e1ae82674da75418c7cf8f8c8a9ab3, type: 3}
+    clip: {fileID: 8300000, guid: 935ab4573d97c7745a7667e6e13574ab, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: YurumeSesi
+    clip: {fileID: 8300000, guid: cc8f62346e9817249886596974dd3f07, type: 3}
     volume: 1
     pitch: 0
+  - name: KosmaSesi
+    clip: {fileID: 8300000, guid: 20ced17537c2b994888c9b87d779dd8c, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: SepetDoldu
+    clip: {fileID: 8300000, guid: 391f22b26bf3e9d4fbb920cf390bf85b, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: KamyonDoldu
+    clip: {fileID: 8300000, guid: 50e3224a7f5e79f41a2874914174c8bd, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: YeniBolge
+    clip: {fileID: 8300000, guid: 21a7f842ba917ac40bacd8f2af3a5969, type: 3}
+    volume: 1
+    pitch: 0.1
   ambienceSounds:
   - name: IlkbaharMuzik
     clip: {fileID: 8300000, guid: 575f92fb55641d0458393fa3e41b3c8d, type: 3}
     volume: 1
-    pitch: 0
+    pitch: 0.1
   - name: KisMuzik
     clip: {fileID: 8300000, guid: ce63ffbd71e16c74a83e0a3075c94440, type: 3}
     volume: 1
@@ -103,7 +131,11 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 5f42cee49bed5564187c712c69726acc, type: 3}
     volume: 1
     pitch: 0
-  vehicleSounds: []
+  vehicleSounds:
+  - name: ArabaMotoru
+    clip: {fileID: 8300000, guid: b22be34c2b0e4514fa211e3c2c0dfac2, type: 3}
+    volume: 1
+    pitch: 0
 --- !u!82 &-781825273070750688
 AudioSource:
   m_ObjectHideFlags: 0
