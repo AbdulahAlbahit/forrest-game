@@ -1,13 +1,7 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Audio/Ambience.meta
 guid: 5f8fc306b264850468ac62c467b1fb6a
-folderAsset: yes
-DefaultImporter:
-========
-guid: 5277576e903fd8c45b97d47a52080215
 TextScriptImporter:
->>>>>>>> origin/develop:Assets/Efe/Clothing/Quaternius/UltimateMen/How To Use.txt.meta
   externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+  userData:
+  assetBundleName:
+  assetBundleVariant:

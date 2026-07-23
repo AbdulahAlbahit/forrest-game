@@ -1,13 +1,7 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Audio/SFX/Gameplay.meta
 guid: d2f05ddae124fcf43be8439eb5b4b319
-folderAsset: yes
-DefaultImporter:
-========
-guid: 556636398ab3a3a4cae68a79aef44d1a
 TextScriptImporter:
->>>>>>>> origin/develop:Assets/Efe/Clothing/Quaternius/UltimateMen/License.txt.meta
   externalObjects: {}
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+  userData:
+  assetBundleName:
+  assetBundleVariant:
