@@ -59,19 +59,33 @@ namespace ForrestGame.Managers
             if (data.CompletedQuests == null)
                 data.CompletedQuests = new System.Collections.Generic.List<string>();
 
-            // Sayaci guncelle
-            string questKey = $"satilan_{itemId.ToLower()}";
-            int currentProgress = data.ActiveQuests.Get(questKey, 0);
-            int newProgress = currentProgress + amount;
-            data.ActiveQuests.Set(questKey, newProgress);
+            string actionKey = $"satilan_{itemId.ToLower()}";
+            bool progressChanged = false;
 
-            Debug.Log($"QuestManager: [{questKey}] ilerleme: {currentProgress} -> {newProgress}");
+            // Sadece tamamlanmamis ve bu aksiyonu izleyen gorevlerin ilerlemesini QuestID uzerinden arttir
+            if (tumGorevler != null)
+            {
+                foreach (QuestConfig quest in tumGorevler)
+                {
+                    if (quest == null) continue;
+                    if (data.CompletedQuests.Contains(quest.QuestID)) continue;
 
-            // Tamamlanan gorev var mi kontrol et ve otomatik odullendir
-            bool anyCompleted = CheckAndRewardQuests(data);
+                    if (quest.TargetKey.ToLower() == actionKey)
+                    {
+                        int currentProgress = data.ActiveQuests.Get(quest.QuestID, 0);
+                        int newProgress = currentProgress + amount;
+                        data.ActiveQuests.Set(quest.QuestID, newProgress);
+                        progressChanged = true;
+                        Debug.Log($"QuestManager: Gorev [{quest.QuestName}] ilerledi: {currentProgress} -> {newProgress}");
+                    }
+                }
+            }
 
-            // Her durumda kaydet (ilerleme degisti)
-            CloudSaveManager.Instance.SaveData(data);
+            if (progressChanged)
+            {
+                CheckAndRewardQuests(data);
+                CloudSaveManager.Instance.SaveData(data);
+            }
         }
 
         /// <summary>
@@ -95,8 +109,8 @@ namespace ForrestGame.Managers
                 // Zaten tamamlanmis mi?
                 if (data.CompletedQuests.Contains(quest.QuestID)) continue;
 
-                // Bu gorevin izledigi sayaci al
-                int progress = data.ActiveQuests.Get(quest.TargetKey, 0);
+                // Bu gorevin ilerlemesini kendi QuestID'si uzerinden al
+                int progress = data.ActiveQuests.Get(quest.QuestID, 0);
 
                 // Hedef doldu mu?
                 if (progress >= quest.TargetAmount)
@@ -151,7 +165,7 @@ namespace ForrestGame.Managers
             QuestConfig quest = tumGorevler.Find(q => q != null && q.QuestID == questId);
             if (quest == null) return 0f;
 
-            int progress = CloudSaveManager.Instance.CurrentData.ActiveQuests.Get(quest.TargetKey, 0);
+            int progress = CloudSaveManager.Instance.CurrentData.ActiveQuests.Get(quest.QuestID, 0);
             return Mathf.Clamp01((float)progress / quest.TargetAmount);
         }
 
