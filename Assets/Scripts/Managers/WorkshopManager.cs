@@ -162,7 +162,6 @@ public class WorkshopManager : MonoBehaviour
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             CloudSaveManager.Instance.CurrentData.WorkshopRawWood = mevcutKuyruk;
-            CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
         }
         OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
         return true;
@@ -178,7 +177,6 @@ public class WorkshopManager : MonoBehaviour
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             CloudSaveManager.Instance.CurrentData.WorkshopRawWood = mevcutKuyruk;
-            CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
         }
         OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
         Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {mevcutKuyruk}");
@@ -224,9 +222,8 @@ public class WorkshopManager : MonoBehaviour
 
         Debug.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim siparisi alindi. Dusulen Odun: {requiredWood}");
         
-        // Arayuz guncellemesi ve Bulut Kaydi
+        // Arayuz guncellemesi (Bulut kaydi otomatik donguye birakildi)
         OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
-        CloudSaveManager.Instance.SaveData(data);
         
         return true;
     }
@@ -325,9 +322,6 @@ public class WorkshopManager : MonoBehaviour
             OnWoodProcessed?.Invoke();
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);
             
-            // Bulut Kaydi
-            CloudSaveManager.Instance.SaveData(data);
-
             // Zamanlayici sifirla
             uretimZamanlayicisi = 0f;
 
