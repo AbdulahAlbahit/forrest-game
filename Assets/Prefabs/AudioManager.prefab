@@ -71,7 +71,7 @@ MonoBehaviour:
     volume: 1
     pitch: 0
   - name: BaltaVurma
-    clip: {fileID: 8300000, guid: e5b3e9356629bd94f8090c61780154ee, type: 3}
+    clip: {fileID: 8300000, guid: 2e126ce435f987d4c809a32627807121, type: 3}
     volume: 1
     pitch: 0
   - name: AgacDusme
@@ -91,15 +91,15 @@ MonoBehaviour:
     volume: 1
     pitch: 0
   - name: OdunToplama
-    clip: {fileID: 8300000, guid: 935ab4573d97c7745a7667e6e13574ab, type: 3}
+    clip: {fileID: 8300000, guid: 55772a57f521e3c45b7acb3082277b74, type: 3}
     volume: 1
     pitch: 0.1
   - name: YurumeSesi
-    clip: {fileID: 8300000, guid: cc8f62346e9817249886596974dd3f07, type: 3}
+    clip: {fileID: 8300000, guid: bed7a85b0fc3b4042a095672b0fc8cd5, type: 3}
     volume: 1
     pitch: 0
   - name: KosmaSesi
-    clip: {fileID: 8300000, guid: 20ced17537c2b994888c9b87d779dd8c, type: 3}
+    clip: {fileID: 8300000, guid: e312a11dfe5107642ac528d18ccffcf9, type: 3}
     volume: 1
     pitch: 0.1
   - name: SepetDoldu
