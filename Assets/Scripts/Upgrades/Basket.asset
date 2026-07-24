@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9c3981ed0af485d4ab5a93de4d1efc4d, type: 3}
   m_Name: Basket
   m_EditorClassIdentifier: Assembly-CSharp::ItemUpgradeConfig
-  ItemID: NewItem
+  ItemID: Basket
   Category: 0
-  Effect: 0
+  Effect: 1
   BasePrice: 50
   PriceMultiplier: 1.5
   BaseValue: 10

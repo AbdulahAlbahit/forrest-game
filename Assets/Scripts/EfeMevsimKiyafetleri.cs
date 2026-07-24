@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ForrestGame.Core;
 
 public enum EfeKiyafetMevsimi
 {
@@ -39,6 +40,27 @@ public sealed class EfeMevsimKiyafetleri : MonoBehaviour
         {
             MevsimiUygula(baslangicMevsimi);
         }
+    }
+
+    private void OnEnable()
+    {
+        SeasonManager.OnMevsimDegisti += SeasonManager_OnMevsimDegisti;
+
+        // SeasonManager sahnede zaten kurulduysa gercek mevsimi hemen uygula.
+        if (SeasonManager.Instance != null)
+        {
+            MevsimiUygula((int)SeasonManager.Instance.aktifMevsim);
+        }
+    }
+
+    private void OnDisable()
+    {
+        SeasonManager.OnMevsimDegisti -= SeasonManager_OnMevsimDegisti;
+    }
+
+    private void SeasonManager_OnMevsimDegisti(MevsimTuru mevsim)
+    {
+        MevsimiUygula((int)mevsim);
     }
 
     private void OnValidate()

@@ -129,11 +129,12 @@ GameObject:
   m_Component:
   - component: {fileID: 61426463}
   - component: {fileID: 61426462}
-  - component: {fileID: 61426467}
-  - component: {fileID: 61426466}
-  - component: {fileID: 61426465}
   - component: {fileID: 61426464}
   - component: {fileID: 61426468}
+  - component: {fileID: 61426469}
+  - component: {fileID: 61426470}
+  - component: {fileID: 61426471}
+  - component: {fileID: 61426472}
   m_Layer: 0
   m_Name: genel test
   m_TagString: Untagged
@@ -154,6 +155,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SystemTester
   testRegionId: 1
+  testRegionConfig: {fileID: 11400000, guid: 3195952823444e04c92d41e02070d396, type: 2}
+  testItemId: Axe
+  testRecipe: {fileID: 11400000, guid: f287b812593b38d47b071e2f0d66d6de, type: 2}
+  testWoodAmount: 50
+  testDeliveryAmount: 5
 --- !u!4 &61426463
 Transform:
   m_ObjectHideFlags: 0
@@ -181,46 +187,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34cf888a97ae5b64cb2c207c181a8054, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorkshopManager
-  config: {fileID: 11400000, guid: a4ccca61932dadd409413bbe8c2ddc66, type: 2}
---- !u!114 &61426465
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 61426461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: edb270c45bdc9e84f8a4d1b2d85987c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TruckManager
-  config: {fileID: 11400000, guid: cb7adb910326ff94f89abe7411bb0ced, type: 2}
---- !u!114 &61426466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 61426461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4de8ebfd90dd0ee448ad7d6079db30b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BasketManager
-  config: {fileID: 11400000, guid: 2a5370e7e3d2d814ba89b76efc4f87b7, type: 2}
---- !u!114 &61426467
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 61426461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97c9f55a658bace4dba9cb74e9ac9a15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AxeManager
-  config: {fileID: 11400000, guid: 42b955ad99647f04fa39f6ee074ae184, type: 2}
+  tumTarifler:
+  - {fileID: 11400000, guid: 45412913ce52b8c4d84bb3ab47c65779, type: 2}
+  - {fileID: 11400000, guid: f287b812593b38d47b071e2f0d66d6de, type: 2}
 --- !u!114 &61426468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -234,6 +203,62 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RegionManager
   config: {fileID: 11400000, guid: 3195952823444e04c92d41e02070d396, type: 2}
+--- !u!114 &61426469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61426461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 390d5691ae3234548b92365469fe0c08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UpgradeManager
+  configs:
+  - {fileID: 11400000, guid: d3de2f4834458e0418550321205aadd0, type: 2}
+  - {fileID: 11400000, guid: 2ccae8fdba09cd04d99fffcecd4c0c0b, type: 2}
+  - {fileID: 11400000, guid: 1c76a0c3c42fe0e4fafd92d42eac0db6, type: 2}
+  - {fileID: 11400000, guid: d09b4362a663a444795fb75ce9533cf6, type: 2}
+  - {fileID: 11400000, guid: 6718150c072477c4ebbd67b7006f63a0, type: 2}
+--- !u!114 &61426470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61426461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74fcab3014acdcf40b0c65136a81078d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NotificationManager
+--- !u!114 &61426471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61426461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c75a59b043806574b932b6d4994e7e0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayTimeManager
+--- !u!114 &61426472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 61426461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b0473782c9675b43b612a5c90221ae9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.QuestManager
+  tumGorevler:
+  - {fileID: 0}
 --- !u!1 &98739144
 GameObject:
   m_ObjectHideFlags: 0
@@ -1513,7 +1538,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4de8ebfd90dd0ee448ad7d6079db30b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BasketManager
-  config: {fileID: 0}
 --- !u!4 &1870908354
 Transform:
   m_ObjectHideFlags: 0

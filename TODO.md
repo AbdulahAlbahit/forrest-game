@@ -45,7 +45,7 @@
 - [x] **P2 / EFE:** Karaktere İlkbahar/Yaz/Sonbahar/Kış kıyafet yuvalarını ve ekip mevsim kodundan bağımsız `EfeMevsimKiyafetleri` geçiş API'sini ekle.
 - [x] **P2 / EFE:** CC0 lisanslı Quaternius Ultimate Modular Men resmi Humanoid Rig modellerini ayrı geçerli Avatar'larla karaktere bağla; kısa kollu yaz, gömlekli ilkbahar, hafif dış giyim sonbahar ve kalın koruyucu kış setlerini dört kıyafet yuvasına yerleştir.
 - [x] **P2 / EFE:** Mevsim geçişlerinde karakter kimliğini sabitle; dört kıyafette de aynı sakalsız, açık tenli erkek baş/yüz/saç modelini kullan ve yalnızca kıyafeti değiştir.
-- [ ] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
+- [x] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
 
 ## Sprint 2 — ağaç kesme
 
@@ -84,6 +84,9 @@
 
 ## Sprint 5 — atölye, ürün ve ekonomi
 
+- [x] **P1 / EFE:** Kamyon atölyeye vardığında eski otomatik akışı fallback olarak koruyan ürün seçim event kapısını ve UI öncesi `1=Sandalye`, `2=Koltuk` klavye prototipini uygula.
+- [ ] **P1 / BACKEND SAHİBİ:** Atölye ham odununu kalıcı veriye ekle; bütün kontrollerden sonra odun düşüren sonuç döndürücü `TryStartProduction` API'sini sağla.
+- [ ] **P1 / UI SAHİBİ:** Ürün/miktar seçim arayüzünü `EfeWorkshopSelectionController.SelectRecipe` API'sine ve seçim/üretim event'lerine bağla.
 - [ ] **P1 / BELİRLENECEK:** Atölye giriş deposu ve üretim kuyruğu uygula.
 - [ ] **P1 / BELİRLENECEK:** Odun -> işlenmiş ürün dönüşüm tarifi, süre ve değer verilerini tanımla.
 - [ ] **P1 / BELİRLENECEK:** Üretim progress görseli ve tamamlanma feedback'i ekle.

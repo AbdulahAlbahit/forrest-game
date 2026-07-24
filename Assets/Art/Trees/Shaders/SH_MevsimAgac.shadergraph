@@ -11,6 +11,9 @@
         },
         {
             "m_Id": "8e8bd085311142ee84f6696f34d543cf"
+        },
+        {
+            "m_Id": "f918f19299004dfbace9f91b7f7fe8eb"
         }
     ],
     "m_Keywords": [],
@@ -480,10 +483,10 @@
         "m_Expanded": true,
         "m_Position": {
             "serializedVersion": "2",
-            "x": -373.0,
-            "y": 536.0,
-            "width": 208.0000762939453,
-            "height": 278.0
+            "x": -420.0000305175781,
+            "y": 522.0,
+            "width": 208.00001525878907,
+            "height": 278.00006103515627
         }
     },
     "m_Slots": [
@@ -618,7 +621,7 @@
     "m_ShaderOutputName": "X",
     "m_StageCapability": 3,
     "m_CustomBinding": "",
-    "m_Value": 0.699999988079071,
+    "m_Value": 0.6000000238418579,
     "m_DefaultValue": 0.0,
     "m_Labels": [],
     "m_LiteralMode": false
@@ -1530,6 +1533,9 @@
         },
         {
             "m_Id": "8e8bd085311142ee84f6696f34d543cf"
+        },
+        {
+            "m_Id": "f918f19299004dfbace9f91b7f7fe8eb"
         }
     ]
 }
@@ -2139,5 +2145,50 @@
     },
     "m_Labels": [],
     "m_Space": 0
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "f918f19299004dfbace9f91b7f7fe8eb",
+    "m_Guid": {
+        "m_GuidSerialized": "9d6eafbd-4d3c-487d-9218-d43578f14cf3"
+    },
+    "promotedFromAssetID": "",
+    "promotedFromCategoryName": "",
+    "promotedOrdering": -1,
+    "m_Name": "YaprakDokum",
+    "m_DefaultRefNameVersion": 1,
+    "m_RefNameGeneratedByDisplayName": "YaprakDokum",
+    "m_DefaultReferenceName": "_YaprakDokum",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "hideConnector": false,
+    "m_Hidden": false,
+    "m_PerRendererData": false,
+    "m_customAttributes": [],
+    "m_Value": 0.0,
+    "m_FloatType": 0,
+    "m_LiteralFloatMode": false,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    },
+    "m_SliderType": 0,
+    "m_SliderPower": 3.0,
+    "m_EnumType": 0,
+    "m_CSharpEnumString": "",
+    "m_EnumNames": [
+        "Default"
+    ],
+    "m_EnumValues": [
+        0
+    ]
 }
 

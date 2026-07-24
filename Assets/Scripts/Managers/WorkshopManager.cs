@@ -1,25 +1,38 @@
 using System;
 using UnityEngine;
 using ForrestGame.Core;
+using System.Collections.Generic;
 
 public class WorkshopManager : MonoBehaviour
 {
     public static WorkshopManager Instance { get; private set; }
 
-    private int mevcutKuyruk;
+    [Header("Atolye Ayarlari")]
+    [Tooltip("Uretilebilecek tum tarifleri buraya surukleyin.")]
+    public RecipeConfig[] tumTarifler;
+
+    // Odunlar dogrudan PlayerData uzerinden okunur ve guncellenir.
+    
+    // Uretim surecleri
     private float uretimZamanlayicisi;
+    private string aktifUretilenItem = "";
 
     // Cached degerler (her frame UpgradeManager'a sormamak icin)
     private float cachedSpeed;
     private int cachedCapacity;
 
     /// <summary>
-    /// Atolye kuyrugu degistiginde tetiklenir. (mevcutKuyruk, maksKapasite)
+    /// Kamyon veya baska sistemler urunun bittigini bu event ile anlar (ItemID, Adet)
+    /// </summary>
+    public static event Action<string, int> OnProductionFinished;
+
+    /// <summary>
+    /// Atolye ham odun kuyrugu degistiginde tetiklenir. (mevcutOdun, maksKapasite)
     /// </summary>
     public event Action<int, int> OnQueueChanged;
 
     /// <summary>
-    /// Bir odun islenip urune donustugunde tetiklenir.
+    /// Eski sistem (gorsel/ses efektleri) icin korunan event.
     /// </summary>
     public event Action OnWoodProcessed;
 
@@ -28,9 +41,17 @@ public class WorkshopManager : MonoBehaviour
     /// </summary>
     public event Action<int> OnWorkshopUpgraded;
 
-    public int MevcutKuyruk => mevcutKuyruk;
-    public bool IsQueueFull => mevcutKuyruk >= GetWorkshopCapacity();
-    public bool IsQueueEmpty => mevcutKuyruk <= 0;
+    public int MevcutKuyruk 
+    {
+        get 
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                return CloudSaveManager.Instance.CurrentData.WorkshopRawWood;
+            return 0;
+        }
+    }
+    public bool IsQueueFull => MevcutKuyruk >= GetWorkshopCapacity();
+    public bool IsQueueEmpty => MevcutKuyruk <= 0;
 
     private void Awake()
     {
@@ -43,26 +64,30 @@ public class WorkshopManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        mevcutKuyruk = 0;
         uretimZamanlayicisi = 0f;
         cachedSpeed = 0.5f;
         cachedCapacity = 10;
     }
 
-    private void OnEnable()
+    private void Start()
     {
         if (CloudSaveManager.Instance != null)
         {
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+            if (CloudSaveManager.Instance.CurrentData != null)
+            {
+                HandleDataLoaded(CloudSaveManager.Instance.CurrentData);
+            }
         }
 
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
+            RefreshCachedValues();
         }
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         if (CloudSaveManager.Instance != null)
         {
@@ -75,18 +100,13 @@ public class WorkshopManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Buluttan veri yuklendiginde atolye degerlerini gunceller.
-    /// </summary>
     private void HandleDataLoaded(PlayerData data)
     {
         RefreshCachedValues();
-        Debug.Log($"WorkshopManager: Bulut verisi ile senkronize edildi. Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}");
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+        Debug.Log($"WorkshopManager: Bulut verisi ile senkronize edildi. Hiz: {cachedSpeed:F2}/sn, Kapasite: {cachedCapacity}, Odun: {MevcutKuyruk}");
     }
 
-    /// <summary>
-    /// Herhangi bir esya yukseltildiginde, eger atolye ile ilgiliyse degerleri gunceller.
-    /// </summary>
     private void HandleItemUpgraded(string itemId, int newLevel)
     {
         if (itemId == "Workshop" || itemId == "WorkshopQueue")
@@ -97,9 +117,6 @@ public class WorkshopManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// UpgradeManager uzerinden atolye degerlerini yeniden hesaplar ve cache'ler.
-    /// </summary>
     private void RefreshCachedValues()
     {
         if (UpgradeManager.Instance != null)
@@ -114,9 +131,6 @@ public class WorkshopManager : MonoBehaviour
         ProcessQueue();
     }
 
-    /// <summary>
-    /// Atolye uretim hizini dondurur.
-    /// </summary>
     public float GetProcessingSpeed()
     {
         float baseSpeed = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue("Workshop") : cachedSpeed;
@@ -130,9 +144,6 @@ public class WorkshopManager : MonoBehaviour
         return 1f;
     }
 
-    /// <summary>
-    /// Atolye kuyruk kapasitesini dondurur.
-    /// </summary>
     public int GetWorkshopCapacity()
     {
         if (UpgradeManager.Instance != null)
@@ -143,100 +154,224 @@ public class WorkshopManager : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════
-    //  Oyun Mekanikleri (Degistirilmedi)
+    //  YENİ SİSTEM: TARİF VE ÜRETİM KUYRUĞU
     // ═══════════════════════════════════════════
 
     /// <summary>
-    /// Atolyeye islenmesi icin odun ekler.
-    /// Eger kapasite doluysa false doner ve eklemez.
+    /// Atolyeye (Ham Madde Stoklarına) islenmesi icin odun ekler.
     /// </summary>
     public bool AddWoodToQueue()
     {
-        if (IsQueueFull)
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
-            Debug.LogWarning("WorkshopManager: Kuyruk dolu! Odun eklenemiyor.");
+            Debug.LogWarning("WorkshopManager: Bulut verisi hazir degil, odun eklenemiyor.");
             return false;
         }
 
-        mevcutKuyruk++;
-        Debug.Log($"WorkshopManager: Kuyruga 1 odun eklendi. Durum: {mevcutKuyruk}/{GetWorkshopCapacity()}");
-        OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+        if (IsQueueFull)
+        {
+            Debug.LogWarning("WorkshopManager: Kapasite dolu! Odun eklenemiyor.");
+            return false;
+        }
 
+        CloudSaveManager.Instance.CurrentData.WorkshopRawWood++;
+        CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         return true;
     }
 
     /// <summary>
-    /// Kuyrukta odun varsa, atolye seviyesine bagli uretim hizina gore isler.
+    /// Test amaciyla veya kapasiteden bagimsiz dogrudan odun bakiyesi ekler.
+    /// </summary>
+    public void AddWood(int amount)
+    {
+        if (amount <= 0) return;
+        
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("WorkshopManager: Bulut verisi hazir degil, odun eklenemiyor.");
+            return;
+        }
+
+        CloudSaveManager.Instance.CurrentData.WorkshopRawWood += amount;
+        CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+        Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {MevcutKuyruk}");
+    }
+
+    /// <summary>
+    /// Arayuz (UI) tarafindan cagrilarak belirtilen tariften uretim baslatir.
+    /// Basarili olursa true, hata olursa false dondurur.
+    /// </summary>
+    public bool TryStartProduction(RecipeConfig recipe, int amount)
+    {
+        if (recipe == null || amount <= 0) return false;
+
+        // 1. Kayit verisi kontrolu
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            Debug.LogWarning("WorkshopManager: Bulut verisi henuz hazir degil. Uretim baslatilamiyor.");
+            NotificationManager.Instance?.SendNotification("Kayıt verisi hazır değil!");
+            return false;
+        }
+
+        int requiredWood = recipe.RequiredWood * amount;
+
+        // 2. Odun bakiyesi kontrolu
+        if (MevcutKuyruk < requiredWood)
+        {
+            Debug.LogWarning($"WorkshopManager: Yetersiz odun bakiyesi! Gereken: {requiredWood}, Mevcut: {MevcutKuyruk}");
+            NotificationManager.Instance?.SendNotification("Yetersiz odun!");
+            return false;
+        }
+
+        // 3. Kontroller gecti, islemi onayla ve odunu dus
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        data.WorkshopRawWood -= requiredWood; // Firebase verisini de guncelle
+
+        if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
+
+        // Uretim siparisini PlayerData uzerindeki WorkshopQueue'ya ekle
+        int existingQueue = data.WorkshopQueue.Get(recipe.ItemID, 0);
+        data.WorkshopQueue.Set(recipe.ItemID, existingQueue + amount);
+
+        // Arayuz guncellemesi ve aninda bulut kaydi
+        OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+        CloudSaveManager.Instance.SaveData(data);
+        
+        return true;
+    }
+
+    private float debugLogTimer = 0f;
+
+    /// <summary>
+    /// WorkshopQueue icindeki siparisleri tek tek tarife gore uretir.
     /// </summary>
     private void ProcessQueue()
     {
-        if (IsQueueEmpty)
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        
+        if (data.WorkshopQueue == null || data.WorkshopQueue.ToDictionary().Keys.Count == 0)
         {
-            if (uretimZamanlayicisi > 0)
-                uretimZamanlayicisi = 0f;
+            uretimZamanlayicisi = 0f;
+            aktifUretilenItem = "";
             return;
         }
 
-        float hiz = GetProcessingSpeed();
-        
-        // Hata onleyici Guard Clause: Hiz 0 veya negatif ise sonsuz donguyu engelle
-        if (hiz <= 0f) 
+        // 1. Eger su an uretilen bir sey yoksa kuyruktan bul
+        if (string.IsNullOrEmpty(aktifUretilenItem) || data.WorkshopQueue.Get(aktifUretilenItem, 0) <= 0)
         {
-            return;
-        }
-
-        // Seviyeye gore hesaplanan hiz: saniyede X odun => 1 odun icin 1/X saniye gerek
-        float saniyePerOdun = 1f / hiz;
-        
-        // Cok kucuk sayilar (sonsuz dongu riski) icin ekstra guvenlik onlemi
-        if (saniyePerOdun <= 0.01f) 
-        {
-            saniyePerOdun = 0.01f;
-        }
-
-        uretimZamanlayicisi += Time.deltaTime;
-        int islenenOdun = 0;
-
-        // Unity'nin donmasini engellemek icin guvenli while dongusu
-        while (uretimZamanlayicisi >= saniyePerOdun && mevcutKuyruk > 0)
-        {
-            mevcutKuyruk--;
-            uretimZamanlayicisi -= saniyePerOdun;
-            islenenOdun++;
-
-            // StackOverflow veya Sonsuz Dongu onlemi: 1 frame'de 100'den fazla islem yapilmasin.
-            if (islenenOdun >= 100) 
+            aktifUretilenItem = "";
+            foreach (string itemId in data.WorkshopQueue.ToDictionary().Keys)
             {
-                break;
+                if (data.WorkshopQueue.Get(itemId, 0) > 0)
+                {
+                    aktifUretilenItem = itemId;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(aktifUretilenItem)) return; // Uretilecek hicbir sey kalmamis
+        }
+
+        // 2. Aktif uretilen esyanin tarifini bul
+        RecipeConfig currentRecipe = null;
+        if (tumTarifler != null)
+        {
+            foreach (var r in tumTarifler)
+            {
+                if (r.ItemID == aktifUretilenItem)
+                {
+                    currentRecipe = r;
+                    break;
+                }
             }
         }
 
-        if (islenenOdun > 0)
+        // Tarif bulunamazsa hatali veriyi temizle
+        if (currentRecipe == null)
         {
-            Debug.Log($"WorkshopManager: {islenenOdun} odun islendi! Kalan: {mevcutKuyruk}/{GetWorkshopCapacity()}");
+            Debug.LogWarning($"WorkshopManager: {aktifUretilenItem} icin RecipeConfig bulunamadi. Kuyruk temizleniyor.");
+            data.WorkshopQueue.Set(aktifUretilenItem, 0);
+            aktifUretilenItem = "";
+            return;
+        }
+
+        // 3. Uretim suresi hesaplamasi
+        float hizCarpani = GetProcessingSpeed();
+        if (hizCarpani <= 0f) hizCarpani = 1f;
+
+        float gercekUretimSuresi = currentRecipe.BaseProductionTime / hizCarpani;
+        if (gercekUretimSuresi <= 0.1f) gercekUretimSuresi = 0.1f;
+
+        // 4. Zamanlayiciyi calistir
+        uretimZamanlayicisi += Time.deltaTime;
+
+        // Her 2 saniyede bir timer durumunu logla
+        debugLogTimer += Time.deltaTime;
+        if (debugLogTimer >= 2f)
+        {
+            debugLogTimer = 0f;
+            Debug.Log($"[Workshop Timer] {aktifUretilenItem}: {uretimZamanlayicisi:F2} / {gercekUretimSuresi:F2} sn (Hiz:{hizCarpani:F2})");
+        }
+
+        if (uretimZamanlayicisi >= gercekUretimSuresi)
+        {
+            uretimZamanlayicisi -= gercekUretimSuresi;
+
+            int currentAmount = data.WorkshopQueue.Get(aktifUretilenItem, 0);
+            int newAmount = Mathf.Max(0, currentAmount - 1);
+            data.WorkshopQueue.Set(aktifUretilenItem, newAmount);
+            
+            // Fabrika Bandı: Üretilen malı Kamyon Bekleyenler'e (ReadyForTruck) ekle
+            if (data.ReadyForTruck == null) data.ReadyForTruck = new SerializableDict();
+            int readyAmount = data.ReadyForTruck.Get(aktifUretilenItem, 0);
+            data.ReadyForTruck.Set(aktifUretilenItem, readyAmount + 1);
+
+            Debug.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk Kaldi: {newAmount})");
+            NotificationManager.Instance?.SendNotification($"{aktifUretilenItem} üretimi tamamlandı!");
+
             OnWoodProcessed?.Invoke();
-            OnQueueChanged?.Invoke(mevcutKuyruk, GetWorkshopCapacity());
+            OnProductionFinished?.Invoke(aktifUretilenItem, 1);
+            
+            // Aninda buluta kaydet
+            CloudSaveManager.Instance.SaveData(data);
+
+            // Zamanlayici sifirla
+            uretimZamanlayicisi = 0f;
+
+            // Bu urunden siparish bittiyse bir sonraki urune gec
+            if (newAmount <= 0)
+            {
+                aktifUretilenItem = "";
+            }
         }
     }
 
     /// <summary>
-    /// Isleme suresinin (0.0 ~ 1.0) yuzdesini dondurur.
-    /// HUD'daki uretim bari icin kullanilabilir.
+    /// Guncel uretilen esyanin yuzdelik tamamlanma durumunu dondurur. (Arayuz bari icin)
     /// </summary>
     public float GetProcessingProgress()
     {
-        if (IsQueueEmpty) return 0f;
-        float hiz = GetProcessingSpeed();
-        if (hiz <= 0f) return 0f;
-        float saniyePerOdun = 1f / hiz;
-        return Mathf.Clamp01(uretimZamanlayicisi / saniyePerOdun);
-    }
+        if (string.IsNullOrEmpty(aktifUretilenItem)) return 0f;
 
-    private void OnDestroy()
-    {
-        if (Instance == this)
+        RecipeConfig currentRecipe = null;
+        if (tumTarifler != null)
         {
-            Instance = null;
+            foreach (var r in tumTarifler)
+            {
+                if (r.ItemID == aktifUretilenItem) { currentRecipe = r; break; }
+            }
         }
+        
+        if (currentRecipe == null) return 0f;
+
+        float hizCarpani = GetProcessingSpeed();
+        if (hizCarpani <= 0f) hizCarpani = 1f;
+        float gercekUretimSuresi = currentRecipe.BaseProductionTime / hizCarpani;
+
+        return Mathf.Clamp01(uretimZamanlayicisi / gercekUretimSuresi);
     }
 }
