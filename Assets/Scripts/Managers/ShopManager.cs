@@ -83,5 +83,35 @@ namespace ForrestGame.Managers
 
             return false;
         }
+
+        public void ProcessCustomerOrder(string itemId, int amount, int unitPrice)
+        {
+            if (TryRemoveStock(itemId, amount))
+            {
+                EconomyManager.Instance.AddMoney(amount * unitPrice);
+                NotificationManager.Instance.SendNotification($"{amount} adet {itemId} satildi!");
+            }
+            else
+            {
+                if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+                {
+                    Debug.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
+                    return;
+                }
+
+                PlayerData data = CloudSaveManager.Instance.CurrentData;
+                
+                if (data.PendingCustomerOrders == null) 
+                {
+                    data.PendingCustomerOrders = new SerializableDict();
+                }
+
+                int currentPending = data.PendingCustomerOrders.Get(itemId, 0);
+                data.PendingCustomerOrders.Set(itemId, currentPending + amount);
+
+                NotificationManager.Instance.SendNotification($"Yeni Siparis: {amount} adet {itemId} bekleniyor!");
+                CloudSaveManager.Instance.SaveData(data);
+            }
+        }
     }
 }
