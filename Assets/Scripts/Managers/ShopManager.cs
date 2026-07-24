@@ -194,11 +194,16 @@ namespace ForrestGame.Managers
                 int newStock = currentStock - amount;
                 data.ShopInventory.Set(itemId, newStock);
                 OnStockChanged?.Invoke(itemId, newStock);
-                // Stok dusunce aninda buluta kaydet
+                
+                NotificationManager.Instance?.SendNotification($"{itemId} satıldı!");
+                
+                // Eventi tetikle (QuestManager vb. dinleyebilir)
+                OnItemSold?.Invoke(itemId, amount);
+                
+                // Satis ve event sonrasi aninda buluta kaydet
                 CloudSaveManager.Instance.SaveData(data);
                 Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
-                NotificationManager.Instance?.SendNotification($"{itemId} satıldı!");
-                OnItemSold?.Invoke(itemId, amount);
+                
                 return true;
             }
 
@@ -210,7 +215,7 @@ namespace ForrestGame.Managers
             if (TryRemoveStock(itemId, amount))
             {
                 EconomyManager.Instance.AddMoney(amount * unitPrice);
-                OnItemSold?.Invoke(itemId, amount);
+                // OnItemSold?.Invoke kaldirildi cunku TryRemoveStock icinde zaten cagiriliyor.
                 NotificationManager.Instance?.SendNotification($"{amount} adet {itemId} satildi!");
             }
             else
