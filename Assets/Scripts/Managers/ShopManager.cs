@@ -134,6 +134,7 @@ namespace ForrestGame.Managers
                         EconomyManager.Instance?.AddMoney(fulfilled * unitPrice);
                         OnItemSold?.Invoke(itemId, fulfilled);
                         OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
+                        AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
                         NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: {fulfilled}x {itemId}!");
                         Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
                         anyFulfilled = true;
@@ -177,6 +178,8 @@ namespace ForrestGame.Managers
                 // Eventi tetikle (QuestManager vb. dinleyebilir)
                 OnItemSold?.Invoke(itemId, amount);
                 
+                AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
+
                 // Satis ve event sonrasi aninda buluta kaydet
                 CloudSaveManager.Instance.SaveData(data);
                 Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
