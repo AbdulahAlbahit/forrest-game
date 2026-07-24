@@ -22,31 +22,103 @@ namespace ForrestGame.Managers
             Instance = this;
         }
 
+        private void Start()
+        {
+            if (CloudSaveManager.Instance != null)
+            {
+                CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+            }
+            TruckRouteController.OnMarketSale += HandleTruckArrivalAtMarket;
+        }
+
+        private void OnDestroy()
+        {
+            if (CloudSaveManager.Instance != null)
+            {
+                CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+            }
+            TruckRouteController.OnMarketSale -= HandleTruckArrivalAtMarket;
+        }
+
+        private void HandleDataLoaded() { }
+
+        private void HandleTruckArrivalAtMarket()
+        {
+            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
+            PlayerData data = CloudSaveManager.Instance.CurrentData;
+            
+            if (data.ReadyForTruck == null) return;
+            
+            var readyDict = data.ReadyForTruck.ToDictionary();
+            bool anyLoaded = false;
+            
+            foreach (var kvp in readyDict)
+            {
+                string itemId = kvp.Key;
+                int hazirMiktar = System.Convert.ToInt32(kvp.Value);
+                
+                if (hazirMiktar > 0)
+                {
+                    data.ReadyForTruck.Set(itemId, 0);
+                    AddStock(itemId, hazirMiktar);
+                    anyLoaded = true;
+                }
+            }
+            
+            if (anyLoaded)
+            {
+                Debug.Log("ShopManager: Kamyon markete ulasti, urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
+            }
+        }
+
         public void AddStock(string itemId, int amount)
         {
             if (amount <= 0) return;
 
-            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-            {
-                Debug.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
-                return;
-            }
-
             PlayerData data = CloudSaveManager.Instance.CurrentData;
-            
-            if (data.ShopInventory == null) 
+
+            // 1. Check pending orders
+            if (data.PendingCustomerOrders != null)
             {
-                data.ShopInventory = new SerializableDict();
+                int pending = data.PendingCustomerOrders.Get(itemId, 0);
+                if (pending > 0)
+                {
+                    int fulfilled = Mathf.Min(pending, amount);
+                    
+                    data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
+                    amount -= fulfilled;
+                    
+                    int unitPrice = 100;
+                    if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+                    {
+                        foreach (var r in WorkshopManager.Instance.tumTarifler)
+                        {
+                            if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
+                        }
+                    }
+                    
+                    EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
+                    NotificationManager.Instance?.SendNotification($"Bekleyen sipariş tamamlandı: {fulfilled}x {itemId}!");
+                    Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
+                }
             }
 
-            int currentStock = data.ShopInventory.Get(itemId, 0);
-            int newStock = currentStock + amount;
+            if (amount > 0)
+            {
+                if (data.ShopInventory == null) 
+                {
+                    data.ShopInventory = new SerializableDict();
+                }
 
-            data.ShopInventory.Set(itemId, newStock);
-            OnStockChanged?.Invoke(itemId, newStock);
-            // Stok degisince aninda buluta kaydet
+                int currentStock = data.ShopInventory.Get(itemId, 0);
+                int newStock = currentStock + amount;
+
+                data.ShopInventory.Set(itemId, newStock);
+                OnStockChanged?.Invoke(itemId, newStock);
+            }
+
+            // Stok veya siparis degisince aninda buluta kaydet
             CloudSaveManager.Instance.SaveData(data);
-            Debug.Log($"ShopManager: {itemId} stoku {currentStock} -> {newStock} (buluta kaydedildi)");
         }
 
         public bool TryRemoveStock(string itemId, int amount)
