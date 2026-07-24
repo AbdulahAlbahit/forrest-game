@@ -77,16 +77,24 @@ namespace ForrestGame.Core
         private float currentSnowAmount;
         private Coroutine snowTransitionCoroutine;
         private bool winterPreviewStarted;
+        private Terrain runtimeTerrain;
+        private TerrainCollider runtimeTerrainCollider;
+        private TerrainData sourceTerrainData;
+        private TerrainData runtimeTerrainData;
+        private float[] originalSnowAmounts;
+        private bool runtimeResourcesPrepared;
 
         private void Awake()
         {
             if (Instance == null) Instance = this;
+            PrepareRuntimeSeasonResources();
         }
 
         private void Start()
         {
             HesaplaCevrimdisiZaman();
             MevsimEfektleriniGuncelle();
+            OnMevsimDegisti?.Invoke(aktifMevsim);
         }
 
         private void Update()
@@ -127,21 +135,41 @@ namespace ForrestGame.Core
 
         private void HesaplaCevrimdisiZaman()
         {
-            string sonGirisString = PlayerPrefs.GetString("SonCikisZamani", DateTime.Now.ToString());
-            DateTime sonGiris = DateTime.Parse(sonGirisString);
-            
-            TimeSpan gecenZaman = DateTime.Now - sonGiris;
-            double gecenSaniye = gecenZaman.TotalSeconds;
+            float mevsimSuresi = ayarlar != null
+                ? Mathf.Max(1f, ayarlar.mevsimSuresiDakika * 60f)
+                : 1200f;
+            double gecenSaniye = 0d;
 
-            aktifMevsim = (MevsimTuru)PlayerPrefs.GetInt("AktifMevsim", 0);
-            kalanSaniye = PlayerPrefs.GetFloat("KalanMevsimSaniyesi", ayarlar.mevsimSuresiDakika * 60);
+            if (PlayerPrefs.HasKey("SonCikisZamani") &&
+                DateTime.TryParse(PlayerPrefs.GetString("SonCikisZamani"), out DateTime sonGiris))
+            {
+                gecenSaniye = Math.Max(0d, (DateTime.Now - sonGiris).TotalSeconds);
+            }
+
+            if (PlayerPrefs.HasKey("AktifMevsim"))
+            {
+                int kayitliMevsim = PlayerPrefs.GetInt("AktifMevsim", (int)aktifMevsim);
+                if (Enum.IsDefined(typeof(MevsimTuru), kayitliMevsim))
+                {
+                    aktifMevsim = (MevsimTuru)kayitliMevsim;
+                }
+            }
+
+            kalanSaniye = PlayerPrefs.HasKey("KalanMevsimSaniyesi")
+                ? PlayerPrefs.GetFloat("KalanMevsimSaniyesi", mevsimSuresi)
+                : mevsimSuresi;
+
+            if (float.IsNaN(kalanSaniye) || float.IsInfinity(kalanSaniye))
+            {
+                kalanSaniye = mevsimSuresi;
+            }
 
             kalanSaniye -= (float)gecenSaniye;
 
             while (kalanSaniye <= 0)
             {
                 aktifMevsim = SonrakiMevsimiBul(aktifMevsim);
-                kalanSaniye += ayarlar.mevsimSuresiDakika * 60; 
+                kalanSaniye += mevsimSuresi;
             }
 
             Debug.Log($"[Season] Oyuna dönüldü. Mevsim: {aktifMevsim}. Bitmesine {(kalanSaniye/60):F1} dakika var.");
@@ -149,10 +177,24 @@ namespace ForrestGame.Core
 
         private void OnApplicationQuit()
         {
-            PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
-            PlayerPrefs.SetInt("AktifMevsim", (int)aktifMevsim);
-            PlayerPrefs.SetFloat("KalanMevsimSaniyesi", kalanSaniye);
-            PlayerPrefs.Save();
+            SaveSeasonState();
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                SaveSeasonState();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            RestoreRuntimeSeasonResources();
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         [ContextMenu("Test: Go To Winter")]
@@ -180,7 +222,9 @@ namespace ForrestGame.Core
         public void MevsimeGec(MevsimTuru yeniMevsim)
         {
             aktifMevsim = yeniMevsim;
-            kalanSaniye = ayarlar.mevsimSuresiDakika * 60;
+            kalanSaniye = ayarlar != null
+                ? Mathf.Max(1f, ayarlar.mevsimSuresiDakika * 60f)
+                : 1200f;
             winterPreviewStarted = false;
 
             Debug.Log($"[Season] Mevsim Değişti: {yeniMevsim} geldi!");
@@ -298,6 +342,8 @@ namespace ForrestGame.Core
 
         private void ApplySnowAmount(float snowAmount)
         {
+            PrepareRuntimeSeasonResources();
+
             if (snowTreeMaterials != null)
             {
                 foreach (Material mat in snowTreeMaterials)
@@ -306,17 +352,114 @@ namespace ForrestGame.Core
                 }
             }
 
-            if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
+            if (runtimeTerrain != null && runtimeTerrain.terrainData != null &&
+                Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
             {
-                TerrainData terrainData = Terrain.activeTerrain.terrainData;
+                TerrainData terrainData = runtimeTerrain.terrainData;
                 terrainData.RefreshPrototypes();
+                lastAppliedTerrainSnowAmount = snowAmount;
+                ApplyTerrainSnowBlend(terrainData, snowAmount);
+            }
+        }
 
-                if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
+        private void PrepareRuntimeSeasonResources()
+        {
+            if (runtimeResourcesPrepared)
+            {
+                return;
+            }
+
+            runtimeResourcesPrepared = true;
+
+            if (snowTreeMaterials != null)
+            {
+                originalSnowAmounts = new float[snowTreeMaterials.Length];
+                bool initialSnowFound = false;
+
+                for (int i = 0; i < snowTreeMaterials.Length; i++)
                 {
-                    lastAppliedTerrainSnowAmount = snowAmount;
-                    ApplyTerrainSnowBlend(terrainData, snowAmount);
+                    Material material = snowTreeMaterials[i];
+                    if (material == null || !material.HasProperty(SnowAmountID))
+                    {
+                        originalSnowAmounts[i] = 0f;
+                        continue;
+                    }
+
+                    originalSnowAmounts[i] = material.GetFloat(SnowAmountID);
+                    if (!initialSnowFound)
+                    {
+                        currentSnowAmount = originalSnowAmounts[i];
+                        initialSnowFound = true;
+                    }
                 }
             }
+
+            runtimeTerrain = Terrain.activeTerrain;
+            if (runtimeTerrain == null)
+            {
+                runtimeTerrain = FindFirstObjectByType<Terrain>();
+            }
+
+            if (runtimeTerrain == null || runtimeTerrain.terrainData == null)
+            {
+                return;
+            }
+
+            sourceTerrainData = runtimeTerrain.terrainData;
+            runtimeTerrainData = Instantiate(sourceTerrainData);
+            runtimeTerrainData.name = sourceTerrainData.name + " (Runtime Season Copy)";
+            runtimeTerrainData.hideFlags = HideFlags.DontSave;
+            runtimeTerrain.terrainData = runtimeTerrainData;
+
+            runtimeTerrainCollider = runtimeTerrain.GetComponent<TerrainCollider>();
+            if (runtimeTerrainCollider != null)
+            {
+                runtimeTerrainCollider.terrainData = runtimeTerrainData;
+            }
+        }
+
+        private void RestoreRuntimeSeasonResources()
+        {
+            if (snowTreeMaterials != null && originalSnowAmounts != null)
+            {
+                int count = Mathf.Min(snowTreeMaterials.Length, originalSnowAmounts.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    Material material = snowTreeMaterials[i];
+                    if (material != null && material.HasProperty(SnowAmountID))
+                    {
+                        material.SetFloat(SnowAmountID, originalSnowAmounts[i]);
+                    }
+                }
+            }
+
+            if (runtimeTerrain != null && sourceTerrainData != null)
+            {
+                runtimeTerrain.terrainData = sourceTerrainData;
+                if (runtimeTerrainCollider != null)
+                {
+                    runtimeTerrainCollider.terrainData = sourceTerrainData;
+                }
+            }
+
+            if (runtimeTerrainData != null)
+            {
+                Destroy(runtimeTerrainData);
+            }
+
+            runtimeTerrainData = null;
+            sourceTerrainData = null;
+            runtimeTerrain = null;
+            runtimeTerrainCollider = null;
+            runtimeResourcesPrepared = false;
+        }
+
+        private void SaveSeasonState()
+        {
+            PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
+            PlayerPrefs.SetInt("AktifMevsim", (int)aktifMevsim);
+            PlayerPrefs.SetFloat("KalanMevsimSaniyesi", kalanSaniye);
+            PlayerPrefs.Save();
         }
 
         private void ApplyTerrainSnowBlend(TerrainData terrainData, float snowAmount)

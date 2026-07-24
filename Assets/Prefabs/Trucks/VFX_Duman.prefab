@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3836170516795854924}
   - component: {fileID: 311818884976874912}
   - component: {fileID: 5151305766368538168}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: VFX_Duman
   m_TagString: Untagged
   m_Icon: {fileID: 0}
