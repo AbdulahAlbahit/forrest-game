@@ -46,6 +46,7 @@
 - [x] **P2 / EFE:** CC0 lisanslı Quaternius Ultimate Modular Men resmi Humanoid Rig modellerini ayrı geçerli Avatar'larla karaktere bağla; kısa kollu yaz, gömlekli ilkbahar, hafif dış giyim sonbahar ve kalın koruyucu kış setlerini dört kıyafet yuvasına yerleştir.
 - [x] **P2 / EFE:** Mevsim geçişlerinde karakter kimliğini sabitle; dört kıyafette de aynı sakalsız, açık tenli erkek baş/yüz/saç modelini kullan ve yalnızca kıyafeti değiştir.
 - [x] **P2 / MEVSİM SAHİBİ:** Mevsim değişikliği event'ini `EfeMevsimKiyafetleri.MevsimiUygula` metoduna bağla.
+- [ ] **P1 / MEVSİM SAHİBİ + EFE:** Play Mode başlayınca `SeasonManager` nesnesinin kaybolmasını ve oyunun kış mevsiminde takılı kalmasını inceleyip dört mevsim geçişini oyun içinde doğrula.
 
 ## Sprint 2 — ağaç kesme
 
@@ -90,7 +91,9 @@
 - [ ] **P1 / BELİRLENECEK:** Atölye giriş deposu ve üretim kuyruğu uygula.
 - [ ] **P1 / BELİRLENECEK:** Odun -> işlenmiş ürün dönüşüm tarifi, süre ve değer verilerini tanımla.
 - [ ] **P1 / BELİRLENECEK:** Üretim progress görseli ve tamamlanma feedback'i ekle.
-- [ ] **P1 / BELİRLENECEK:** İşlenmiş ürünün satılması ve para kazanımı akışını tamamla.
+- [x] **P1 / EFE:** Seçimli üretim yükünü kamyon markete ulaştığında satan, konsolda kazanç/bakiye gösteren ve UI/backend için event/API uçları bırakan oturumluk satış prototipini uygula.
+- [ ] **P1 / BACKEND SAHİBİ:** `EfeMarketSalesController.OnCreditRequested` üzerinden satış kazancını kalıcı ekonomi/Firebase bakiyesine ekleyip yetkili yeni bakiyeyi döndür.
+- [ ] **P1 / UI SAHİBİ:** `OnCargoReadyForMarket`, `OnSaleCompleted` ve `OnBalanceChanged` eventlerini ürün, satış bildirimi ve bakiye arayüzüne bağla.
 - [ ] **P1 / BELİRLENECEK:** Backend branch'indeki `EconomyManager` ve `UpgradeManager` API'lerini oynanıştan bağımsız incele ve sözleşmeyle entegre et.
 - [ ] **P1 / BELİRLENECEK:** En az balta gücü, sırt kapasitesi, kamyon kapasitesi ve atölye hızı upgrade'lerini uygula.
 - [ ] **P1 / BELİRLENECEK:** Satın alma maliyeti, yetersiz bakiye ve kalıcı seviye testleri yaz.

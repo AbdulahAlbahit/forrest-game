@@ -34,9 +34,12 @@ public class TruckRouteController : MonoBehaviour
     public float homeWaitTime = 5f; 
 
     // SFX Actions for AudioManager
+    public static event Action OnTruckDepartedHome;
     public static event Action OnTruckArrival;
     public static event Action OnTruckDeparture;
     public static event Action OnMarketSale;
+    public static event Action OnTruckDepartedMarket;
+    public static event Action OnTruckArrivedHome;
 
     /// <summary>
     /// Atolyeye varan kamyonu harici bir secim sistemi devralmak isterse true dondurur.
@@ -156,6 +159,7 @@ public class TruckRouteController : MonoBehaviour
 
             isAtHomePosition = false;
             GameLogger.Log($"[TruckRoute] Cargo full ({currentLoadedWood}/{requiredWoodToDepart}). Departing to workshop!", this);
+            OnTruckDepartedHome?.Invoke();
 
             yield return StartCoroutine(DriveToPoints(1, workshopIndex, true));
             
@@ -205,9 +209,11 @@ public class TruckRouteController : MonoBehaviour
 
             yield return StartCoroutine(StopAndWait(stopWaitTime));
 
+            OnTruckDepartedMarket?.Invoke();
             yield return StartCoroutine(DriveToPointsReverse(marketIndex - 1, 0, true));
 
             yield return StartCoroutine(TurnToFaceFirstPoint());
+            OnTruckArrivedHome?.Invoke();
             yield return StartCoroutine(StopAndWait(homeWaitTime));
 
             currentLoadedWood = 0;
