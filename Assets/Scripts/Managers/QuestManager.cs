@@ -50,6 +50,7 @@ namespace ForrestGame.Managers
         /// </summary>
         private void HandleItemSold(string itemId, int amount)
         {
+            Debug.Log($"QuestManager: HandleItemSold tetiklendi! Item: {itemId}, Miktar: {amount}");
             if (CloudSaveManager.Instance?.CurrentData == null) return;
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;

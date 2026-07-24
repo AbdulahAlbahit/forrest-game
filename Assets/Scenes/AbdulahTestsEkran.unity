@@ -258,7 +258,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.QuestManager
   tumGorevler:
-  - {fileID: 0}
+  - {fileID: 11400000, guid: ca6657874ee32b645b7f7915f42c8545, type: 2}
 --- !u!1 &98739144
 GameObject:
   m_ObjectHideFlags: 0

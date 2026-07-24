@@ -383,4 +383,29 @@ public class SystemTester : MonoBehaviour
             Debug.LogWarning($"[Test 4] Satis basarisiz: Dukkan stokta hicbir urun yok! Once Test 3 ile kamyonu calistir.");
         }
     }
+
+    // ADIM 5: Yeni NPC Siparis Sistemi Testi
+    [ContextMenu("Test 5: Yeni NPC Siparis Sistemi (Stok Yoksa BekleyenSiparise Atar)")]
+    public void TestNPC_NewOrderSystem()
+    {
+        if (ShopManager.Instance == null)
+        {
+            Debug.LogError("[Test 5] ShopManager bulunamadi!");
+            return;
+        }
+
+        string itemId = testRecipe != null ? testRecipe.ItemID : "Chair";
+        int siparisMiktari = 3;
+        int fiyat = 100;
+
+        Debug.Log($"[Test 5] NPC Geldi! {siparisMiktari} adet {itemId} istiyor.");
+        ShopManager.Instance.ProcessCustomerOrder(itemId, siparisMiktari, fiyat);
+
+        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+        {
+            PlayerData d = CloudSaveManager.Instance.CurrentData;
+            int bekleyenSiparis = d.PendingCustomerOrders != null ? d.PendingCustomerOrders.Get(itemId, 0) : 0;
+            Debug.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis miktari: {bekleyenSiparis}");
+        }
+    }
 }
