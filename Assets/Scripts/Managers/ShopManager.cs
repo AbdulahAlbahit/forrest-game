@@ -43,51 +43,7 @@ namespace ForrestGame.Managers
         private void HandleDataLoaded(PlayerData data)
         {
             if (data == null) return;
-            bool anyFulfilled = false;
-
-            if (data.PendingCustomerOrders != null && data.ShopInventory != null)
-            {
-                var pendingDict = data.PendingCustomerOrders.ToDictionary();
-                foreach (var kvp in pendingDict)
-                {
-                    string itemId = kvp.Key;
-                    int pending = System.Convert.ToInt32(kvp.Value);
-                    
-                    if (pending > 0)
-                    {
-                        int currentStock = data.ShopInventory.Get(itemId, 0);
-                        if (currentStock > 0)
-                        {
-                            int fulfilled = Mathf.Min(pending, currentStock);
-                            
-                            data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
-                            data.ShopInventory.Set(itemId, currentStock - fulfilled);
-                            
-                            int unitPrice = 100;
-                            if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
-                            {
-                                foreach (var r in WorkshopManager.Instance.tumTarifler)
-                                {
-                                    if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
-                                }
-                            }
-                            
-                            EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
-                            OnItemSold?.Invoke(itemId, fulfilled);
-                            OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
-                            anyFulfilled = true;
-                            
-                            Debug.Log($"ShopManager: Oyuna giriste bekleyen {fulfilled}x {itemId} siparisi mevcut stoktan karsilandi.");
-                        }
-                    }
-                }
-            }
-
-            if (anyFulfilled)
-            {
-                // Mevcut stoktan satis yapildigi icin aninda kayit atiyoruz.
-                CloudSaveManager.Instance.SaveData(data);
-            }
+            CheckAndFulfillPendingOrders(data, true);
         }
 
         private void HandleTruckArrivalAtMarket()
@@ -122,52 +78,73 @@ namespace ForrestGame.Managers
         public void AddStock(string itemId, int amount)
         {
             if (amount <= 0) return;
+            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;
 
-            // 1. Check pending orders
-            if (data.PendingCustomerOrders != null)
+            if (data.ShopInventory == null) 
             {
-                int pending = data.PendingCustomerOrders.Get(itemId, 0);
+                data.ShopInventory = new SerializableDict();
+            }
+
+            // 1. Once stogu envantere ekle
+            int currentStock = data.ShopInventory.Get(itemId, 0);
+            int newStock = currentStock + amount;
+            data.ShopInventory.Set(itemId, newStock);
+            OnStockChanged?.Invoke(itemId, newStock);
+
+            // 2. Bekleyen siparisleri mevcut stokla karsila
+            CheckAndFulfillPendingOrders(data, false);
+
+            // 3. Degisiklikleri kaydet
+            CloudSaveManager.Instance.SaveData(data);
+        }
+
+        public void CheckAndFulfillPendingOrders(PlayerData data, bool autoSave = true)
+        {
+            if (data == null || data.PendingCustomerOrders == null || data.ShopInventory == null) return;
+            
+            bool anyFulfilled = false;
+            var pendingDict = data.PendingCustomerOrders.ToDictionary();
+            
+            foreach (var kvp in pendingDict)
+            {
+                string itemId = kvp.Key;
+                int pending = System.Convert.ToInt32(kvp.Value);
+                
                 if (pending > 0)
                 {
-                    int fulfilled = Mathf.Min(pending, amount);
-                    
-                    data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
-                    amount -= fulfilled;
-                    
-                    int unitPrice = 100;
-                    if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+                    int currentStock = data.ShopInventory.Get(itemId, 0);
+                    if (currentStock > 0)
                     {
-                        foreach (var r in WorkshopManager.Instance.tumTarifler)
+                        int fulfilled = Mathf.Min(pending, currentStock);
+                        
+                        data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
+                        data.ShopInventory.Set(itemId, currentStock - fulfilled);
+                        
+                        int unitPrice = 100;
+                        if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
                         {
-                            if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
+                            foreach (var r in WorkshopManager.Instance.tumTarifler)
+                            {
+                                if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
+                            }
                         }
+                        
+                        EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
+                        OnItemSold?.Invoke(itemId, fulfilled);
+                        OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
+                        NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: {fulfilled}x {itemId}!");
+                        Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
+                        anyFulfilled = true;
                     }
-                    
-                    EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
-                    OnItemSold?.Invoke(itemId, fulfilled);
-                    NotificationManager.Instance?.SendNotification($"Bekleyen sipariş tamamlandı: {fulfilled}x {itemId}!");
-                    Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
                 }
             }
 
-            if (amount > 0)
+            if (anyFulfilled && autoSave)
             {
-                if (data.ShopInventory == null) 
-                {
-                    data.ShopInventory = new SerializableDict();
-                }
-
-                int currentStock = data.ShopInventory.Get(itemId, 0);
-                int newStock = currentStock + amount;
-
-                data.ShopInventory.Set(itemId, newStock);
-                OnStockChanged?.Invoke(itemId, newStock);
+                CloudSaveManager.Instance.SaveData(data);
             }
-
-            // Stok veya siparis degisince aninda buluta kaydet
-            CloudSaveManager.Instance.SaveData(data);
         }
 
         public bool TryRemoveStock(string itemId, int amount)
@@ -236,7 +213,11 @@ namespace ForrestGame.Managers
                 int currentPending = data.PendingCustomerOrders.Get(itemId, 0);
                 data.PendingCustomerOrders.Set(itemId, currentPending + amount);
 
-                NotificationManager.Instance.SendNotification($"Yeni Siparis: {amount} adet {itemId} bekleniyor!");
+                NotificationManager.Instance?.SendNotification($"Yeni Siparis: {amount} adet {itemId} bekleniyor!");
+                
+                // Siparisin karsilanabilen kismini hemen sat (stokta az da olsa varsa degerlendir)
+                CheckAndFulfillPendingOrders(data, false);
+                
                 CloudSaveManager.Instance.SaveData(data);
             }
         }
