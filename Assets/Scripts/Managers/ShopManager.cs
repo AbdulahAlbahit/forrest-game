@@ -40,7 +40,7 @@ namespace ForrestGame.Managers
             TruckRouteController.OnMarketSale -= HandleTruckArrivalAtMarket;
         }
 
-        private void HandleDataLoaded() { }
+        private void HandleDataLoaded(PlayerData data) { }
 
         private void HandleTruckArrivalAtMarket()
         {
