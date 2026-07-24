@@ -211,9 +211,10 @@ public class EfeWorkshopSelectionController : MonoBehaviour
 
         string option1 = DescribeOption(1, option1Recipe);
         string option2 = DescribeOption(2, option2Recipe);
-        Debug.Log(
-            $"[EfeWorkshopSelection] Kamyon atolyede. Uretim secimi bekleniyor. " +
-            $"Odun: {_deliveredWood}. {option1} | {option2}",
+        Debug.LogWarning(
+            $"[ATOLYE SECIMI] Kamyon atolyeye geldi. Urun secin: " +
+            $"klavyeden [{option1}] veya [{option2}]. Teslim edilen odun: {_deliveredWood}. " +
+            "Gelecekteki mobil arayuz SelectOption(1/2) metodunu cagirabilir.",
             this);
         InvokeSafely(OnSelectionRequested, truck, _deliveredWood);
         return true;
