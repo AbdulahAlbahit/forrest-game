@@ -131,7 +131,7 @@ namespace ForrestGame.Managers
                             }
                         }
                         
-                        EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
+                        EconomyManager.Instance?.AddMoney(fulfilled * unitPrice);
                         OnItemSold?.Invoke(itemId, fulfilled);
                         OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
                         NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: {fulfilled}x {itemId}!");
@@ -191,7 +191,7 @@ namespace ForrestGame.Managers
         {
             if (TryRemoveStock(itemId, amount))
             {
-                EconomyManager.Instance.AddMoney(amount * unitPrice);
+                EconomyManager.Instance?.AddMoney(amount * unitPrice);
                 // OnItemSold?.Invoke kaldirildi cunku TryRemoveStock icinde zaten cagiriliyor.
                 NotificationManager.Instance?.SendNotification($"{amount} adet {itemId} satildi!");
             }
