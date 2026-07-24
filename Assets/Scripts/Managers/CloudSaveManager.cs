@@ -480,7 +480,7 @@ public class CloudSaveManager : MonoBehaviour
 
         while (true)
         {
-            yield return new WaitForSeconds(autoSaveInterval);
+            yield return new WaitForSecondsRealtime(autoSaveInterval);
 
             if (CurrentData != null)
             {

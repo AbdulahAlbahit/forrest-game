@@ -276,13 +276,12 @@ public class WorkshopManager : MonoBehaviour
             if (string.IsNullOrEmpty(aktifUretilenItem)) return; // Uretilecek hicbir sey kalmamis
         }
 
-        // 2. Aktif uretilen esyanin tarifini bul
         RecipeConfig currentRecipe = null;
         if (tumTarifler != null)
         {
             foreach (var r in tumTarifler)
             {
-                if (r.ItemID == aktifUretilenItem)
+                if (r != null && r.ItemID == aktifUretilenItem)
                 {
                     currentRecipe = r;
                     break;
@@ -362,7 +361,7 @@ public class WorkshopManager : MonoBehaviour
         {
             foreach (var r in tumTarifler)
             {
-                if (r.ItemID == aktifUretilenItem) { currentRecipe = r; break; }
+                if (r != null && r.ItemID == aktifUretilenItem) { currentRecipe = r; break; }
             }
         }
         
