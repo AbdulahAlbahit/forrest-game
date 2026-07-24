@@ -9,6 +9,9 @@ namespace ForrestGame.Data
         [Header("Mevsim Süresi")]
         [Tooltip("Bir mevsimin kaç dakika süreceği (Çevrimdışıyken de sayar)")]
         public int mevsimSuresiDakika = 20;
+        [Range(0f, 1f)]
+        [Tooltip("Mevsim başladığında ışık/kar/yaprak rengi gibi görsel efektlerin kaç oranında yumuşak geçişle geleceği. Örn: 0.2 ve 20 dakikalık mevsimde geçiş ilk 4 dakika sürer.")]
+        public float gecisOrani = 0.2f;
 
         [Header("İlkbahar (Spring) Etkileri")]
         public float ilkbaharAgacBuyumeHizi = 1.20f;
