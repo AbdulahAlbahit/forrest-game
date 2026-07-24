@@ -209,6 +209,13 @@ public class CloudSaveManager : MonoBehaviour
             playerDict["ReadyForTruck"] = dict;
         }
 
+        if (data.PendingCustomerOrders != null)
+        {
+            Dictionary<string, object> dict = new Dictionary<string, object>();
+            foreach(string key in data.PendingCustomerOrders.keys) dict[key] = data.PendingCustomerOrders.Get(key);
+            playerDict["PendingCustomerOrders"] = dict;
+        }
+
         if (data.ActiveQuests != null)
         {
             Dictionary<string, object> dict = new Dictionary<string, object>();
@@ -329,6 +336,12 @@ public class CloudSaveManager : MonoBehaviour
                     data.ReadyForTruck.FromDictionary(readyForTruckRaw);
                 }
 
+                data.PendingCustomerOrders = new SerializableDict();
+                if (dict.ContainsKey("PendingCustomerOrders") && dict["PendingCustomerOrders"] is Dictionary<string, object> pendingRaw)
+                {
+                    data.PendingCustomerOrders.FromDictionary(pendingRaw);
+                }
+
                 data.ActiveQuests = new SerializableDict();
                 if (dict.ContainsKey("ActiveQuests") && dict["ActiveQuests"] is Dictionary<string, object> activeQuestsRaw)
                 {
@@ -444,6 +457,7 @@ public class CloudSaveManager : MonoBehaviour
                     if (localData.ShopInventory == null) localData.ShopInventory = new SerializableDict();
                     if (localData.WorkshopQueue == null) localData.WorkshopQueue = new SerializableDict();
                     if (localData.ReadyForTruck == null) localData.ReadyForTruck = new SerializableDict();
+                    if (localData.PendingCustomerOrders == null) localData.PendingCustomerOrders = new SerializableDict();
                     if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
                     if (localData.CompletedQuests == null) localData.CompletedQuests = new System.Collections.Generic.List<string>();
 
@@ -480,7 +494,7 @@ public class CloudSaveManager : MonoBehaviour
 
         while (true)
         {
-            yield return new WaitForSeconds(autoSaveInterval);
+            yield return new WaitForSecondsRealtime(autoSaveInterval);
 
             if (CurrentData != null)
             {

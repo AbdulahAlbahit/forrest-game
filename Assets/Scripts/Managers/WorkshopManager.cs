@@ -175,7 +175,6 @@ public class WorkshopManager : MonoBehaviour
         }
 
         CloudSaveManager.Instance.CurrentData.WorkshopRawWood++;
-        CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         return true;
     }
@@ -194,7 +193,6 @@ public class WorkshopManager : MonoBehaviour
         }
 
         CloudSaveManager.Instance.CurrentData.WorkshopRawWood += amount;
-        CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         Debug.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {MevcutKuyruk}");
     }
@@ -235,9 +233,8 @@ public class WorkshopManager : MonoBehaviour
         int existingQueue = data.WorkshopQueue.Get(recipe.ItemID, 0);
         data.WorkshopQueue.Set(recipe.ItemID, existingQueue + amount);
 
-        // Arayuz guncellemesi ve aninda bulut kaydi
+        // Arayuz guncellemesi (bulut kaydi Auto-Save'e birakildi)
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
-        CloudSaveManager.Instance.SaveData(data);
         
         return true;
     }
@@ -276,13 +273,12 @@ public class WorkshopManager : MonoBehaviour
             if (string.IsNullOrEmpty(aktifUretilenItem)) return; // Uretilecek hicbir sey kalmamis
         }
 
-        // 2. Aktif uretilen esyanin tarifini bul
         RecipeConfig currentRecipe = null;
         if (tumTarifler != null)
         {
             foreach (var r in tumTarifler)
             {
-                if (r.ItemID == aktifUretilenItem)
+                if (r != null && r.ItemID == aktifUretilenItem)
                 {
                     currentRecipe = r;
                     break;
@@ -336,8 +332,7 @@ public class WorkshopManager : MonoBehaviour
             OnWoodProcessed?.Invoke();
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);
             
-            // Aninda buluta kaydet
-            CloudSaveManager.Instance.SaveData(data);
+            // Bulut kaydi Auto-Save'e birakildi
 
             // Zamanlayici sifirla
             uretimZamanlayicisi = 0f;
@@ -362,7 +357,7 @@ public class WorkshopManager : MonoBehaviour
         {
             foreach (var r in tumTarifler)
             {
-                if (r.ItemID == aktifUretilenItem) { currentRecipe = r; break; }
+                if (r != null && r.ItemID == aktifUretilenItem) { currentRecipe = r; break; }
             }
         }
         

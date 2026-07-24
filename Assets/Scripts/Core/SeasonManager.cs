@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 using System;
-using System.Collections;
 using ForrestGame.Data;
 
 namespace ForrestGame.Core
@@ -11,12 +10,12 @@ namespace ForrestGame.Core
     public class SeasonManager : MonoBehaviour
     {
         public static SeasonManager Instance;
-        
+
         public static event Action<MevsimTuru> OnMevsimDegisti;
 
         [Header("Tasarım Ayarları")]
         public SeasonSettings ayarlar;
-        
+
         [Header("Anlık Durum (Sadece Bilgi İçin)")]
         public MevsimTuru aktifMevsim;
         public float kalanSaniye;
@@ -31,6 +30,23 @@ namespace ForrestGame.Core
         [Header("Snow Tree Materials (Using SH_MevsimAgac)")]
         [FormerlySerializedAs("agacKarMateryalleri")]
         public Material[] snowTreeMaterials;
+
+        [Header("Autumn Leaf Color Blend (Using SH_MevsimAgac _TabanRengi)")]
+        [Tooltip("Only leaf materials (e.g. leafsGreen 1/2, leafsDark) go here, not bark materials.")]
+        public Material[] autumnLeafMaterials;
+        [Tooltip("Normal (non-autumn) base color for each material above, matched by index. Set explicitly so a previous session's leftover material state can never be picked up as the baseline.")]
+        public Color[] baseLeafColors;
+        [Tooltip("Target autumn color for each material above, matched by index.")]
+        public Color[] autumnLeafColors;
+
+        [Header("Sonbahar Rain Fade")]
+        [Tooltip("Yagmurun tam yogunluktaki emisyon orani. Sonbahar'in baslangic/bitis kenarlarinda 0'a kadar iner.")]
+        public float sonbaharRainMaxEmissionRate = 180f;
+
+        [Header("Ilkbahar Flowers (Terrain Detail Layers)")]
+        [Tooltip("Cicekleri fircaladiktan sonra 'Tools/Ilkbahar Cicek Yogunlugunu Kaydet' ile olusan baseline asset'lerini (her cicek rengi/layer'i icin birer tane) buraya sürükle.")]
+        public TerrainDetailBaseline[] ilkbaharCicekBaselineleri;
+        private float lastAppliedFlowerAmount = -1f;
 
         [Header("Terrain Snow Blend")]
         [Tooltip("Terrain'deki toprak (ground) Terrain Layer'inin index'i.")]
@@ -55,121 +71,178 @@ namespace ForrestGame.Core
         public float yazLightIntensity = 1f;
         public float sonbaharLightIntensity = 1f;
         public float kisLightIntensity = 0.7f; // kapali/kararmis hava hissi
-        public float lightColorTransitionDuration = 5f;
-
-        private Coroutine lightColorTransitionCoroutine;
-
-        [Tooltip("How many seconds the snow amount takes to smoothly transition between 0 and 1")]
-        [FormerlySerializedAs("karGecisSuresiSaniye")]
-        public float snowTransitionDuration = 5f;
-
-        [Header("Winter Approach Preview")]
-        [Tooltip("How many minutes before Kis begins that light snow starts falling")]
-        public float transitionDurationMinutes = 5f;
-        [Range(0f, 1f)]
-        [Tooltip("Snow amount cap during the pre-winter preview window (full snow only starts once Kis officially begins)")]
-        public float lightSnowCapDuringTransition = 0.15f;
-        [Range(0f, 1f)]
-        [Tooltip("Snow particle intensity scale during the pre-winter preview window")]
-        public float lightSnowIntensityDuringTransition = 0.25f;
 
         private static readonly int SnowAmountID = Shader.PropertyToID("_KarMiktari");
-        private float currentSnowAmount;
-        private Coroutine snowTransitionCoroutine;
-        private bool winterPreviewStarted;
-        private Terrain runtimeTerrain;
-        private TerrainCollider runtimeTerrainCollider;
-        private TerrainData sourceTerrainData;
-        private TerrainData runtimeTerrainData;
-        private float[] originalSnowAmounts;
-        private bool runtimeResourcesPrepared;
+        private static readonly int BaseColorID = Shader.PropertyToID("_TabanRengi");
+
+        /// <summary>
+        /// Bir mevsimin ilk %10'u baslangic gecisi, son %10'u bitis gecisidir (ayarlar.gecisOrani'nin yarisi her kenara).
+        /// Ayni tarif tum mevsimlere ve tum gorsel kanallara (isik, kar, yaprak rengi, sonbahar VFX) uygulanir.
+        /// </summary>
+        private float EdgeDuration => ayarlar.mevsimSuresiDakika * 60f * (ayarlar.gecisOrani * 0.5f);
 
         private void Awake()
         {
             if (Instance == null) Instance = this;
-            PrepareRuntimeSeasonResources();
         }
 
         private void Start()
         {
             HesaplaCevrimdisiZaman();
-            MevsimEfektleriniGuncelle();
-            OnMevsimDegisti?.Invoke(aktifMevsim);
+            MevsimVFXAktifligiUygula();
         }
 
         private void Update()
         {
             kalanSaniye -= Time.deltaTime;
 
-            UpdateWinterPreview();
-
             if (kalanSaniye <= 0)
             {
                 MevsimeGec(SonrakiMevsimiBul(aktifMevsim));
             }
+
+            ApplyContinuousSeasonEffects();
         }
 
-        private void UpdateWinterPreview()
+        /// <summary>
+        /// Sadece bir mevsimin kendi suresi icinde var olan efektler (kar, sonbahar yaprak/yagmur) icin
+        /// 0 -> 1 -> 0 seklinde bir "darbe" degeri. Baslangic ve bitis kenarlarinda EdgeDuration suresince yumusar.
+        /// </summary>
+        private float GetSeasonPulseAmount(MevsimTuru hedefMevsim)
         {
-            if (aktifMevsim == MevsimTuru.Kis) return;
-            if (SonrakiMevsimiBul(aktifMevsim) != MevsimTuru.Kis) return;
+            if (aktifMevsim != hedefMevsim) return 0f;
 
-            float transitionSeconds = transitionDurationMinutes * 60f;
-            if (kalanSaniye > transitionSeconds) return;
+            float edge = EdgeDuration;
+            if (edge <= 0f) return 1f;
 
-            if (!winterPreviewStarted)
+            float toplamSure = ayarlar.mevsimSuresiDakika * 60f;
+            float gecenSure = toplamSure - kalanSaniye;
+
+            if (gecenSure < edge) return Mathf.Clamp01(gecenSure / edge);
+            if (kalanSaniye < edge) return Mathf.Clamp01(kalanSaniye / edge);
+            return 1f;
+        }
+
+        /// <summary>
+        /// Isik gibi tum mevsimlerde farkli bir hedefi olan surekli kanallar icin komsu mevsimle harmanlanmis agirlik.
+        /// Sinirda (mevsim degisim ani) her iki tarafta da 0.5 olacak sekilde simetriktir, ani sicrama olmaz.
+        /// </summary>
+        private float GetOwnSeasonWeight()
+        {
+            float edge = EdgeDuration;
+            if (edge <= 0f) return 1f;
+
+            float toplamSure = ayarlar.mevsimSuresiDakika * 60f;
+            float gecenSure = toplamSure - kalanSaniye;
+
+            if (gecenSure < edge) return 0.5f + 0.5f * Mathf.Clamp01(gecenSure / edge);
+            if (kalanSaniye < edge) return 0.5f + 0.5f * Mathf.Clamp01(kalanSaniye / edge);
+            return 1f;
+        }
+
+        private void ApplyContinuousSeasonEffects()
+        {
+            ApplyContinuousLight();
+
+            float kisMiktari = GetSeasonPulseAmount(MevsimTuru.Kis);
+            ApplySnowAmount(kisMiktari);
+            if (kisVFX != null)
             {
-                winterPreviewStarted = true;
-                if (kisVFX != null)
-                {
-                    kisVFX.SetActive(true);
-                    SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
-                    if (snowStorm != null) snowStorm.SetIntensityScale(lightSnowIntensityDuringTransition);
-                }
+                SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
+                if (snowStorm != null) snowStorm.SetIntensityScale(kisMiktari);
             }
 
-            float progress = 1f - Mathf.Clamp01(kalanSaniye / transitionSeconds);
-            currentSnowAmount = progress * lightSnowCapDuringTransition;
-            ApplySnowAmount(currentSnowAmount);
+            float sonbaharMiktari = GetSeasonPulseAmount(MevsimTuru.Sonbahar);
+            ApplyAutumnLeafColor(sonbaharMiktari);
+            ApplySonbaharVFXYogunlugu(sonbaharMiktari);
+        }
+
+        /// <summary>
+        /// Cicek yogunlugu her frame degil, sadece mevsim degistigi anda bir kere (sert 0/1 anahtar) uygulanir.
+        /// Boylece her frame yuzlerce/binlerce detail hucresini yeniden yazma yuku olmaz.
+        /// </summary>
+        private void ApplyIlkbaharCicekYogunlugu()
+        {
+            if (ilkbaharCicekBaselineleri == null || ilkbaharCicekBaselineleri.Length == 0) return;
+            if (Terrain.activeTerrain == null || Terrain.activeTerrain.terrainData == null) return;
+
+            float amount = aktifMevsim == MevsimTuru.Ilkbahar ? 1f : 0f;
+            if (Mathf.Approximately(amount, lastAppliedFlowerAmount)) return;
+
+            lastAppliedFlowerAmount = amount;
+
+            TerrainData terrainData = Terrain.activeTerrain.terrainData;
+
+            foreach (TerrainDetailBaseline baseline in ilkbaharCicekBaselineleri)
+            {
+                if (baseline == null) continue;
+
+                int layerIndex = baseline.detailLayerIndex;
+                if (layerIndex >= terrainData.detailPrototypes.Length) continue;
+
+                int width = baseline.width;
+                int height = baseline.height;
+                int[,] scaled = new int[height, width];
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        scaled[y, x] = Mathf.RoundToInt(baseline.density[y * width + x] * amount);
+                    }
+                }
+
+                terrainData.SetDetailLayer(0, 0, layerIndex, scaled);
+            }
+        }
+
+        private void ApplyContinuousLight()
+        {
+            if (directionalLight == null) return;
+
+            float agirlik = GetOwnSeasonWeight();
+            float edge = EdgeDuration;
+            float toplamSure = ayarlar.mevsimSuresiDakika * 60f;
+            float gecenSure = toplamSure - kalanSaniye;
+
+            MevsimTuru komsuMevsim;
+            if (edge > 0f && gecenSure < edge)
+            {
+                komsuMevsim = OncekiMevsimiBul(aktifMevsim);
+            }
+            else if (edge > 0f && kalanSaniye < edge)
+            {
+                komsuMevsim = SonrakiMevsimiBul(aktifMevsim);
+            }
+            else
+            {
+                komsuMevsim = aktifMevsim;
+            }
+
+            Color hedefRenk = Color.Lerp(GetLightColorForSeason(komsuMevsim), GetLightColorForSeason(aktifMevsim), agirlik);
+            float hedefYogunluk = Mathf.Lerp(GetLightIntensityForSeason(komsuMevsim), GetLightIntensityForSeason(aktifMevsim), agirlik);
+
+            directionalLight.color = hedefRenk;
+            directionalLight.intensity = hedefYogunluk;
         }
 
         private void HesaplaCevrimdisiZaman()
         {
-            float mevsimSuresi = ayarlar != null
-                ? Mathf.Max(1f, ayarlar.mevsimSuresiDakika * 60f)
-                : 1200f;
-            double gecenSaniye = 0d;
+            string sonGirisString = PlayerPrefs.GetString("SonCikisZamani", DateTime.Now.ToString());
+            DateTime sonGiris = DateTime.Parse(sonGirisString);
 
-            if (PlayerPrefs.HasKey("SonCikisZamani") &&
-                DateTime.TryParse(PlayerPrefs.GetString("SonCikisZamani"), out DateTime sonGiris))
-            {
-                gecenSaniye = Math.Max(0d, (DateTime.Now - sonGiris).TotalSeconds);
-            }
+            TimeSpan gecenZaman = DateTime.Now - sonGiris;
+            double gecenSaniye = gecenZaman.TotalSeconds;
 
-            if (PlayerPrefs.HasKey("AktifMevsim"))
-            {
-                int kayitliMevsim = PlayerPrefs.GetInt("AktifMevsim", (int)aktifMevsim);
-                if (Enum.IsDefined(typeof(MevsimTuru), kayitliMevsim))
-                {
-                    aktifMevsim = (MevsimTuru)kayitliMevsim;
-                }
-            }
-
-            kalanSaniye = PlayerPrefs.HasKey("KalanMevsimSaniyesi")
-                ? PlayerPrefs.GetFloat("KalanMevsimSaniyesi", mevsimSuresi)
-                : mevsimSuresi;
-
-            if (float.IsNaN(kalanSaniye) || float.IsInfinity(kalanSaniye))
-            {
-                kalanSaniye = mevsimSuresi;
-            }
+            aktifMevsim = (MevsimTuru)PlayerPrefs.GetInt("AktifMevsim", 0);
+            kalanSaniye = PlayerPrefs.GetFloat("KalanMevsimSaniyesi", ayarlar.mevsimSuresiDakika * 60);
 
             kalanSaniye -= (float)gecenSaniye;
 
             while (kalanSaniye <= 0)
             {
                 aktifMevsim = SonrakiMevsimiBul(aktifMevsim);
-                kalanSaniye += mevsimSuresi;
+                kalanSaniye += ayarlar.mevsimSuresiDakika * 60;
             }
 
             Debug.Log($"[Season] Oyuna dönüldü. Mevsim: {aktifMevsim}. Bitmesine {(kalanSaniye/60):F1} dakika var.");
@@ -177,24 +250,10 @@ namespace ForrestGame.Core
 
         private void OnApplicationQuit()
         {
-            SaveSeasonState();
-        }
-
-        private void OnApplicationPause(bool paused)
-        {
-            if (paused)
-            {
-                SaveSeasonState();
-            }
-        }
-
-        private void OnDestroy()
-        {
-            RestoreRuntimeSeasonResources();
-            if (Instance == this)
-            {
-                Instance = null;
-            }
+            PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
+            PlayerPrefs.SetInt("AktifMevsim", (int)aktifMevsim);
+            PlayerPrefs.SetFloat("KalanMevsimSaniyesi", kalanSaniye);
+            PlayerPrefs.Save();
         }
 
         [ContextMenu("Test: Go To Winter")]
@@ -222,15 +281,12 @@ namespace ForrestGame.Core
         public void MevsimeGec(MevsimTuru yeniMevsim)
         {
             aktifMevsim = yeniMevsim;
-            kalanSaniye = ayarlar != null
-                ? Mathf.Max(1f, ayarlar.mevsimSuresiDakika * 60f)
-                : 1200f;
-            winterPreviewStarted = false;
+            kalanSaniye = ayarlar.mevsimSuresiDakika * 60;
 
             Debug.Log($"[Season] Mevsim Değişti: {yeniMevsim} geldi!");
 
-            MevsimEfektleriniGuncelle();
-            
+            MevsimVFXAktifligiUygula();
+
             OnMevsimDegisti?.Invoke(yeniMevsim);
 
             if (AudioManager.Instance != null)
@@ -239,7 +295,7 @@ namespace ForrestGame.Core
             }
         }
 
-        private void MevsimEfektleriniGuncelle()
+        private void MevsimVFXAktifligiUygula()
         {
             if (ilkbaharVFX != null) ilkbaharVFX.SetActive(false);
             if (yazVFX != null) yazVFX.SetActive(false);
@@ -251,32 +307,11 @@ namespace ForrestGame.Core
                 case MevsimTuru.Ilkbahar: if (ilkbaharVFX != null) ilkbaharVFX.SetActive(true); break;
                 case MevsimTuru.Yaz: if (yazVFX != null) yazVFX.SetActive(true); break;
                 case MevsimTuru.Sonbahar: if (sonbaharVFX != null) sonbaharVFX.SetActive(true); break;
-                case MevsimTuru.Kis:
-                    if (kisVFX != null)
-                    {
-                        kisVFX.SetActive(true);
-                        SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
-                        if (snowStorm != null) snowStorm.SetIntensityScale(1f);
-                    }
-                    break;
+                case MevsimTuru.Kis: if (kisVFX != null) kisVFX.SetActive(true); break;
             }
 
-            float targetSnowAmount = aktifMevsim == MevsimTuru.Kis ? 1f : 0f;
-
-            if (snowTransitionCoroutine != null)
-            {
-                StopCoroutine(snowTransitionCoroutine);
-            }
-            snowTransitionCoroutine = StartCoroutine(TransitionSnowAmount(targetSnowAmount));
-
-            if (directionalLight != null)
-            {
-                if (lightColorTransitionCoroutine != null)
-                {
-                    StopCoroutine(lightColorTransitionCoroutine);
-                }
-                lightColorTransitionCoroutine = StartCoroutine(TransitionLight(GetLightColorForSeason(aktifMevsim), GetLightIntensityForSeason(aktifMevsim)));
-            }
+            ApplyIlkbaharCicekYogunlugu();
+            ApplyContinuousSeasonEffects();
         }
 
         private Color GetLightColorForSeason(MevsimTuru mevsim)
@@ -303,47 +338,43 @@ namespace ForrestGame.Core
             }
         }
 
-        private IEnumerator TransitionLight(Color targetColor, float targetIntensity)
+        private void ApplyAutumnLeafColor(float amount)
         {
-            Color startColor = directionalLight.color;
-            float startIntensity = directionalLight.intensity;
-            float elapsed = 0f;
+            if (autumnLeafMaterials == null) return;
 
-            while (elapsed < lightColorTransitionDuration)
+            for (int i = 0; i < autumnLeafMaterials.Length; i++)
             {
-                elapsed += Time.deltaTime;
-                float progress = Mathf.Clamp01(elapsed / lightColorTransitionDuration);
-                directionalLight.color = Color.Lerp(startColor, targetColor, progress);
-                directionalLight.intensity = Mathf.Lerp(startIntensity, targetIntensity, progress);
-                yield return null;
-            }
+                Material mat = autumnLeafMaterials[i];
+                if (mat == null) continue;
+                if (baseLeafColors == null || i >= baseLeafColors.Length) continue;
+                if (autumnLeafColors == null || i >= autumnLeafColors.Length) continue;
 
-            directionalLight.color = targetColor;
-            directionalLight.intensity = targetIntensity;
+                Color blended = Color.Lerp(baseLeafColors[i], autumnLeafColors[i], amount);
+                mat.SetColor(BaseColorID, blended);
+            }
         }
 
-        private IEnumerator TransitionSnowAmount(float targetSnowAmount)
+        private void ApplySonbaharVFXYogunlugu(float amount)
         {
-            float startSnowAmount = currentSnowAmount;
-            float elapsed = 0f;
+            if (sonbaharVFX == null) return;
 
-            while (elapsed < snowTransitionDuration)
+            foreach (SnowStormController controller in sonbaharVFX.GetComponentsInChildren<SnowStormController>(true))
             {
-                elapsed += Time.deltaTime;
-                float progress = Mathf.Clamp01(elapsed / snowTransitionDuration);
-                currentSnowAmount = Mathf.Lerp(startSnowAmount, targetSnowAmount, progress);
-                ApplySnowAmount(currentSnowAmount);
-                yield return null;
+                controller.SetIntensityScale(amount);
             }
 
-            currentSnowAmount = targetSnowAmount;
-            ApplySnowAmount(currentSnowAmount);
+            Transform rainTransform = sonbaharVFX.transform.Find("Rain");
+            if (rainTransform == null) return;
+
+            ParticleSystem rainParticles = rainTransform.GetComponent<ParticleSystem>();
+            if (rainParticles == null) return;
+
+            ParticleSystem.EmissionModule emission = rainParticles.emission;
+            emission.rateOverTime = amount * sonbaharRainMaxEmissionRate;
         }
 
         private void ApplySnowAmount(float snowAmount)
         {
-            PrepareRuntimeSeasonResources();
-
             if (snowTreeMaterials != null)
             {
                 foreach (Material mat in snowTreeMaterials)
@@ -352,114 +383,17 @@ namespace ForrestGame.Core
                 }
             }
 
-            if (runtimeTerrain != null && runtimeTerrain.terrainData != null &&
-                Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
+            if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
             {
-                TerrainData terrainData = runtimeTerrain.terrainData;
+                TerrainData terrainData = Terrain.activeTerrain.terrainData;
                 terrainData.RefreshPrototypes();
-                lastAppliedTerrainSnowAmount = snowAmount;
-                ApplyTerrainSnowBlend(terrainData, snowAmount);
-            }
-        }
 
-        private void PrepareRuntimeSeasonResources()
-        {
-            if (runtimeResourcesPrepared)
-            {
-                return;
-            }
-
-            runtimeResourcesPrepared = true;
-
-            if (snowTreeMaterials != null)
-            {
-                originalSnowAmounts = new float[snowTreeMaterials.Length];
-                bool initialSnowFound = false;
-
-                for (int i = 0; i < snowTreeMaterials.Length; i++)
+                if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
                 {
-                    Material material = snowTreeMaterials[i];
-                    if (material == null || !material.HasProperty(SnowAmountID))
-                    {
-                        originalSnowAmounts[i] = 0f;
-                        continue;
-                    }
-
-                    originalSnowAmounts[i] = material.GetFloat(SnowAmountID);
-                    if (!initialSnowFound)
-                    {
-                        currentSnowAmount = originalSnowAmounts[i];
-                        initialSnowFound = true;
-                    }
+                    lastAppliedTerrainSnowAmount = snowAmount;
+                    ApplyTerrainSnowBlend(terrainData, snowAmount);
                 }
             }
-
-            runtimeTerrain = Terrain.activeTerrain;
-            if (runtimeTerrain == null)
-            {
-                runtimeTerrain = FindFirstObjectByType<Terrain>();
-            }
-
-            if (runtimeTerrain == null || runtimeTerrain.terrainData == null)
-            {
-                return;
-            }
-
-            sourceTerrainData = runtimeTerrain.terrainData;
-            runtimeTerrainData = Instantiate(sourceTerrainData);
-            runtimeTerrainData.name = sourceTerrainData.name + " (Runtime Season Copy)";
-            runtimeTerrainData.hideFlags = HideFlags.DontSave;
-            runtimeTerrain.terrainData = runtimeTerrainData;
-
-            runtimeTerrainCollider = runtimeTerrain.GetComponent<TerrainCollider>();
-            if (runtimeTerrainCollider != null)
-            {
-                runtimeTerrainCollider.terrainData = runtimeTerrainData;
-            }
-        }
-
-        private void RestoreRuntimeSeasonResources()
-        {
-            if (snowTreeMaterials != null && originalSnowAmounts != null)
-            {
-                int count = Mathf.Min(snowTreeMaterials.Length, originalSnowAmounts.Length);
-                for (int i = 0; i < count; i++)
-                {
-                    Material material = snowTreeMaterials[i];
-                    if (material != null && material.HasProperty(SnowAmountID))
-                    {
-                        material.SetFloat(SnowAmountID, originalSnowAmounts[i]);
-                    }
-                }
-            }
-
-            if (runtimeTerrain != null && sourceTerrainData != null)
-            {
-                runtimeTerrain.terrainData = sourceTerrainData;
-                if (runtimeTerrainCollider != null)
-                {
-                    runtimeTerrainCollider.terrainData = sourceTerrainData;
-                }
-            }
-
-            if (runtimeTerrainData != null)
-            {
-                Destroy(runtimeTerrainData);
-            }
-
-            runtimeTerrainData = null;
-            sourceTerrainData = null;
-            runtimeTerrain = null;
-            runtimeTerrainCollider = null;
-            runtimeResourcesPrepared = false;
-        }
-
-        private void SaveSeasonState()
-        {
-            PlayerPrefs.SetString("SonCikisZamani", DateTime.Now.ToString());
-            PlayerPrefs.SetInt("AktifMevsim", (int)aktifMevsim);
-            PlayerPrefs.SetFloat("KalanMevsimSaniyesi", kalanSaniye);
-            PlayerPrefs.Save();
         }
 
         private void ApplyTerrainSnowBlend(TerrainData terrainData, float snowAmount)
@@ -506,6 +440,14 @@ namespace ForrestGame.Core
             if (suanki == MevsimTuru.Yaz) return MevsimTuru.Sonbahar;
             if (suanki == MevsimTuru.Sonbahar) return MevsimTuru.Kis;
             return MevsimTuru.Ilkbahar;
+        }
+
+        private MevsimTuru OncekiMevsimiBul(MevsimTuru suanki)
+        {
+            if (suanki == MevsimTuru.Yaz) return MevsimTuru.Ilkbahar;
+            if (suanki == MevsimTuru.Sonbahar) return MevsimTuru.Yaz;
+            if (suanki == MevsimTuru.Kis) return MevsimTuru.Sonbahar;
+            return MevsimTuru.Kis;
         }
     }
 }
