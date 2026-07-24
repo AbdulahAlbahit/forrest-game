@@ -7,6 +7,7 @@ public class PlayerData
     public int Para;
     public int XP;
     public int OyuncuSeviyesi;
+    public long LastSaveTime = 0;
 
     // --- Jenerik Upgrade Seviyeleri ---
     // Tum esyalarin seviyeleri bu sozlukte tutulur.

@@ -152,6 +152,9 @@ public class CloudSaveManager : MonoBehaviour
             return;
         }
 
+        // Zaman damgasi (Timestamp) guncelle
+        data.LastSaveTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
         // --- Lokal Kayit (Offline Save) ---
         // Firestore'dan bagimsiz olarak her zaman yerel yedegi guncelle
         SaveToLocal(data);
@@ -176,7 +179,8 @@ public class CloudSaveManager : MonoBehaviour
             { "OyunSuresi", data.OyunSuresi },
             { "WorkshopRawWood", data.WorkshopRawWood },
             { "AcilanBolgeler", data.AcilanBolgeler },
-            { "SonGuncelleme", FieldValue.ServerTimestamp }
+            { "SonGuncelleme", FieldValue.ServerTimestamp },
+            { "LastSaveTime", data.LastSaveTime }
         };
 
         // ItemLevels sozlugunu Firestore'a yaz
@@ -303,6 +307,11 @@ public class CloudSaveManager : MonoBehaviour
                     }
                 }
 
+                if (dict.ContainsKey("LastSaveTime")) 
+                {
+                    data.LastSaveTime = Convert.ToInt64(dict["LastSaveTime"]);
+                }
+
                 // ═══════════════════════════════════════════
                 //  ItemLevels Yukleme + Geriye Donuk Uyumluluk (Migration)
                 // ═══════════════════════════════════════════
@@ -384,6 +393,22 @@ public class CloudSaveManager : MonoBehaviour
                     Debug.LogWarning("CloudSaveManager: [MIGRATION] Eski format tespit edildi! Veriler yeni ItemLevels yapisina aktarildi.");
                 }
 
+                // ═══════════════════════════════════════════
+                //  Cakisma Onleme (Conflict Resolution)
+                // ═══════════════════════════════════════════
+                PlayerData localData = GetLocalData();
+                if (localData != null && localData.LastSaveTime > data.LastSaveTime)
+                {
+                    Debug.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttaki veriden (Time: {data.LastSaveTime}) daha guncel! Lokal veri korunuyor ve buluta yaziliyor...");
+                    CurrentData = localData;
+                    
+                    // Lokal veriyi hemen buluta senkronize et
+                    SaveData(localData);
+                    
+                    OnDataLoaded?.Invoke(localData);
+                    return; // Buluttan gelen eski veriyi reddet
+                }
+
                 CurrentData = data;
 
                 // Buluttan basariyla yuklendi, lokal yedegi de guncelle
@@ -438,11 +463,28 @@ public class CloudSaveManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Bulut baglantisi basarisiz oldugunda PlayerPrefs'ten veri okuyup oyunu baslatir.
-    /// Eger lokal veri de yoksa yeni bir PlayerData olusturur.
-    /// </summary>
     private void LoadFromLocalFallback()
+    {
+        PlayerData localData = GetLocalData();
+        if (localData != null)
+        {
+            CurrentData = localData;
+            Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
+            OnDataLoaded?.Invoke(localData);
+            return;
+        }
+
+        // Lokal veri de yoksa sifirdan baslat
+        Debug.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
+        PlayerData newData = new PlayerData();
+        CurrentData = newData;
+        OnDataLoaded?.Invoke(newData);
+    }
+
+    /// <summary>
+    /// PlayerPrefs'ten PlayerData'yi okur ve geriye dondurur. Veri yoksa null doner.
+    /// </summary>
+    public PlayerData GetLocalData()
     {
         if (PlayerPrefs.HasKey(LOCAL_SAVE_KEY))
         {
@@ -461,10 +503,7 @@ public class CloudSaveManager : MonoBehaviour
                     if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
                     if (localData.CompletedQuests == null) localData.CompletedQuests = new System.Collections.Generic.List<string>();
 
-                    CurrentData = localData;
-                    Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
-                    OnDataLoaded?.Invoke(localData);
-                    return;
+                    return localData;
                 }
             }
             catch (Exception e)
@@ -472,12 +511,7 @@ public class CloudSaveManager : MonoBehaviour
                 Debug.LogError($"CloudSaveManager: Lokal veri okuma hatasi: {e.Message}");
             }
         }
-
-        // Lokal veri de yoksa sifirdan baslat
-        Debug.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
-        PlayerData newData = new PlayerData();
-        CurrentData = newData;
-        OnDataLoaded?.Invoke(newData);
+        return null;
     }
 
     // =============================================
