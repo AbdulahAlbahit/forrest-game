@@ -40,7 +40,55 @@ namespace ForrestGame.Managers
             TruckRouteController.OnMarketSale -= HandleTruckArrivalAtMarket;
         }
 
-        private void HandleDataLoaded(PlayerData data) { }
+        private void HandleDataLoaded(PlayerData data)
+        {
+            if (data == null) return;
+            bool anyFulfilled = false;
+
+            if (data.PendingCustomerOrders != null && data.ShopInventory != null)
+            {
+                var pendingDict = data.PendingCustomerOrders.ToDictionary();
+                foreach (var kvp in pendingDict)
+                {
+                    string itemId = kvp.Key;
+                    int pending = System.Convert.ToInt32(kvp.Value);
+                    
+                    if (pending > 0)
+                    {
+                        int currentStock = data.ShopInventory.Get(itemId, 0);
+                        if (currentStock > 0)
+                        {
+                            int fulfilled = Mathf.Min(pending, currentStock);
+                            
+                            data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
+                            data.ShopInventory.Set(itemId, currentStock - fulfilled);
+                            
+                            int unitPrice = 100;
+                            if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+                            {
+                                foreach (var r in WorkshopManager.Instance.tumTarifler)
+                                {
+                                    if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
+                                }
+                            }
+                            
+                            EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
+                            OnItemSold?.Invoke(itemId, fulfilled);
+                            OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
+                            anyFulfilled = true;
+                            
+                            Debug.Log($"ShopManager: Oyuna giriste bekleyen {fulfilled}x {itemId} siparisi mevcut stoktan karsilandi.");
+                        }
+                    }
+                }
+            }
+
+            if (anyFulfilled)
+            {
+                // Mevcut stoktan satis yapildigi icin aninda kayit atiyoruz.
+                CloudSaveManager.Instance.SaveData(data);
+            }
+        }
 
         private void HandleTruckArrivalAtMarket()
         {
@@ -98,6 +146,7 @@ namespace ForrestGame.Managers
                     }
                     
                     EconomyManager.Instance.AddMoney(fulfilled * unitPrice);
+                    OnItemSold?.Invoke(itemId, fulfilled);
                     NotificationManager.Instance?.SendNotification($"Bekleyen sipariş tamamlandı: {fulfilled}x {itemId}!");
                     Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
                 }
@@ -161,7 +210,8 @@ namespace ForrestGame.Managers
             if (TryRemoveStock(itemId, amount))
             {
                 EconomyManager.Instance.AddMoney(amount * unitPrice);
-                NotificationManager.Instance.SendNotification($"{amount} adet {itemId} satildi!");
+                OnItemSold?.Invoke(itemId, amount);
+                NotificationManager.Instance?.SendNotification($"{amount} adet {itemId} satildi!");
             }
             else
             {
