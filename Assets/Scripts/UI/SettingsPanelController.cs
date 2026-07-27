@@ -31,18 +31,11 @@ public class SettingsPanelController : MonoBehaviour
     [SerializeField] private TextMeshProUGUI sfxToggleText;
 
     [Header("--- Diger ---")]
-    [Tooltip("Oturumu kapatip login ekranina donduren buton.")]
-    [SerializeField] private Button logoutButton;
-
     [Tooltip("Ayarlar panelini kapatan buton.")]
     [SerializeField] private Button closeButton;
 
     [Tooltip("Oyun versiyonunu gosteren text. Otomatik olarak Application.version'dan doldurulur.")]
     [SerializeField] private TextMeshProUGUI versionText;
-
-    [Header("--- Sahne Ayarlari ---")]
-    [Tooltip("Cikis yapildiginda donulecek login sahnesinin adi.")]
-    [SerializeField] private string loginSceneName = "Bulut_UI_Login";
     
     [Header("--- Ses Ayarlari ---")]
     [Tooltip("Butonlara basildiginda calacak SFX sesinin ismi (AudioManager'daki Sound ismi). Bos kalirsa calmaz.")]
@@ -95,9 +88,6 @@ public class SettingsPanelController : MonoBehaviour
 
         if (sfxToggleButton != null)
             sfxToggleButton.onClick.AddListener(ToggleSFX);
-
-        if (logoutButton != null)
-            logoutButton.onClick.AddListener(Logout);
 
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
@@ -159,27 +149,7 @@ public class SettingsPanelController : MonoBehaviour
         Debug.Log($"SettingsPanelController: SFX {(isSfxOn ? "acildi" : "kapatildi")}");
     }
 
-    // ═══════════════════════════════════════════
-    //  Cikis (Logout)
-    // ═══════════════════════════════════════════
 
-    /// <summary>
-    /// Firebase oturumunu kapatir ve login sahnesine doner.
-    /// </summary>
-    private void Logout()
-    {
-        PlayButtonClickSFX();
-        Debug.Log("SettingsPanelController: Cikis yapiliyor...");
-
-        // Firebase oturumunu kapat
-        if (FirebaseAuthManager.Instance != null)
-        {
-            FirebaseAuthManager.Instance.SignOut();
-        }
-
-        // Login sahnesine don
-        SceneManager.LoadScene(loginSceneName);
-    }
 
     // ═══════════════════════════════════════════
     //  Panel Kapat
