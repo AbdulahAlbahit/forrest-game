@@ -250,7 +250,7 @@ public class WorkshopManager : MonoBehaviour
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
         
-        if (data.WorkshopQueue == null || data.WorkshopQueue.ToDictionary().Keys.Count == 0)
+        if (data.WorkshopQueue == null || data.WorkshopQueue.keys.Count == 0)
         {
             uretimZamanlayicisi = 0f;
             aktifUretilenItem = "";
@@ -261,7 +261,7 @@ public class WorkshopManager : MonoBehaviour
         if (string.IsNullOrEmpty(aktifUretilenItem) || data.WorkshopQueue.Get(aktifUretilenItem, 0) <= 0)
         {
             aktifUretilenItem = "";
-            foreach (string itemId in data.WorkshopQueue.ToDictionary().Keys)
+            foreach (string itemId in data.WorkshopQueue.keys)
             {
                 if (data.WorkshopQueue.Get(itemId, 0) > 0)
                 {
