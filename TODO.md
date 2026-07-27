@@ -87,7 +87,8 @@
 
 - [x] **P1 / EFE:** Kamyon atölyeye vardığında eski otomatik akışı fallback olarak koruyan ürün seçim event kapısını ve UI öncesi `1=Sandalye`, `2=Koltuk` klavye prototipini uygula.
 - [ ] **P1 / BACKEND SAHİBİ:** Atölye ham odununu kalıcı veriye ekle; bütün kontrollerden sonra odun düşüren sonuç döndürücü `TryStartProduction` API'sini sağla.
-- [ ] **P1 / UI SAHİBİ:** Ürün/miktar seçim arayüzünü `EfeWorkshopSelectionController.SelectRecipe` API'sine ve seçim/üretim event'lerine bağla.
+- [x] **P1 / EFE + UI SAHİBİ:** Bulut'un `WorkshopPanel` arayüzünü `EfeWorkshopSelectionController.SelectRecipe` API'sine bağla; kamyon atölyeye gelince paneli aç, seçim kabul edilince üretimi başlatıp paneli kapat.
+- [x] **P1 / EFE:** Atölye panelinde ürün kartına dokununca doğrudan kuyruğa eklenen, son `Üret` basışıyla başlayan ve teslim edilen odun sınırını aşmayan karma ürün kuyruğu kur; ürünleri yeşil ilerleme halkası ve koli uçuşuyla tek tek üret, Masa/Sandalye/Ahşap Dolap satışlarını ayrı fiyatlarla market bakiyesine ekle.
 - [ ] **P1 / BELİRLENECEK:** Atölye giriş deposu ve üretim kuyruğu uygula.
 - [ ] **P1 / BELİRLENECEK:** Odun -> işlenmiş ürün dönüşüm tarifi, süre ve değer verilerini tanımla.
 - [ ] **P1 / BELİRLENECEK:** Üretim progress görseli ve tamamlanma feedback'i ekle.
