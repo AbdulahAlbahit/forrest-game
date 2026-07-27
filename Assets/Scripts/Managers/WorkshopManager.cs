@@ -129,7 +129,7 @@ public class WorkshopManager : MonoBehaviour
 
     public float GetProcessingSpeed()
     {
-        float baseSpeed = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue("Workshop") : cachedSpeed;
+        float baseSpeed = cachedSpeed > 0 ? cachedSpeed : 1f;
         return baseSpeed * GetSeasonProductionMultiplier();
     }
 
@@ -142,11 +142,7 @@ public class WorkshopManager : MonoBehaviour
 
     public int GetWorkshopCapacity()
     {
-        if (UpgradeManager.Instance != null)
-        {
-            return Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue("WorkshopQueue"));
-        }
-        return cachedCapacity;
+        return cachedCapacity > 0 ? cachedCapacity : 10;
     }
 
     // ═══════════════════════════════════════════
@@ -208,26 +204,15 @@ public class WorkshopManager : MonoBehaviour
             return false;
         }
 
-        int requiredWood = recipe.RequiredWood * amount;
-
-        if (MevcutKuyruk < requiredWood)
-        {
-            GameLogger.LogWarning($"WorkshopManager: Yetersiz odun bakiyesi! Gereken: {requiredWood}, Mevcut: {MevcutKuyruk}");
-            NotificationManager.Instance?.SendNotification("Yetersiz odun!");
-            return false;
-        }
-
-        // 3. Kontroller gecti, islemi onayla ve odunu dus
         PlayerData data = CloudSaveManager.Instance.CurrentData;
-        data.WorkshopRawWood -= requiredWood; // Firebase verisini de guncelle
-
         if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
 
-        // Uretim siparisini PlayerData uzerindeki WorkshopQueue'ya ekle
         int existingQueue = data.WorkshopQueue.Get(recipe.ItemID, 0);
         data.WorkshopQueue.Set(recipe.ItemID, existingQueue + amount);
 
-        // Arayuz guncellemesi (bulut kaydi Auto-Save'e birakildi)
+        GameLogger.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim sirasina alindi.");
+        NotificationManager.Instance?.SendNotification($"{amount} adet üretime eklendi!");
+
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         
         return true;
@@ -286,6 +271,19 @@ public class WorkshopManager : MonoBehaviour
             data.WorkshopQueue.Set(aktifUretilenItem, 0);
             aktifUretilenItem = "";
             return;
+        }
+
+        if (uretimZamanlayicisi <= 0f)
+        {
+            if (data.WorkshopRawWood >= currentRecipe.RequiredWood)
+            {
+                data.WorkshopRawWood -= currentRecipe.RequiredWood;
+                OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+            }
+            else
+            {
+                return;
+            }
         }
 
         float hizCarpani = GetProcessingSpeed();
