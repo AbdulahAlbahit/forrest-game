@@ -53,12 +53,16 @@ QualitySettings:
     terrainPixelError: 1
     terrainDetailDensityScale: 1
     terrainBasemapDistance: 1000
-    terrainDetailDistance: 80
-    terrainTreeDistance: 5000
+    terrainDetailDistance: 50
+    terrainTreeDistance: 80
     terrainBillboardStart: 50
     terrainFadeLength: 5
     terrainMaxTrees: 50
     excludedTargetPlatforms:
     - Standalone
   m_TextureMipmapLimitGroupNames: []
-  m_PerPlatformDefaultQuality: {}
+  m_PerPlatformDefaultQuality:
+    Android: 0
+    Nintendo Switch 2: 0
+    Standalone: 0
+    iPhone: 0

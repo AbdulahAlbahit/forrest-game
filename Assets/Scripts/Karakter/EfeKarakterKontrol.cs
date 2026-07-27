@@ -36,6 +36,7 @@ public class EfeKarakterKontrol : MonoBehaviour
 
     private CharacterController controller;
     private Animator animator;
+    private Transform kameraTransform;
     private Vector3 yatayHiz;
     private float dikeyHiz;
     private Collider aktifSuAlani;
@@ -56,6 +57,7 @@ public class EfeKarakterKontrol : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
+        if (Camera.main != null) kameraTransform = Camera.main.transform;
         baslangicKonumu = transform.position;
         baslangicDonusu = transform.rotation;
 
@@ -90,13 +92,13 @@ public class EfeKarakterKontrol : MonoBehaviour
             // Kameranın baktığı yatay (X-Z) yönü al (y ekseni sıfırlanır ki yere saplanmasın)
             Vector3 camForward = Vector3.forward;
             Vector3 camRight = Vector3.right;
-            if (Camera.main != null)
+            if (kameraTransform != null)
             {
-                camForward = Camera.main.transform.forward;
+                camForward = kameraTransform.forward;
                 camForward.y = 0f;
                 camForward.Normalize();
 
-                camRight = Camera.main.transform.right;
+                camRight = kameraTransform.right;
                 camRight.y = 0f;
                 camRight.Normalize();
             }
