@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -54,13 +55,26 @@ public class EfeMarketSalesController : MonoBehaviour
     [SerializeField] private bool logEmptyMarketArrival;
 
     public int CurrentBalance => _currentBalance;
-    public bool HasPendingCargo => _pendingRecipe != null && _pendingAmount > 0;
-    public RecipeConfig PendingRecipe => _pendingRecipe;
-    public int PendingAmount => _pendingAmount;
+    public bool HasPendingCargo => _pendingCargo.Count > 0;
+    public RecipeConfig PendingRecipe => HasPendingCargo ? _pendingCargo[0].Recipe : null;
+    public int PendingAmount
+    {
+        get
+        {
+            int total = 0;
+            foreach (PendingCargoEntry entry in _pendingCargo) total += entry.Amount;
+            return total;
+        }
+    }
 
     private int _currentBalance;
-    private RecipeConfig _pendingRecipe;
-    private int _pendingAmount;
+    private readonly List<PendingCargoEntry> _pendingCargo = new List<PendingCargoEntry>();
+
+    private sealed class PendingCargoEntry
+    {
+        public RecipeConfig Recipe;
+        public int Amount;
+    }
 
     private void Awake()
     {
@@ -123,12 +137,22 @@ public class EfeMarketSalesController : MonoBehaviour
             return;
         }
 
-        _pendingRecipe = recipe;
-        _pendingAmount = amount;
+        PendingCargoEntry existing = _pendingCargo.Find(
+            entry => string.Equals(entry.Recipe.ItemID, recipe.ItemID, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            existing.Amount += amount;
+        }
+        else
+        {
+            _pendingCargo.Add(new PendingCargoEntry { Recipe = recipe, Amount = amount });
+        }
+
+        int unitPrice = ResolveUnitPrice(recipe);
 
         Debug.Log(
             $"[EfeMarketSales] Market yuku hazir: {amount}x {recipe.ItemID}. " +
-            $"Birim satis fiyati: {Mathf.Max(0, recipe.BaseSalePrice)}.",
+            $"Birim satis fiyati: {unitPrice}. Kamyondaki toplam koli: {PendingAmount}.",
             this);
         InvokeSafely(OnCargoReadyForMarket, recipe, amount);
     }
@@ -148,49 +172,83 @@ public class EfeMarketSalesController : MonoBehaviour
             return false;
         }
 
-        int quantity = _pendingAmount;
-        string itemId = _pendingRecipe.ItemID;
-        int unitPrice = Mathf.Max(0, _pendingRecipe.BaseSalePrice);
-        int earnedAmount = unitPrice * quantity;
-        int previousBalance = _currentBalance;
+        int saleStartBalance = _currentBalance;
+        int totalEarned = 0;
+        int totalQuantity = 0;
 
-        SaleRequest request = new SaleRequest
+        foreach (PendingCargoEntry cargo in _pendingCargo)
         {
-            ItemId = itemId,
-            Quantity = quantity,
-            UnitPrice = unitPrice,
-            TotalPrice = earnedAmount
-        };
+            int quantity = cargo.Amount;
+            string itemId = cargo.Recipe.ItemID;
+            int unitPrice = ResolveUnitPrice(cargo.Recipe);
+            int earnedAmount = unitPrice * quantity;
+            int previousBalance = _currentBalance;
 
-        bool usedExternalBalance = TryCreditExternalBalance(request, out int newBalance);
-        if (!usedExternalBalance)
-        {
-            newBalance = previousBalance + earnedAmount;
+            SaleRequest request = new SaleRequest
+            {
+                ItemId = itemId,
+                Quantity = quantity,
+                UnitPrice = unitPrice,
+                TotalPrice = earnedAmount
+            };
+
+            bool usedExternalBalance = TryCreditExternalBalance(request, out int newBalance);
+            if (!usedExternalBalance)
+            {
+                newBalance = previousBalance + earnedAmount;
+            }
+            _currentBalance = Mathf.Max(0, newBalance);
+            totalEarned += earnedAmount;
+            totalQuantity += quantity;
+
+            SaleResult result = new SaleResult
+            {
+                ItemId = itemId,
+                Quantity = quantity,
+                UnitPrice = unitPrice,
+                EarnedAmount = earnedAmount,
+                PreviousBalance = previousBalance,
+                NewBalance = _currentBalance,
+                UsedExternalBalance = usedExternalBalance
+            };
+
+            Debug.Log(
+                $"[MARKET SATISI] {quantity}x {itemId} satildi. Birim fiyat: {unitPrice}. " +
+                $"Kazanilan para: +{earnedAmount}. Guncel bakiye: {_currentBalance}.",
+                this);
+            InvokeSafely(OnSaleCompleted, result);
         }
 
-        _currentBalance = Mathf.Max(0, newBalance);
-        _pendingRecipe = null;
-        _pendingAmount = 0;
-
-        SaleResult result = new SaleResult
-        {
-            ItemId = itemId,
-            Quantity = quantity,
-            UnitPrice = unitPrice,
-            EarnedAmount = earnedAmount,
-            PreviousBalance = previousBalance,
-            NewBalance = _currentBalance,
-            UsedExternalBalance = usedExternalBalance
-        };
-
+        _pendingCargo.Clear();
         Debug.Log(
-            $"[MARKET SATISI] {quantity}x {itemId} satildi. " +
-            $"Kazanilan para: +{earnedAmount}. Guncel bakiye: {_currentBalance}.",
+            $"[MARKET SATISI OZET] {totalQuantity} koli teslim edildi. " +
+            $"Toplam kazanc: +{totalEarned}. Bakiye: {saleStartBalance} -> {_currentBalance}.",
             this);
-
         InvokeSafely(OnBalanceChanged, _currentBalance);
-        InvokeSafely(OnSaleCompleted, result);
         return true;
+    }
+
+    private static int ResolveUnitPrice(RecipeConfig recipe)
+    {
+        if (recipe == null) return 0;
+        if (recipe.BaseSalePrice > 0) return recipe.BaseSalePrice;
+
+        string itemId = recipe.ItemID == null ? string.Empty : recipe.ItemID.Trim().ToLowerInvariant();
+        switch (itemId)
+        {
+            case "masa":
+                return 500;
+            case "sandalye":
+                return 250;
+            case "ahşap dolap":
+            case "ahsap dolap":
+                return 450;
+            case "koltuk":
+                return 400;
+            default:
+                Debug.LogWarning($"[EfeMarketSales] '{recipe.ItemID}' icin satis fiyati tanimli degil.");
+                return 0;
+        }
     }
 
     private void HandleMarketSale()

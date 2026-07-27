@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -35,6 +36,8 @@ public class EfeWorkshopSelectionController : MonoBehaviour
     public int SelectedAmount => _selectedAmount;
     public RecipeConfig Option1Recipe => option1Recipe;
     public RecipeConfig Option2Recipe => option2Recipe;
+    public IReadOnlyList<RecipeConfig> QueuedRecipes => _queuedRecipes;
+    public int QueuedProductCount => _queuedRecipes.Count;
 
     private TruckRouteController _pendingTruck;
     private bool _isAwaitingSelection;
@@ -44,6 +47,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
     private RecipeConfig _selectedRecipe;
     private int _selectedAmount;
     private Coroutine _completionRoutine;
+    private readonly List<RecipeConfig> _queuedRecipes = new List<RecipeConfig>();
 
     private void Awake()
     {
@@ -98,6 +102,10 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         {
             SelectOption(2);
         }
+        else if (WasConfirmPressed())
+        {
+            ConfirmSelection();
+        }
     }
 
     /// <summary>
@@ -131,7 +139,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
 
         if (_productionStarted)
         {
-            return Reject("Secilen paket zaten uretiliyor.");
+            return Reject("Uretim basladigi icin kuyruga yeni urun eklenemez.");
         }
 
         if (recipe == null || string.IsNullOrWhiteSpace(recipe.ItemID) || recipe.RequiredWood <= 0)
@@ -139,11 +147,10 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             return Reject("Tarif bilgisi gecersiz.");
         }
 
-        int amount = _deliveredWood / recipe.RequiredWood;
-        if (amount <= 0)
+        if (_remainingWood < recipe.RequiredWood)
         {
             return Reject(
-                $"{recipe.ItemID} icin yetersiz odun. Gereken: {recipe.RequiredWood}, mevcut: {_deliveredWood}");
+                $"{recipe.ItemID} icin yetersiz odun. Gereken: {recipe.RequiredWood}, kalan: {_remainingWood}");
         }
 
         if (workshopProduction == null)
@@ -151,28 +158,50 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             return Reject("WorkshopProductionManager baglantisi bulunamadi.");
         }
 
-        if (!workshopProduction.StartProductionCycle(_pendingTruck.gameObject))
-        {
-            return Reject("Atolye su anda baska bir uretimle mesgul.");
-        }
-
         _selectedRecipe = recipe;
-        _selectedAmount = amount;
-        _remainingWood = _deliveredWood - amount * recipe.RequiredWood;
-        _isAwaitingSelection = false;
-        _productionStarted = true;
+        _selectedAmount = 1;
+        _remainingWood -= recipe.RequiredWood;
+        _queuedRecipes.Add(recipe);
 
         Debug.Log(
-            $"[EfeWorkshopSelection] Secim kabul edildi: {amount}x {recipe.ItemID}. " +
-            $"Kullanilan odun: {amount * recipe.RequiredWood}, kalan: {_remainingWood}.",
+            $"[EfeWorkshopSelection] Kuyruga eklendi: 1x {recipe.ItemID}. " +
+            $"Kuyruk: {_queuedRecipes.Count} urun, kalan odun: {_remainingWood}. " +
+            "Baska urun secin veya panelde Uret ile kuyrugu baslatin.",
             this);
-        InvokeSafely(OnRecipeSelected, recipe, amount, _remainingWood);
+        InvokeSafely(OnRecipeSelected, recipe, 1, _remainingWood);
+        return true;
+    }
+
+    public bool ConfirmSelection()
+    {
+        if (!_isAwaitingSelection || _pendingTruck == null)
+        {
+            return Reject("Onaylanacak bir atolye secimi yok.");
+        }
+
+        if (_queuedRecipes.Count == 0)
+        {
+            return Reject("Uretime baslamadan once en az bir urun secin.");
+        }
+
+        if (_productionStarted)
+        {
+            return Reject("Uretim zaten basladi.");
+        }
+
+        _isAwaitingSelection = false;
+        _productionStarted = true;
 
         if (_completionRoutine != null)
         {
             StopCoroutine(_completionRoutine);
         }
-        _completionRoutine = StartCoroutine(WaitForSelectedProduction());
+        _completionRoutine = StartCoroutine(ProcessSelectedQueue());
+
+        Debug.Log(
+            $"[EfeWorkshopSelection] {_queuedRecipes.Count} urunluk kuyruk onaylandi. " +
+            $"Kullanilan odun: {_deliveredWood - _remainingWood}, kalan: {_remainingWood}.",
+            this);
         return true;
     }
 
@@ -207,6 +236,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         _remainingWood = incomingWood;
         _selectedRecipe = null;
         _selectedAmount = 0;
+        _queuedRecipes.Clear();
         _isAwaitingSelection = true;
 
         string option1 = DescribeOption(1, option1Recipe);
@@ -214,37 +244,263 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         Debug.LogWarning(
             $"[ATOLYE SECIMI] Kamyon atolyeye geldi. Urun secin: " +
             $"klavyeden [{option1}] veya [{option2}]. Teslim edilen odun: {_deliveredWood}. " +
-            "Gelecekteki mobil arayuz SelectOption(1/2) metodunu cagirabilir.",
+            "Her tus bir urunu kuyruga ekler; Enter kuyrugu onaylar. " +
+            "Mobil arayuz SelectRecipe ve ConfirmSelection metodlarini kullanir.",
             this);
         InvokeSafely(OnSelectionRequested, truck, _deliveredWood);
         return true;
     }
 
-    private IEnumerator WaitForSelectedProduction()
+    private IEnumerator ProcessSelectedQueue()
     {
         TruckRouteController truck = _pendingTruck;
-        RecipeConfig recipe = _selectedRecipe;
-        int amount = _selectedAmount;
+        List<RecipeConfig> productionOrders = new List<RecipeConfig>(_queuedRecipes);
 
-        while (truck != null && !truck.isWorkshopProcessDone)
+        if (truck == null || workshopProduction == null)
         {
+            Reject("Uretim baslarken kamyon veya atolye baglantisi kayboldu.");
+            if (truck != null) truck.OnWorkshopProcessComplete();
+            ResetPendingState();
+            yield break;
+        }
+
+        yield return StartCoroutine(UnloadTruckWood(truck));
+
+        for (int i = 0; i < productionOrders.Count; i++)
+        {
+            RecipeConfig recipe = productionOrders[i];
+            yield return StartCoroutine(CraftSingleProduct(recipe, truck, i + 1, productionOrders.Count));
+
+            Debug.Log(
+                $"[EfeWorkshopSelection] Paket hazir: 1x {recipe.ItemID} " +
+                $"({i + 1}/{productionOrders.Count}).",
+                this);
+            InvokeSafely(OnSelectedProductionCompleted, recipe, 1);
+        }
+
+        PrepareTruckCargoVisual(truck);
+        truck.OnWorkshopProcessComplete();
+        Debug.Log(
+            $"[EfeWorkshopSelection] Tum kuyruk tamamlandi: {productionOrders.Count} koli. Kamyon serbest.",
+            this);
+        ResetPendingState();
+    }
+
+    private IEnumerator UnloadTruckWood(TruckRouteController truck)
+    {
+        workshopProduction.ResetVisuals();
+
+        int totalLogs = Mathf.Max(0, truck.currentLoadedWood);
+        Transform startPoint = workshopProduction.truckCargoPoint != null
+            ? workshopProduction.truckCargoPoint
+            : truck.transform;
+        Transform endPoint = workshopProduction.workshopTableTop;
+        GameObject logPrefab = TreeManager.Instance != null ? TreeManager.Instance.woodLogPrefab : null;
+        float unloadDuration = Mathf.Max(0.1f, workshopProduction.unloadDuration);
+
+        if (totalLogs > 0 && startPoint != null && endPoint != null && logPrefab != null)
+        {
+            float delay = unloadDuration / totalLogs;
+            float flightDuration = Mathf.Clamp(delay * 1.5f, 0.2f, 0.5f);
+            for (int i = 0; i < totalLogs; i++)
+            {
+                truck.currentLoadedWood = Mathf.Max(0, truck.currentLoadedWood - 1);
+                GameObject flyingLog = Instantiate(logPrefab, startPoint.position, startPoint.rotation);
+                Rigidbody rigidbody = flyingLog.GetComponent<Rigidbody>();
+                if (rigidbody != null)
+                {
+                    rigidbody.isKinematic = true;
+                    rigidbody.useGravity = false;
+                }
+                foreach (Collider collider in flyingLog.GetComponentsInChildren<Collider>())
+                {
+                    collider.enabled = false;
+                }
+
+                StartCoroutine(AnimateAndDestroy(
+                    flyingLog,
+                    startPoint.position,
+                    startPoint.rotation,
+                    endPoint.position,
+                    endPoint.rotation,
+                    flightDuration));
+                yield return new WaitForSeconds(delay);
+            }
+        }
+        else
+        {
+            truck.currentLoadedWood = 0;
+            yield return new WaitForSeconds(unloadDuration);
+        }
+
+        truck.currentLoadedWood = 0;
+        if (workshopProduction.smallLogStack != null)
+        {
+            SnapToPoint(workshopProduction.smallLogStack, workshopProduction.workshopTableTop);
+            workshopProduction.smallLogStack.SetActive(true);
+        }
+        yield return new WaitForSeconds(0.5f);
+
+        if (workshopProduction.smallLogStack != null) workshopProduction.smallLogStack.SetActive(false);
+        if (workshopProduction.largeLogStack != null)
+        {
+            SnapToPoint(workshopProduction.largeLogStack, workshopProduction.workshopTableTop);
+            workshopProduction.largeLogStack.SetActive(true);
+        }
+    }
+
+    private IEnumerator CraftSingleProduct(
+        RecipeConfig recipe,
+        TruckRouteController truck,
+        int orderNumber,
+        int totalOrders)
+    {
+        if (workshopProduction.workerAnimator != null)
+        {
+            workshopProduction.workerAnimator.SetBool("isCrafting", true);
+        }
+        if (workshopProduction.loadingRingCanvas != null)
+        {
+            workshopProduction.loadingRingCanvas.SetActive(true);
+        }
+        if (workshopProduction.loadingRingProgress != null)
+        {
+            workshopProduction.loadingRingProgress.fillAmount = 0f;
+        }
+
+        float duration = recipe != null && recipe.BaseProductionTime > 0f
+            ? recipe.BaseProductionTime
+            : Mathf.Max(0.1f, workshopProduction.craftingDuration);
+        float elapsed = 0f;
+        Debug.Log(
+            $"[EfeWorkshopSelection] Uretim basladi: {recipe.ItemID} ({orderNumber}/{totalOrders}).",
+            this);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            if (workshopProduction.loadingRingProgress != null)
+            {
+                workshopProduction.loadingRingProgress.fillAmount = Mathf.Clamp01(elapsed / duration);
+            }
             yield return null;
         }
 
-        if (truck != null)
+        if (workshopProduction.workerAnimator != null)
         {
-            Debug.Log(
-                $"[EfeWorkshopSelection] Secilen paket hazir: {amount}x {recipe.ItemID}. Kamyon serbest.",
-                this);
-            InvokeSafely(OnSelectedProductionCompleted, recipe, amount);
+            workshopProduction.workerAnimator.SetBool("isCrafting", false);
+        }
+        if (workshopProduction.loadingRingCanvas != null)
+        {
+            workshopProduction.loadingRingCanvas.SetActive(false);
         }
 
-        ResetPendingState();
+        GameObject boxes = workshopProduction.normalBoxes;
+        Transform startPoint = workshopProduction.boxSpawnPoint != null
+            ? workshopProduction.boxSpawnPoint
+            : workshopProduction.workshopTableTop;
+        Transform endPoint = workshopProduction.truckCargoPoint != null
+            ? workshopProduction.truckCargoPoint
+            : truck.transform;
+
+        if (boxes != null && startPoint != null && endPoint != null)
+        {
+            boxes.SetActive(true);
+            yield return StartCoroutine(AnimateObject(
+                boxes,
+                startPoint.position,
+                startPoint.rotation,
+                endPoint.position,
+                endPoint.rotation,
+                0.75f));
+            boxes.SetActive(false);
+        }
+        else
+        {
+            yield return new WaitForSeconds(Mathf.Max(0.1f, workshopProduction.loadingDuration));
+        }
+    }
+
+    private void PrepareTruckCargoVisual(TruckRouteController truck)
+    {
+        if (workshopProduction.largeLogStack != null)
+        {
+            workshopProduction.largeLogStack.SetActive(false);
+        }
+
+        Transform target = workshopProduction.truckCargoPoint != null
+            ? workshopProduction.truckCargoPoint
+            : truck.transform;
+        if (workshopProduction.largeBoxes != null && target != null)
+        {
+            SnapToPoint(workshopProduction.largeBoxes, target);
+            workshopProduction.largeBoxes.SetActive(true);
+        }
+    }
+
+    private IEnumerator AnimateAndDestroy(
+        GameObject item,
+        Vector3 startPosition,
+        Quaternion startRotation,
+        Vector3 endPosition,
+        Quaternion endRotation,
+        float duration)
+    {
+        yield return StartCoroutine(AnimateObject(
+            item,
+            startPosition,
+            startRotation,
+            endPosition,
+            endRotation,
+            duration));
+        if (item != null) Destroy(item);
+    }
+
+    private static IEnumerator AnimateObject(
+        GameObject item,
+        Vector3 startPosition,
+        Quaternion startRotation,
+        Vector3 endPosition,
+        Quaternion endRotation,
+        float duration)
+    {
+        float elapsed = 0f;
+        duration = Mathf.Max(0.01f, duration);
+        while (elapsed < duration)
+        {
+            if (item == null) yield break;
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            Vector3 position = Vector3.Lerp(startPosition, endPosition, t);
+            position.y += Mathf.Sin(t * Mathf.PI) * 2.5f;
+            item.transform.position = position;
+            item.transform.rotation = Quaternion.Lerp(startRotation, endRotation, t) *
+                                      Quaternion.AngleAxis(t * 360f, Vector3.right + Vector3.up);
+            yield return null;
+        }
+
+        if (item != null)
+        {
+            item.transform.SetPositionAndRotation(endPosition, endRotation);
+        }
+    }
+
+    private static void SnapToPoint(GameObject item, Transform point)
+    {
+        if (item != null && point != null)
+        {
+            item.transform.SetPositionAndRotation(point.position, point.rotation);
+        }
     }
 
     private void ContinueWithAutomaticFallback()
     {
         _isAwaitingSelection = false;
+
+        if (workshopProduction != null)
+        {
+            workshopProduction.ResetVisuals();
+        }
 
         if (workshopProduction != null &&
             !_productionStarted &&
@@ -267,6 +523,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         _isAwaitingSelection = false;
         _productionStarted = false;
         _completionRoutine = null;
+        _queuedRecipes.Clear();
     }
 
     private bool Reject(string reason)
@@ -304,6 +561,19 @@ public class EfeWorkshopSelectionController : MonoBehaviour
                (keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame);
 #elif ENABLE_LEGACY_INPUT_MANAGER
         return Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2);
+#else
+        return false;
+#endif
+    }
+
+    private static bool WasConfirmPressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null &&
+               (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame);
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
 #else
         return false;
 #endif
