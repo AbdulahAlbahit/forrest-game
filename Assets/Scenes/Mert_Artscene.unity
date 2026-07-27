@@ -36055,6 +36055,7 @@ MonoBehaviour:
   defaultTreeHealth: 3
   searchRadius: 2.5
   fallTorque: 23.3
+  nonTreePrototypeIndices: 03000000
   disappearDelay: 2
   logDisappearDelay: 8
   shrinkDuration: 0.5

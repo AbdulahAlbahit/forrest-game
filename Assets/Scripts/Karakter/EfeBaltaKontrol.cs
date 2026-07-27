@@ -138,6 +138,11 @@ public class EfeBaltaKontrol : MonoBehaviour
 
             foreach (TreeInstance agac in terrain.terrainData.treeInstances)
             {
+                if (TreeManager.Instance != null && !TreeManager.Instance.IsChoppablePrototype(agac.prototypeIndex))
+                {
+                    continue;
+                }
+
                 Vector3 agacDunyaKonumu = new Vector3(
                     agac.position.x * terrainBoyutu.x + terrainKonumu.x,
                     agac.position.y * terrainBoyutu.y + terrainKonumu.y,
