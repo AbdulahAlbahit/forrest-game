@@ -41,6 +41,13 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Sahnede yer alan veya prefab'ten koyulan SettingsPanel objesi.")]
     [SerializeField] private GameObject settingsPanel;
 
+    [Header("--- Pause Menüsü ---")]
+    [Tooltip("Oyunu duraklatma butonu.")]
+    [SerializeField] private Button pauseButton;
+
+    [Tooltip("PauseMenuController scripti içeren Pause paneli objesi.")]
+    [SerializeField] private GameObject pausePanel;
+
     [Header("--- Ses Ayarları ---")]
     [Tooltip("Butonlara basıldığında çalacak SFX sesinin ismi.")]
     [SerializeField] private string buttonSfxName = "";
@@ -60,9 +67,15 @@ public class MainHUDController : MonoBehaviour
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsButtonClicked);
 
-        // Başlangıçta paneli gizle
+        // Pause butonu listener
+        if (pauseButton != null)
+            pauseButton.onClick.AddListener(OnPauseButtonClicked);
+
+        // Başlangıçta panelleri gizle
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
+        if (pausePanel != null)
+            pausePanel.SetActive(false);
 
         // Tüm UI değerlerini başlangıçta güncelle
         RefreshAllHUD();
@@ -234,6 +247,26 @@ public class MainHUDController : MonoBehaviour
 
         if (settingsPanel != null)
             settingsPanel.SetActive(!settingsPanel.activeSelf);
+    }
+
+    private void OnPauseButtonClicked()
+    {
+        PlayButtonClickSFX();
+
+        // PauseMenuController varsa toggle yap
+        PauseMenuController pauseController = pausePanel != null 
+            ? pausePanel.GetComponent<PauseMenuController>() 
+            : PauseMenuController.Instance;
+
+        if (pauseController != null)
+        {
+            pauseController.TogglePause();
+        }
+        else if (pausePanel != null)
+        {
+            // Fallback: PauseMenuController yoksa sadece paneli göster/gizle
+            pausePanel.SetActive(!pausePanel.activeSelf);
+        }
     }
 
     private void PlayButtonClickSFX()
