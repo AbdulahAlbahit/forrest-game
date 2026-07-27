@@ -1,4 +1,5 @@
 using UnityEngine;
+using ForrestGame.Utils;
 
 public class PlayTimeManager : MonoBehaviour
 {
@@ -18,15 +19,7 @@ public class PlayTimeManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void OnEnable()
-    {
-        // OnDataSaved (otomatik kayit) eventine baglanmiyoruz (Firebase'i spamlamamak icin)
-    }
 
-    private void OnDisable()
-    {
-        // Event kaldirildi
-    }
 
     private void Update()
     {

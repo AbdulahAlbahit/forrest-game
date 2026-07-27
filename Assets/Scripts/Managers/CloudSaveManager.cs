@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using ForrestGame.Utils;
 using Firebase.Firestore;
 using Firebase.Extensions;
 
@@ -20,24 +21,24 @@ public class CloudSaveManager : MonoBehaviour
 
     private Coroutine autoSaveCoroutine;
 
-    /// <summary>
-    /// Bulut verisi basariyla yuklendiginde, yuklenlen PlayerData ile tetiklenir.
-    /// </summary>
+    /
+    /
+    /
     public event Action<PlayerData> OnDataLoaded;
 
-    /// <summary>
-    /// Buluta kayit basarili oldugunda tetiklenir.
-    /// </summary>
+    /
+    /
+    /
     public event Action OnDataSaved;
 
-    /// <summary>
-    /// Herhangi bir bulut islemi basarisiz oldugunda hata mesajiyla tetiklenir.
-    /// </summary>
+    /
+    /
+    /
     public event Action<string> OnCloudError;
 
-    /// <summary>
-    /// Mevcut yuklenmis oyuncu verisini tutar.
-    /// </summary>
+    /
+    /
+    /
     public PlayerData CurrentData { get; private set; }
 
     private void Awake()
@@ -68,7 +69,7 @@ public class CloudSaveManager : MonoBehaviour
 
     private IEnumerator WaitForAuthManager()
     {
-        Debug.Log("CloudSaveManager: FirebaseAuthManager bekleniyor...");
+        GameLogger.Log("CloudSaveManager: FirebaseAuthManager bekleniyor...");
 
         while (FirebaseAuthManager.Instance == null)
         {
@@ -76,7 +77,7 @@ public class CloudSaveManager : MonoBehaviour
         }
 
         SubscribeToAuth();
-        Debug.Log("CloudSaveManager: FirebaseAuthManager bulundu, event aboneligi yapildi.");
+        GameLogger.Log("CloudSaveManager: FirebaseAuthManager bulundu, event aboneligi yapildi.");
     }
 
     private void SubscribeToAuth()
@@ -87,11 +88,11 @@ public class CloudSaveManager : MonoBehaviour
             isSubscribed = true;
         }
 
-        // RACE CONDITION FIX: Abonelik aninda kullanici ZATEN login olmussa
-        // event bir daha ateslenmeyecek. Bu durumda HandleLoginSuccess'i dogrudan cagir.
+
+
         if (FirebaseAuthManager.Instance.IsLoggedIn)
         {
-            Debug.Log("CloudSaveManager: Giris zaten tamamlanmis, dogrudan Firestore baslatiliyor.");
+            GameLogger.Log("CloudSaveManager: Giris zaten tamamlanmis, dogrudan Firestore baslatiliyor.");
             HandleLoginSuccess();
         }
     }
@@ -110,65 +111,65 @@ public class CloudSaveManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Giris basarili oldugunda Firestore baglantisini kurar ve veri yukler.
-    /// </summary>
+    /
+    /
+    /
     private void HandleLoginSuccess()
     {
-        Debug.Log("CloudSaveManager: Giris basarili, Firestore baglantisi kuruluyor...");
+        GameLogger.Log("CloudSaveManager: Giris basarili, Firestore baglantisi kuruluyor...");
 
         db = FirebaseFirestore.DefaultInstance;
         userId = FirebaseAuthManager.Instance.CurrentUser.UserId;
 
-        Debug.Log($"CloudSaveManager: Firestore hazir. Kullanici ID: {userId}");
+        GameLogger.Log($"CloudSaveManager: Firestore hazir. Kullanici ID: {userId}");
 
-        // Giris yapildi, buluttan veriyi cek
+
         LoadData();
 
-        // Otomatik kayit dongusunu baslat
+
         if (autoSaveCoroutine != null)
             StopCoroutine(autoSaveCoroutine);
         autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
     }
 
-    /// <summary>
-    /// Kullaniciya ait Firestore dokuman referansini dondurur.
-    /// Yol: players/{userId}
-    /// </summary>
+    /
+    /
+    /
+    /
     private DocumentReference GetPlayerDocument()
     {
         return db.Collection("players").Document(userId);
     }
 
-    /// <summary>
-    /// Oyuncu verisini Firestore'a kaydeder.
-    /// ItemLevels sozlugu ayri bir alan olarak yazilir.
-    /// </summary>
+    /
+    /
+    /
+    /
     public void SaveData(PlayerData data)
     {
         if (data == null)
         {
-            Debug.LogError("CloudSaveManager: SaveData'ya null PlayerData gonderildi!");
+            GameLogger.LogError("CloudSaveManager: SaveData'ya null PlayerData gonderildi!");
             return;
         }
 
-        // Zaman damgasi (Timestamp) guncelle
+
         data.LastSaveTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
-        // --- Lokal Kayit (Offline Save) ---
-        // Firestore'dan bagimsiz olarak her zaman yerel yedegi guncelle
+
+
         SaveToLocal(data);
 
-        // --- Bulut Kayit (Cloud Save) ---
+
         if (db == null || string.IsNullOrEmpty(userId))
         {
             string errorMsg = "Firestore baglantisi hazir degil veya kullanici girisi yapilmamis. Sadece lokal kayit yapildi.";
-            Debug.LogWarning($"CloudSaveManager: {errorMsg}");
+            GameLogger.LogWarning($"CloudSaveManager: {errorMsg}");
             OnCloudError?.Invoke(errorMsg);
             return;
         }
 
-        Debug.Log("CloudSaveManager: Veriler buluta kaydediliyor...");
+        GameLogger.Log("CloudSaveManager: Veriler buluta kaydediliyor...");
 
         Dictionary<string, object> playerDict = new Dictionary<string, object>
         {
@@ -183,7 +184,7 @@ public class CloudSaveManager : MonoBehaviour
             { "LastSaveTime", data.LastSaveTime }
         };
 
-        // ItemLevels sozlugunu Firestore'a yaz
+
         if (data.ItemLevels != null)
         {
             Dictionary<string, object> dict = new Dictionary<string, object>();
@@ -191,7 +192,7 @@ public class CloudSaveManager : MonoBehaviour
             playerDict["ItemLevels"] = dict;
         }
         
-        // Yeni Sistem: ShopInventory, WorkshopQueue ve ReadyForTruck yaz
+
         if (data.ShopInventory != null)
         {
             Dictionary<string, object> dict = new Dictionary<string, object>();
@@ -227,7 +228,7 @@ public class CloudSaveManager : MonoBehaviour
             playerDict["ActiveQuests"] = dict;
         }
 
-        // CompletedQuests listesini yaz
+
         if (data.CompletedQuests != null)
         {
             playerDict["CompletedQuests"] = data.CompletedQuests;
@@ -238,43 +239,43 @@ public class CloudSaveManager : MonoBehaviour
             if (task.IsFaulted)
             {
                 string errorMsg = $"Buluta kayit sirasinda hata olustu: {task.Exception?.Message}";
-                Debug.LogError($"CloudSaveManager: {errorMsg}");
+                GameLogger.LogError($"CloudSaveManager: {errorMsg}");
                 OnCloudError?.Invoke(errorMsg);
                 return;
             }
 
             CurrentData = data;
-            Debug.Log("CloudSaveManager: Veriler buluta basariyla kaydedildi!");
-            Debug.Log($"  -> Para: {data.Para}, XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
+            GameLogger.Log("CloudSaveManager: Veriler buluta basariyla kaydedildi!");
+            GameLogger.Log($"  -> Para: {data.Para}, XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
             OnDataSaved?.Invoke();
         });
     }
 
-    /// <summary>
-    /// Oyuncu verisini Firestore'dan yukler.
-    /// Eger bulutta veri yoksa yeni bir PlayerData olusturup kaydeder.
-    /// Eski format (BaltaSeviyesi vb.) tespit edilirse otomatik migration yapar.
-    /// </summary>
+    /
+    /
+    /
+    /
+    /
     public void LoadData()
     {
         if (db == null || string.IsNullOrEmpty(userId))
         {
-            Debug.LogWarning("CloudSaveManager: Firestore baglantisi hazir degil. Lokal veri deneniyor...");
+            GameLogger.LogWarning("CloudSaveManager: Firestore baglantisi hazir degil. Lokal veri deneniyor...");
             LoadFromLocalFallback();
             return;
         }
 
-        Debug.Log("CloudSaveManager: Buluttan veriler yukleniyor...");
+        GameLogger.Log("CloudSaveManager: Buluttan veriler yukleniyor...");
 
         GetPlayerDocument().GetSnapshotAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted)
             {
                 string errorMsg = $"Buluttan veri yuklenirken hata olustu: {task.Exception?.Message}";
-                Debug.LogError($"CloudSaveManager: {errorMsg}");
+                GameLogger.LogError($"CloudSaveManager: {errorMsg}");
                 OnCloudError?.Invoke(errorMsg);
 
-                // Bulut basarisiz oldu, lokal yedege dus
+
                 LoadFromLocalFallback();
                 return;
             }
@@ -283,7 +284,7 @@ public class CloudSaveManager : MonoBehaviour
 
             if (snapshot.Exists)
             {
-                Debug.Log("CloudSaveManager: Bulutta mevcut veri bulundu, yukleniyor...");
+                GameLogger.Log("CloudSaveManager: Bulutta mevcut veri bulundu, yukleniyor...");
 
                 PlayerData data = new PlayerData();
                 Dictionary<string, object> dict = snapshot.ToDictionary();
@@ -292,12 +293,12 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("XP")) data.XP = Convert.ToInt32(dict["XP"]);
                 if (dict.ContainsKey("OyuncuSeviyesi")) data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
 
-                // Zaman ve Kaynak verileri
+
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
                 if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
                 if (dict.ContainsKey("WorkshopRawWood")) data.WorkshopRawWood = Convert.ToInt32(dict["WorkshopRawWood"]);
 
-                // Acilan Bolgeler
+
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
                 {
                     data.AcilanBolgeler = new List<string>();
@@ -312,21 +313,21 @@ public class CloudSaveManager : MonoBehaviour
                     data.LastSaveTime = Convert.ToInt64(dict["LastSaveTime"]);
                 }
 
-                // ═══════════════════════════════════════════
-                //  ItemLevels Yukleme + Geriye Donuk Uyumluluk (Migration)
-                // ═══════════════════════════════════════════
+
+
+
 
                 data.ItemLevels = new SerializableDict();
                 bool needsMigration = false;
 
-                // Yeni format: ItemLevels sozlugu
+
                 if (dict.ContainsKey("ItemLevels") && dict["ItemLevels"] is Dictionary<string, object> itemLevelsRaw)
                 {
                     data.ItemLevels.FromDictionary(itemLevelsRaw);
-                    Debug.Log($"CloudSaveManager: ItemLevels yuklendi ({itemLevelsRaw.Count} esya).");
+                    GameLogger.Log($"CloudSaveManager: ItemLevels yuklendi ({itemLevelsRaw.Count} esya).");
                 }
 
-                // Yeni Sistem: ShopInventory, WorkshopQueue ve ReadyForTruck yukleme
+
                 data.ShopInventory = new SerializableDict();
                 if (dict.ContainsKey("ShopInventory") && dict["ShopInventory"] is Dictionary<string, object> shopInventoryRaw)
                 {
@@ -357,7 +358,7 @@ public class CloudSaveManager : MonoBehaviour
                     data.ActiveQuests.FromDictionary(activeQuestsRaw);
                 }
 
-                // CompletedQuests listesini yukle
+
                 data.CompletedQuests = new System.Collections.Generic.List<string>();
                 if (dict.ContainsKey("CompletedQuests") && dict["CompletedQuests"] is System.Collections.Generic.List<object> completedRaw)
                 {
@@ -365,8 +366,8 @@ public class CloudSaveManager : MonoBehaviour
                         data.CompletedQuests.Add(id.ToString());
                 }
 
-                // Eski format: BaltaSeviyesi, SepetSeviyesi vb. (Migration)
-                // Eger eski alanlar varsa ve ItemLevels'da karsiligi yoksa, aktarim yap
+
+
                 if (dict.ContainsKey("BaltaSeviyesi") && !data.ItemLevels.ContainsKey("Axe"))
                 {
                     data.ItemLevels.Set("Axe", Convert.ToInt32(dict["BaltaSeviyesi"]));
@@ -390,64 +391,64 @@ public class CloudSaveManager : MonoBehaviour
 
                 if (needsMigration)
                 {
-                    Debug.LogWarning("CloudSaveManager: [MIGRATION] Eski format tespit edildi! Veriler yeni ItemLevels yapisina aktarildi.");
+                    GameLogger.LogWarning("CloudSaveManager: [MIGRATION] Eski format tespit edildi! Veriler yeni ItemLevels yapisina aktarildi.");
                 }
 
-                // ═══════════════════════════════════════════
-                //  Cakisma Onleme (Conflict Resolution)
-                // ═══════════════════════════════════════════
+
+
+
                 PlayerData localData = GetLocalData();
                 if (localData != null && localData.LastSaveTime > data.LastSaveTime)
                 {
-                    Debug.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttaki veriden (Time: {data.LastSaveTime}) daha guncel! Lokal veri korunuyor ve buluta yaziliyor...");
+                    GameLogger.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttaki veriden (Time: {data.LastSaveTime}) daha guncel! Lokal veri korunuyor ve buluta yaziliyor...");
                     CurrentData = localData;
                     
-                    // Lokal veriyi hemen buluta senkronize et
+
                     SaveData(localData);
                     
                     OnDataLoaded?.Invoke(localData);
-                    return; // Buluttan gelen eski veriyi reddet
+                    return;
                 }
 
                 CurrentData = data;
 
-                // Buluttan basariyla yuklendi, lokal yedegi de guncelle
+
                 SaveToLocal(data);
 
-                // Migration yapildiysa yeni formati buluta kaydet
+
                 if (needsMigration)
                 {
                     SaveData(data);
-                    Debug.Log("CloudSaveManager: [MIGRATION] Yeni format buluta kaydedildi.");
+                    GameLogger.Log("CloudSaveManager: [MIGRATION] Yeni format buluta kaydedildi.");
                 }
 
-                Debug.Log("CloudSaveManager: Veriler basariyla yuklendi!");
+                GameLogger.Log("CloudSaveManager: Veriler basariyla yuklendi!");
                 OnDataLoaded?.Invoke(data);
             }
             else
             {
-                Debug.Log("CloudSaveManager: Bulutta veri bulunamadi. Yeni oyuncu verisi olusturuluyor...");
+                GameLogger.Log("CloudSaveManager: Bulutta veri bulunamadi. Yeni oyuncu verisi olusturuluyor...");
 
                 PlayerData newData = new PlayerData();
                 CurrentData = newData;
 
-                // Yeni veriyi buluta kaydet
+
                 SaveData(newData);
 
-                Debug.Log("CloudSaveManager: Yeni oyuncu verisi olusturuldu ve buluta kaydedildi.");
+                GameLogger.Log("CloudSaveManager: Yeni oyuncu verisi olusturuldu ve buluta kaydedildi.");
                 OnDataLoaded?.Invoke(newData);
             }
         });
     }
 
-    // =============================================
-    // LOKAL KAYIT / YUKLE YARDIMCI METOTLARI
-    // =============================================
 
-    /// <summary>
-    /// PlayerData'yi JSON'a cevirip PlayerPrefs'e yazar.
-    /// Her SaveData cagrisinda otomatik olarak tetiklenir.
-    /// </summary>
+
+
+
+    /
+    /
+    /
+    /
     private void SaveToLocal(PlayerData data)
     {
         try
@@ -455,11 +456,11 @@ public class CloudSaveManager : MonoBehaviour
             string json = JsonUtility.ToJson(data);
             PlayerPrefs.SetString(LOCAL_SAVE_KEY, json);
             PlayerPrefs.Save();
-            Debug.Log("CloudSaveManager: Lokal yedek guncellendi (PlayerPrefs).");
+            GameLogger.Log("CloudSaveManager: Lokal yedek guncellendi (PlayerPrefs).");
         }
         catch (Exception e)
         {
-            Debug.LogError($"CloudSaveManager: Lokal kayit sirasinda hata: {e.Message}");
+            GameLogger.LogError($"CloudSaveManager: Lokal kayit sirasinda hata: {e.Message}");
         }
     }
 
@@ -469,21 +470,21 @@ public class CloudSaveManager : MonoBehaviour
         if (localData != null)
         {
             CurrentData = localData;
-            Debug.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
+            GameLogger.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
             OnDataLoaded?.Invoke(localData);
             return;
         }
 
-        // Lokal veri de yoksa sifirdan baslat
-        Debug.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
+
+        GameLogger.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
         PlayerData newData = new PlayerData();
         CurrentData = newData;
         OnDataLoaded?.Invoke(newData);
     }
 
-    /// <summary>
-    /// PlayerPrefs'ten PlayerData'yi okur ve geriye dondurur. Veri yoksa null doner.
-    /// </summary>
+    /
+    /
+    /
     public PlayerData GetLocalData()
     {
         if (PlayerPrefs.HasKey(LOCAL_SAVE_KEY))
@@ -508,23 +509,23 @@ public class CloudSaveManager : MonoBehaviour
             }
             catch (Exception e)
             {
-                Debug.LogError($"CloudSaveManager: Lokal veri okuma hatasi: {e.Message}");
+                GameLogger.LogError($"CloudSaveManager: Lokal veri okuma hatasi: {e.Message}");
             }
         }
         return null;
     }
 
-    // =============================================
-    // OTOMATIK KAYIT (AUTO-SAVE) COROUTINE
-    // =============================================
 
-    /// <summary>
-    /// Oyun calistigi surece belirli aralikla (varsayilan 60sn) otomatik bulut kaydi yapar.
-    /// HandleLoginSuccess icinde baslatilir.
-    /// </summary>
+
+
+
+    /
+    /
+    /
+    /
     private IEnumerator AutoSaveRoutine()
     {
-        Debug.Log($"CloudSaveManager: Otomatik kayit basladi. Aralik: {autoSaveInterval} saniye.");
+        GameLogger.Log($"CloudSaveManager: Otomatik kayit basladi. Aralik: {autoSaveInterval} saniye.");
 
         while (true)
         {
@@ -532,12 +533,12 @@ public class CloudSaveManager : MonoBehaviour
 
             if (CurrentData != null)
             {
-                Debug.Log("CloudSaveManager: [Auto-Save] Otomatik kayit tetiklendi...");
+                GameLogger.Log("CloudSaveManager: [Auto-Save] Otomatik kayit tetiklendi...");
                 SaveData(CurrentData);
             }
             else
             {
-                Debug.LogWarning("CloudSaveManager: [Auto-Save] CurrentData null, kayit atlandi.");
+                GameLogger.LogWarning("CloudSaveManager: [Auto-Save] CurrentData null, kayit atlandi.");
             }
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ForrestGame.Utils;
 
 namespace ForrestGame.Managers
 {
@@ -7,9 +8,7 @@ namespace ForrestGame.Managers
     {
         public static ShopManager Instance { get; private set; }
 
-        // Event: ItemID ve Yeni Stok Miktari
         public static event Action<string, int> OnStockChanged;
-        // Event: ItemID ve Satilan Miktar
         public static event Action<string, int> OnItemSold;
 
         private void Awake()
@@ -53,13 +52,12 @@ namespace ForrestGame.Managers
             
             if (data.ReadyForTruck == null) return;
             
-            var readyDict = data.ReadyForTruck.ToDictionary();
             bool anyLoaded = false;
             
-            foreach (var kvp in readyDict)
+            for (int i = 0; i < data.ReadyForTruck.keys.Count; i++)
             {
-                string itemId = kvp.Key;
-                int hazirMiktar = System.Convert.ToInt32(kvp.Value);
+                string itemId = data.ReadyForTruck.keys[i];
+                int hazirMiktar = data.ReadyForTruck.values[i];
                 
                 if (hazirMiktar > 0)
                 {
@@ -71,7 +69,7 @@ namespace ForrestGame.Managers
             
             if (anyLoaded)
             {
-                Debug.Log("ShopManager: Kamyon markete ulasti, urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
+                GameLogger.Log("ShopManager: Kamyon markete ulasti, urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
             }
         }
 
@@ -87,16 +85,13 @@ namespace ForrestGame.Managers
                 data.ShopInventory = new SerializableDict();
             }
 
-            // 1. Once stogu envantere ekle
             int currentStock = data.ShopInventory.Get(itemId, 0);
             int newStock = currentStock + amount;
             data.ShopInventory.Set(itemId, newStock);
             OnStockChanged?.Invoke(itemId, newStock);
 
-            // 2. Bekleyen siparisleri mevcut stokla karsila
             CheckAndFulfillPendingOrders(data, false);
 
-            // 3. Degisiklikleri kaydet
             CloudSaveManager.Instance.SaveData(data);
         }
 
@@ -105,12 +100,11 @@ namespace ForrestGame.Managers
             if (data == null || data.PendingCustomerOrders == null || data.ShopInventory == null) return;
             
             bool anyFulfilled = false;
-            var pendingDict = data.PendingCustomerOrders.ToDictionary();
             
-            foreach (var kvp in pendingDict)
+            for (int i = 0; i < data.PendingCustomerOrders.keys.Count; i++)
             {
-                string itemId = kvp.Key;
-                int pending = System.Convert.ToInt32(kvp.Value);
+                string itemId = data.PendingCustomerOrders.keys[i];
+                int pending = data.PendingCustomerOrders.values[i];
                 
                 if (pending > 0)
                 {
@@ -136,7 +130,7 @@ namespace ForrestGame.Managers
                         OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
                         AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
                         NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: {fulfilled}x {itemId}!");
-                        Debug.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
+                        GameLogger.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
                         anyFulfilled = true;
                     }
                 }
@@ -154,7 +148,7 @@ namespace ForrestGame.Managers
 
             if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
             {
-                Debug.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
+                GameLogger.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
                 return false;
             }
 
@@ -175,14 +169,12 @@ namespace ForrestGame.Managers
                 
                 NotificationManager.Instance?.SendNotification($"{itemId} satıldı!");
                 
-                // Eventi tetikle (QuestManager vb. dinleyebilir)
                 OnItemSold?.Invoke(itemId, amount);
                 
                 AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
 
-                // Satis ve event sonrasi aninda buluta kaydet
                 CloudSaveManager.Instance.SaveData(data);
-                Debug.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
+                GameLogger.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
                 
                 return true;
             }
@@ -195,14 +187,13 @@ namespace ForrestGame.Managers
             if (TryRemoveStock(itemId, amount))
             {
                 EconomyManager.Instance?.AddMoney(amount * unitPrice);
-                // OnItemSold?.Invoke kaldirildi cunku TryRemoveStock icinde zaten cagiriliyor.
                 NotificationManager.Instance?.SendNotification($"{amount} adet {itemId} satildi!");
             }
             else
             {
                 if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
                 {
-                    Debug.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
+                    GameLogger.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
                     return;
                 }
 
@@ -218,7 +209,6 @@ namespace ForrestGame.Managers
 
                 NotificationManager.Instance?.SendNotification($"Yeni Siparis: {amount} adet {itemId} bekleniyor!");
                 
-                // Siparisin karsilanabilen kismini hemen sat (stokta az da olsa varsa degerlendir)
                 CheckAndFulfillPendingOrders(data, false);
                 
                 CloudSaveManager.Instance.SaveData(data);

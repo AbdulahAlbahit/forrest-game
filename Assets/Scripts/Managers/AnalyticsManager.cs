@@ -1,4 +1,5 @@
 using UnityEngine;
+using ForrestGame.Utils;
 using Firebase;
 using Firebase.Analytics;
 using Firebase.Extensions;
@@ -32,7 +33,7 @@ namespace ForrestGame.Managers
                 {
                     FirebaseAnalytics.SetAnalyticsCollectionEnabled(true);
                     firebaseInitialized = true;
-                    Debug.Log("AnalyticsManager: Firebase Analytics basariyla baslatildi.");
+                    GameLogger.Log("AnalyticsManager: Firebase Analytics basariyla baslatildi.");
 
                     string todayString = System.DateTime.Now.ToString("yyyy-MM-dd");
                     string lastLoginDate = PlayerPrefs.GetString("LastLoginDate", "");
@@ -56,7 +57,7 @@ namespace ForrestGame.Managers
                 }
                 else
                 {
-                    Debug.LogError($"AnalyticsManager: Firebase Analytics baslatilamadi: {dependencyStatus}");
+                    GameLogger.LogError($"AnalyticsManager: Firebase Analytics baslatilamadi: {dependencyStatus}");
                 }
             });
         }
@@ -66,7 +67,7 @@ namespace ForrestGame.Managers
             if (!firebaseInitialized) return;
 
             FirebaseAnalytics.LogEvent(eventName, new Parameter(parameterName, parameterValue));
-            Debug.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
+            GameLogger.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
         }
 
         public void LogCustomEvent(string eventName, string parameterName, int parameterValue)
@@ -74,7 +75,7 @@ namespace ForrestGame.Managers
             if (!firebaseInitialized) return;
 
             FirebaseAnalytics.LogEvent(eventName, new Parameter(parameterName, parameterValue));
-            Debug.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
+            GameLogger.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
         }
 
         public void LogCustomEvent(string eventName, string parameterName, float parameterValue)
@@ -82,7 +83,7 @@ namespace ForrestGame.Managers
             if (!firebaseInitialized) return;
 
             FirebaseAnalytics.LogEvent(eventName, new Parameter(parameterName, parameterValue));
-            Debug.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
+            GameLogger.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
         }
 
         private void OnApplicationPause(bool isPaused)
