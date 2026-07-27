@@ -51,7 +51,7 @@ namespace ForrestGame.Managers
                     PlayerPrefs.SetInt("DailySessionCount", dailySessionCount);
                     PlayerPrefs.Save();
 
-                    LogCustomEvent("session_start", "daily_session_count", dailySessionCount);
+                    LogCustomEvent("game_session_start", "daily_session_count", dailySessionCount);
                     sessionStartTime = Time.realtimeSinceStartup;
                 }
                 else
@@ -92,7 +92,7 @@ namespace ForrestGame.Managers
             if (isPaused)
             {
                 float sessionMinutes = (Time.realtimeSinceStartup - sessionStartTime) / 60f;
-                LogCustomEvent("session_end", "session_minutes", sessionMinutes);
+                LogCustomEvent("game_session_end", "session_minutes", sessionMinutes);
             }
             else
             {
@@ -105,7 +105,7 @@ namespace ForrestGame.Managers
             if (!firebaseInitialized) return;
 
             float sessionMinutes = (Time.realtimeSinceStartup - sessionStartTime) / 60f;
-            LogCustomEvent("session_end", "session_minutes", sessionMinutes);
+            LogCustomEvent("game_session_end", "session_minutes", sessionMinutes);
         }
     }
 }

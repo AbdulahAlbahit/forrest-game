@@ -18,20 +18,14 @@ public class PlayTimeManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private void Start()
+    private void OnEnable()
     {
-        if (CloudSaveManager.Instance != null)
-        {
-            CloudSaveManager.Instance.OnDataSaved += LogSessionPlayTime;
-        }
+        // OnDataSaved (otomatik kayit) eventine baglanmiyoruz (Firebase'i spamlamamak icin)
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
-        if (CloudSaveManager.Instance != null)
-        {
-            CloudSaveManager.Instance.OnDataSaved -= LogSessionPlayTime;
-        }
+        // Event kaldirildi
     }
 
     private void Update()
