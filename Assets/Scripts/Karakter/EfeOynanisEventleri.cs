@@ -1,6 +1,13 @@
 using System;
 using UnityEngine;
 
+public enum EfeHareketDurumu
+{
+    Duruyor,
+    Yuruyor,
+    Kosuyor
+}
+
 /// <summary>
 /// Efe'ye ait oynanis sistemlerinin ses/VFX gibi bagimsiz sistemlere acik olay sozlesmesi.
 /// Dinleyiciler OnEnable icinde abone olup OnDisable icinde abonelikten cikmalidir.
@@ -11,8 +18,11 @@ public static class EfeOynanisEventleri
     public static event Action<Transform> JoystickBirakildi;
     public static event Action<Transform> HareketBasladi;
     public static event Action<Transform> HareketBitti;
+    public static event Action<Transform> YurumeBasladi;
+    public static event Action<Transform> YurumeBitti;
     public static event Action<Transform> KosuBasladi;
     public static event Action<Transform> KosuBitti;
+    public static event Action<Transform, EfeHareketDurumu> HareketDurumuDegisti;
     public static event Action<Transform> BaltaSallandi;
     public static event Action<Transform> BaltaAgacaVurdu;
     public static event Action<Transform, int, int> OdunToplandi;
@@ -37,11 +47,26 @@ public static class EfeOynanisEventleri
     internal static void HareketBittiginiYayinla(Transform kaynak) =>
         GuvenliYayinla(HareketBitti, kaynak, nameof(HareketBitti));
 
+    internal static void YurumeBasladiginiYayinla(Transform kaynak) =>
+        GuvenliYayinla(YurumeBasladi, kaynak, nameof(YurumeBasladi));
+
+    internal static void YurumeBittiginiYayinla(Transform kaynak) =>
+        GuvenliYayinla(YurumeBitti, kaynak, nameof(YurumeBitti));
+
     internal static void KosuBasladiginiYayinla(Transform kaynak) =>
         GuvenliYayinla(KosuBasladi, kaynak, nameof(KosuBasladi));
 
     internal static void KosuBittiginiYayinla(Transform kaynak) =>
         GuvenliYayinla(KosuBitti, kaynak, nameof(KosuBitti));
+
+    internal static void HareketDurumunuYayinla(
+        Transform kaynak,
+        EfeHareketDurumu hareketDurumu) =>
+        GuvenliYayinla(
+            HareketDurumuDegisti,
+            kaynak,
+            hareketDurumu,
+            nameof(HareketDurumuDegisti));
 
     internal static void BaltaSallandiginiYayinla(Transform kaynak) =>
         GuvenliYayinla(BaltaSallandi, kaynak, nameof(BaltaSallandi));
@@ -96,6 +121,30 @@ public static class EfeOynanisEventleri
             try
             {
                 dinleyici(kaynak);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[EfeOynanisEventleri] {olayAdi} dinleyicisi hata verdi: {exception}");
+            }
+        }
+    }
+
+    private static void GuvenliYayinla(
+        Action<Transform, EfeHareketDurumu> olay,
+        Transform kaynak,
+        EfeHareketDurumu hareketDurumu,
+        string olayAdi)
+    {
+        if (olay == null)
+        {
+            return;
+        }
+
+        foreach (Action<Transform, EfeHareketDurumu> dinleyici in olay.GetInvocationList())
+        {
+            try
+            {
+                dinleyici(kaynak, hareketDurumu);
             }
             catch (Exception exception)
             {

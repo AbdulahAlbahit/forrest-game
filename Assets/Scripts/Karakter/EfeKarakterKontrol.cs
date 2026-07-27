@@ -300,6 +300,9 @@ public class EfeKarakterKontrol : MonoBehaviour
 
     private void HareketOlaylariniYayinla(bool hareketEdiyor, bool kosuyor)
     {
+        bool oncekiYuruyor = oncekiHareketEdiyor && !oncekiKosuyor;
+        bool yuruyor = hareketEdiyor && !kosuyor;
+
         if (hareketEdiyor && !oncekiHareketEdiyor)
         {
             EfeOynanisEventleri.HareketBasladiginiYayinla(transform);
@@ -307,6 +310,15 @@ public class EfeKarakterKontrol : MonoBehaviour
         else if (!hareketEdiyor && oncekiHareketEdiyor)
         {
             EfeOynanisEventleri.HareketBittiginiYayinla(transform);
+        }
+
+        if (yuruyor && !oncekiYuruyor)
+        {
+            EfeOynanisEventleri.YurumeBasladiginiYayinla(transform);
+        }
+        else if (!yuruyor && oncekiYuruyor)
+        {
+            EfeOynanisEventleri.YurumeBittiginiYayinla(transform);
         }
 
         if (kosuyor && !oncekiKosuyor)
@@ -318,8 +330,27 @@ public class EfeKarakterKontrol : MonoBehaviour
             EfeOynanisEventleri.KosuBittiginiYayinla(transform);
         }
 
+        EfeHareketDurumu oncekiDurum = HareketDurumunuBelirle(
+            oncekiHareketEdiyor,
+            oncekiKosuyor);
+        EfeHareketDurumu yeniDurum = HareketDurumunuBelirle(hareketEdiyor, kosuyor);
+        if (yeniDurum != oncekiDurum)
+        {
+            EfeOynanisEventleri.HareketDurumunuYayinla(transform, yeniDurum);
+        }
+
         oncekiHareketEdiyor = hareketEdiyor;
         oncekiKosuyor = kosuyor;
+    }
+
+    private static EfeHareketDurumu HareketDurumunuBelirle(bool hareketEdiyor, bool kosuyor)
+    {
+        if (!hareketEdiyor)
+        {
+            return EfeHareketDurumu.Duruyor;
+        }
+
+        return kosuyor ? EfeHareketDurumu.Kosuyor : EfeHareketDurumu.Yuruyor;
     }
 
     void OnValidate()
