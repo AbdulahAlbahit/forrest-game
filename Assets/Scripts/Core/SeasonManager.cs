@@ -48,6 +48,13 @@ namespace ForrestGame.Core
         public TerrainDetailBaseline[] ilkbaharCicekBaselineleri;
         private float lastAppliedFlowerAmount = -1f;
 
+        private SnowStormController[] _sonbaharSnowStormControllers;
+        private ParticleSystem _sonbaharRainParticles;
+        private bool _sonbaharVFXCached;
+
+        private SnowStormController _kisSnowStorm;
+        private bool _kisVFXCached;
+
         [Header("Terrain Snow Blend")]
         [Tooltip("Terrain'deki toprak (ground) Terrain Layer'inin index'i.")]
         public int groundTerrainLayerIndex = 0;
@@ -148,8 +155,12 @@ namespace ForrestGame.Core
             ApplySnowAmount(kisMiktari);
             if (kisVFX != null)
             {
-                SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
-                if (snowStorm != null) snowStorm.SetIntensityScale(kisMiktari);
+                if (!_kisVFXCached)
+                {
+                    _kisSnowStorm = kisVFX.GetComponent<SnowStormController>();
+                    _kisVFXCached = true;
+                }
+                if (_kisSnowStorm != null) _kisSnowStorm.SetIntensityScale(kisMiktari);
             }
 
             float sonbaharMiktari = GetSeasonPulseAmount(MevsimTuru.Sonbahar);
@@ -358,18 +369,24 @@ namespace ForrestGame.Core
         {
             if (sonbaharVFX == null) return;
 
-            foreach (SnowStormController controller in sonbaharVFX.GetComponentsInChildren<SnowStormController>(true))
+            if (!_sonbaharVFXCached)
+            {
+                _sonbaharSnowStormControllers = sonbaharVFX.GetComponentsInChildren<SnowStormController>(true);
+
+                Transform rainTransform = sonbaharVFX.transform.Find("Rain");
+                _sonbaharRainParticles = rainTransform != null ? rainTransform.GetComponent<ParticleSystem>() : null;
+
+                _sonbaharVFXCached = true;
+            }
+
+            foreach (SnowStormController controller in _sonbaharSnowStormControllers)
             {
                 controller.SetIntensityScale(amount);
             }
 
-            Transform rainTransform = sonbaharVFX.transform.Find("Rain");
-            if (rainTransform == null) return;
+            if (_sonbaharRainParticles == null) return;
 
-            ParticleSystem rainParticles = rainTransform.GetComponent<ParticleSystem>();
-            if (rainParticles == null) return;
-
-            ParticleSystem.EmissionModule emission = rainParticles.emission;
+            ParticleSystem.EmissionModule emission = _sonbaharRainParticles.emission;
             emission.rateOverTime = amount * sonbaharRainMaxEmissionRate;
         }
 
@@ -386,7 +403,6 @@ namespace ForrestGame.Core
             if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
             {
                 TerrainData terrainData = Terrain.activeTerrain.terrainData;
-                terrainData.RefreshPrototypes();
 
                 if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
                 {
