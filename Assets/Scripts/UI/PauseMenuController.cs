@@ -36,6 +36,10 @@ public class PauseMenuController : MonoBehaviour
     [Tooltip("Butonlara basıldığında çalacak SFX ismi.")]
     [SerializeField] private string buttonSfxName = "";
 
+    [Header("--- Yükleme Ekranı (Loading Overlay) ---")]
+    [Tooltip("Çıkış yaparken gösterilecek yükleme overlay paneli.")]
+    [SerializeField] private GameObject loadingOverlay;
+
     [Header("--- Sahne Ayarları ---")]
     [Tooltip("Çıkış yapıldığında dönülecek sahne adı. Boş bırakılırsa Application.Quit() çağrılır.")]
     [SerializeField] private string exitSceneName = "";
@@ -72,7 +76,6 @@ public class PauseMenuController : MonoBehaviour
             quitButton.onClick.AddListener(QuitGame);
 
         // Başlangıçta paneli sadece oyun duraklatılmamışsa gizle
-        // (İlk tıkta PauseGame() çağrıldığında Start() çalışıp paneli tekrar kapatmasın)
         if (pausePanel != null && !isPaused)
             pausePanel.SetActive(false);
 
@@ -135,8 +138,7 @@ public class PauseMenuController : MonoBehaviour
     }
 
     /// <summary>
-    /// Oyundan çıkış yapar. exitSceneName belirtilmişse o sahneye döner,
-    /// yoksa uygulamayı tamamen kapatır.
+    /// Oyundan çıkış yapar. LoadingOverlay paneli gösterilir ve sahne asenkron olarak yüklenir.
     /// </summary>
     public void QuitGame()
     {
@@ -146,16 +148,57 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 1f;
         isPaused = false;
 
-        Debug.Log("[PauseMenu] Oyundan çıkış yapılıyor...");
+        StartCoroutine(QuitWithLoadingRoutine());
+    }
 
-        // Belirtilen sahneye dön
-        if (!string.IsNullOrEmpty(exitSceneName))
+    private System.Collections.IEnumerator QuitWithLoadingRoutine()
+    {
+        Debug.Log("[PauseMenu] Yükleme ekranı gösteriliyor ve çıkış yapılıyor...");
+
+        // Firebase oturumunu kapat (oturum sonlandırılsın)
+        if (FirebaseAuthManager.Instance != null)
         {
-            SceneManager.LoadScene(exitSceneName);
-            return;
+            FirebaseAuthManager.Instance.SignOut();
         }
 
-        // Uygulama çıkışı
+        // Loading overlay'i göster
+        if (LoadingOverlayController.Instance != null)
+        {
+            LoadingOverlayController.Instance.ShowLoading(true);
+        }
+        else if (loadingOverlay != null)
+        {
+            loadingOverlay.SetActive(true);
+        }
+
+        // Eğer pausePanel bu scriptin kendi objesi değilse gizle
+        if (pausePanel != null && pausePanel != gameObject)
+        {
+            pausePanel.SetActive(false);
+        }
+
+        // Yükleme ekranının görsel olarak açılması için 1 kare bekle
+        yield return null;
+
+        // Belirtilen sahneye asenkron olarak geçiş yap
+        if (!string.IsNullOrEmpty(exitSceneName))
+        {
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(exitSceneName);
+            if (asyncLoad != null)
+            {
+                asyncLoad.allowSceneActivation = false;
+                while (asyncLoad.progress < 0.9f)
+                {
+                    yield return null;
+                }
+                asyncLoad.allowSceneActivation = true;
+                yield break;
+            }
+        }
+
+        // Sahne adı belirtilmemişse uygulamayı kapat
+        yield return new WaitForSecondsRealtime(0.5f);
+
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
