@@ -37,6 +37,10 @@ public class TreeManager : MonoBehaviour
     [Range(5f, 50f)]
     public float fallTorque = 15f;
 
+    [Header("Non-Tree Terrain Prototypes")]
+    [Tooltip("Terrain'e Tree fırçasıyla boyanmış ama gerçek ağaç olmayan prototiplerin (ör. kayalar) index numaraları. Bu index'ler baltayla kesilmez.")]
+    public int[] nonTreePrototypeIndices = new int[0];
+
     [Header("Time Settings")]
     public float disappearDelay = 2f;
     public float logDisappearDelay = 8f;
@@ -219,6 +223,15 @@ public class TreeManager : MonoBehaviour
         return 0; 
     }
 
+    public bool IsChoppablePrototype(int prototypeIndex)
+    {
+        for (int i = 0; i < nonTreePrototypeIndices.Length; i++)
+        {
+            if (nonTreePrototypeIndices[i] == prototypeIndex) return false;
+        }
+        return true;
+    }
+
     private int FindNearestTreeIndex(Vector3 worldPos)
     {
         TreeInstance[] trees = _activeTerrain.terrainData.treeInstances;
@@ -227,6 +240,8 @@ public class TreeManager : MonoBehaviour
 
         for (int i = 0; i < trees.Length; i++)
         {
+            if (!IsChoppablePrototype(trees[i].prototypeIndex)) continue;
+
             Vector3 treePos = GetTreeWorldPos(trees[i]);
             float dist = Vector2.Distance(
                 new Vector2(worldPos.x, worldPos.z),
