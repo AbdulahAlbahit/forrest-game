@@ -59,18 +59,6 @@ public class WorkshopPanelController : MonoBehaviour
     private List<QueueItemUI> spawnedQueueItems = new List<QueueItemUI>();
     private bool externalQueueDisplayActive;
 
-    // SÜREKLİ ARKA PLAN ZAMANLAYICISI (Panel Kapalı Olsa Bile Çalışır)
-    public class OfflineOrder
-    {
-        public string ItemID;
-        public float Elapsed;
-        public float Duration;
-    }
-    public static List<OfflineOrder> GlobalOfflineOrders = new List<OfflineOrder>();
-    public static int OfflineWoodBalance = 25;
-
-    private static List<RecipeConfig> testRecipes = new List<RecipeConfig>();
-
     /// <summary>
     /// Harici bir oynanis sistemi panele baglandiginda Uret butonu dogrudan
     /// WorkshopManager'i calistirmak yerine secilen tarifi bu olayla bildirir.
@@ -106,12 +94,6 @@ public class WorkshopPanelController : MonoBehaviour
         SubscribeEvents();
         PopulateRecipeList();
         RefreshQueueUI();
-
-        // Paneli açtığında arka planda ilerleyen sürece göre UI'ı güncelle
-        if (MainHUDController.Instance != null && (WorkshopManager.Instance == null || CloudSaveManager.Instance?.CurrentData == null))
-        {
-            MainHUDController.Instance.SetWoodTextDirect(OfflineWoodBalance, 25);
-        }
     }
 
     private void OnDisable()
@@ -125,26 +107,7 @@ public class WorkshopPanelController : MonoBehaviour
         UpdateActiveQueueProgress();
     }
 
-    // ARKA PLANDA SÜREKLİ AKAN ZAMANLAYICI (Global Hizmet)
-    public static void TickBackgroundProduction(float deltaTime)
-    {
-        if (GlobalOfflineOrders.Count == 0) return;
 
-        var current = GlobalOfflineOrders[0];
-        current.Elapsed += deltaTime;
-
-        if (current.Elapsed >= current.Duration)
-        {
-            Debug.Log($"[Atölye Arka Plan] '{current.ItemID}' ÜRETİMİ TAMAMLANDI! 🎉");
-            GlobalOfflineOrders.RemoveAt(0);
-
-            // Eğer panel o an ekranda açıksa Queue listesini yenile ve biten kutuyu kaldır
-            if (Instance != null && Instance.gameObject.activeInHierarchy)
-            {
-                Instance.RefreshQueueUI();
-            }
-        }
-    }
 
     // ═══════════════════════════════════════════
     //  Event Abonelikleri
@@ -207,21 +170,15 @@ public class WorkshopPanelController : MonoBehaviour
         }
         spawnedRecipeItems.Clear();
 
-        List<RecipeConfig> listToUse = new List<RecipeConfig>();
-
-        if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null && WorkshopManager.Instance.tumTarifler.Length > 0)
+        if (WorkshopManager.Instance == null || WorkshopManager.Instance.tumTarifler == null || WorkshopManager.Instance.tumTarifler.Length == 0)
         {
-            listToUse.AddRange(WorkshopManager.Instance.tumTarifler);
+            Debug.LogWarning("[WorkshopPanel] WorkshopManager veya tarifler bulunamadı!");
+            return;
         }
 
-        if (listToUse.Count == 0)
+        for (int i = 0; i < WorkshopManager.Instance.tumTarifler.Length; i++)
         {
-            listToUse = GetTestRecipes();
-        }
-
-        for (int i = 0; i < listToUse.Count; i++)
-        {
-            RecipeConfig recipe = listToUse[i];
+            RecipeConfig recipe = WorkshopManager.Instance.tumTarifler[i];
             if (recipe == null) continue;
 
             GameObject obj = Instantiate(recipeItemPrefab, recipeListContent);
@@ -234,29 +191,10 @@ public class WorkshopPanelController : MonoBehaviour
             }
         }
 
-        if (listToUse.Count > 0 && listToUse[0] != null)
+        if (WorkshopManager.Instance.tumTarifler.Length > 0 && WorkshopManager.Instance.tumTarifler[0] != null)
         {
-            OnRecipeSelected(listToUse[0]);
+            OnRecipeSelected(WorkshopManager.Instance.tumTarifler[0]);
         }
-    }
-
-    private List<RecipeConfig> GetTestRecipes()
-    {
-        if (testRecipes.Count == 0)
-        {
-            string[] testNames = { "Masa", "Sandalye", "Ahşap Dolap" };
-            int[] testPrices = { 500, 250, 450 };
-            for (int i = 0; i < testNames.Length; i++)
-            {
-                RecipeConfig config = ScriptableObject.CreateInstance<RecipeConfig>();
-                config.ItemID = testNames[i];
-                config.RequiredWood = 5;
-                config.BaseProductionTime = 5f;
-                config.BaseSalePrice = testPrices[i];
-                testRecipes.Add(config);
-            }
-        }
-        return testRecipes;
     }
 
     private void OnRecipeSelected(RecipeConfig recipe)
@@ -279,6 +217,10 @@ public class WorkshopPanelController : MonoBehaviour
 
         if (productionTimeText != null)
             productionTimeText.text = $"Süre: {recipe.BaseProductionTime} sn";
+
+        // Mobilya ikonunu göster (Mert'in eklediği Sprite)
+        if (selectedItemIcon != null && recipe.ItemIcon != null)
+            selectedItemIcon.sprite = recipe.ItemIcon;
 
         if (produceButton != null)
             produceButton.interactable = true;
@@ -312,6 +254,7 @@ public class WorkshopPanelController : MonoBehaviour
 
         if (selectedRecipe == null) return;
 
+        // Harici üretim dinleyicisi varsa (EfeWorkshopPanelBridge vb.) ona bildir
         if (ProductionRequested != null)
         {
             foreach (Action<RecipeConfig> handler in ProductionRequested.GetInvocationList())
@@ -329,9 +272,7 @@ public class WorkshopPanelController : MonoBehaviour
             return;
         }
 
-        int cost = selectedRecipe.RequiredWood > 0 ? selectedRecipe.RequiredWood : 5;
-
-        // 1. GERÇEK SİSTEM AKTİFSE
+        // WorkshopManager üzerinden üretim başlat
         if (WorkshopManager.Instance != null && CloudSaveManager.Instance?.CurrentData != null)
         {
             bool success = WorkshopManager.Instance.TryStartProduction(selectedRecipe, 1);
@@ -339,45 +280,17 @@ public class WorkshopPanelController : MonoBehaviour
             {
                 Debug.Log($"[WorkshopPanel] {selectedRecipe.ItemID} üretimi sıraya eklendi!");
                 RefreshQueueUI();
-                return;
             }
             else
             {
-                NotificationUIController.Instance?.ShowNotification("⚠️ Yetersiz Odun!");
+                NotificationUIController.Instance?.ShowNotification("Yetersiz Odun!");
             }
         }
-
-        // 2. ÇEVRİMDİŞİ TEST SİMÜLASYONU
-        if (OfflineWoodBalance < cost)
+        else
         {
-            Debug.LogWarning($"[Workshop Test] YETERSIZ ODUN! Gereken: {cost}, Mevcut Test Odunu: {OfflineWoodBalance}.");
-            NotificationManager.Instance?.SendNotification("Yetersiz Odun!");
-            NotificationUIController.Instance?.ShowNotification("⚠️ Yetersiz Odun!");
-            return;
+            Debug.LogWarning("[WorkshopPanel] WorkshopManager veya CloudSave verisi bulunamadı!");
+            NotificationUIController.Instance?.ShowNotification("Sistem hazır değil!");
         }
-
-        OfflineWoodBalance -= cost;
-        Debug.Log($"[Workshop Test] -{cost} Odun Harcandı! Kalan Test Odunu: {OfflineWoodBalance}");
-
-        if (MainHUDController.Instance != null)
-        {
-            MainHUDController.Instance.SetWoodTextDirect(OfflineWoodBalance, 25);
-        }
-
-        AddOfflineTestOrder(selectedRecipe);
-    }
-
-    private void AddOfflineTestOrder(RecipeConfig recipe)
-    {
-        OfflineOrder item = new OfflineOrder
-        {
-            ItemID = recipe.ItemID,
-            Elapsed = 0f,
-            Duration = recipe.BaseProductionTime > 0 ? recipe.BaseProductionTime : 5f
-        };
-
-        GlobalOfflineOrders.Add(item);
-        RefreshQueueUI();
     }
 
     // ═══════════════════════════════════════════
@@ -394,44 +307,26 @@ public class WorkshopPanelController : MonoBehaviour
         }
         spawnedQueueItems.Clear();
 
+        if (CloudSaveManager.Instance?.CurrentData?.WorkshopQueue == null) return;
+
+        var queueDict = CloudSaveManager.Instance.CurrentData.WorkshopQueue.ToDictionary();
         bool isFirst = true;
 
-        // 1. GERÇEK SİSTEM SİPARİŞLERİ
-        if (CloudSaveManager.Instance?.CurrentData?.WorkshopQueue != null)
+        foreach (var kvp in queueDict)
         {
-            var queueDict = CloudSaveManager.Instance.CurrentData.WorkshopQueue.ToDictionary();
+            string itemId = kvp.Key;
+            int count = System.Convert.ToInt32(kvp.Value);
 
-            foreach (var kvp in queueDict)
-            {
-                string itemId = kvp.Key;
-                int count = System.Convert.ToInt32(kvp.Value);
+            if (count <= 0) continue;
 
-                if (count <= 0) continue;
-
-                GameObject obj = Instantiate(queueItemPrefab, queueListContent);
-                QueueItemUI queueUI = obj.GetComponent<QueueItemUI>();
-
-                if (queueUI != null)
-                {
-                    queueUI.Setup(itemId, count, isFirst);
-                    spawnedQueueItems.Add(queueUI);
-                    isFirst = false;
-                }
-            }
-        }
-
-        // 2. ÇEVRİMDİŞİ / TEST SİPARİŞLERİ
-        for (int i = 0; i < GlobalOfflineOrders.Count; i++)
-        {
             GameObject obj = Instantiate(queueItemPrefab, queueListContent);
             QueueItemUI queueUI = obj.GetComponent<QueueItemUI>();
 
             if (queueUI != null)
             {
-                bool active = isFirst && (i == 0);
-                queueUI.Setup(GlobalOfflineOrders[i].ItemID, 1, active);
+                queueUI.Setup(itemId, count, isFirst);
                 spawnedQueueItems.Add(queueUI);
-                if (isFirst) isFirst = false;
+                isFirst = false;
             }
         }
     }
@@ -440,26 +335,10 @@ public class WorkshopPanelController : MonoBehaviour
     {
         if (externalQueueDisplayActive) return;
 
-        if (WorkshopManager.Instance != null && spawnedQueueItems.Count > 0)
+        if (WorkshopManager.Instance != null && spawnedQueueItems.Count > 0 && spawnedQueueItems[0] != null)
         {
             float progress = WorkshopManager.Instance.GetProcessingProgress();
-            if (spawnedQueueItems[0] != null)
-            {
-                spawnedQueueItems[0].UpdateProgress(progress);
-            }
-            return;
-        }
-
-        if (GlobalOfflineOrders.Count > 0 && spawnedQueueItems.Count > 0 && spawnedQueueItems[0] != null)
-        {
-            float progress = GlobalOfflineOrders[0].Elapsed / GlobalOfflineOrders[0].Duration;
             spawnedQueueItems[0].UpdateProgress(progress);
-
-            // Ürün tamamlandıysa listeyi yeniden çiz
-            if (GlobalOfflineOrders[0].Elapsed >= GlobalOfflineOrders[0].Duration)
-            {
-                RefreshQueueUI();
-            }
         }
     }
 
@@ -563,19 +442,4 @@ public class WorkshopPanelController : MonoBehaviour
         }
     }
 
-    [ContextMenu("TEST: +20 Ham Odun Ekle")]
-    public void TestAddWoodToWorkshop()
-    {
-        if (WorkshopManager.Instance != null && CloudSaveManager.Instance?.CurrentData != null)
-        {
-            WorkshopManager.Instance.AddWood(20);
-        }
-        else
-        {
-            OfflineWoodBalance += 20;
-            if (MainHUDController.Instance != null)
-                MainHUDController.Instance.SetWoodTextDirect(OfflineWoodBalance, 25);
-            Debug.Log($"[Workshop Test] +20 Odun Eklendi. Güncel Test Odunu: {OfflineWoodBalance}");
-        }
-    }
 }
