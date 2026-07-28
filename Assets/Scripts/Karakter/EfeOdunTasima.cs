@@ -646,6 +646,26 @@ public class EfeOdunTasima : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Karakterin tasidigi tum odunlari harici bir depolama sistemine aktarilmak
+    /// uzere sepetten cikarir. Kalici stok ve kayit islemi bu sinifin sorumlulugu
+    /// degildir; basarili aktarilan miktari cagirana dondurur.
+    /// </summary>
+    public int TasinanOdunlariAmbaraAktar()
+    {
+        if (kamyonYuklemeAnimasyonuCalisiyor || TasinanOdunSayisi <= 0)
+        {
+            return 0;
+        }
+
+        int aktarilanMiktar = TasinanOdunSayisi;
+        TasinanOdunSayisi = 0;
+        SepetGorselleriniGuncelle();
+        EfeOynanisEventleri.SepetBosaldiginiYayinla(transform);
+
+        return aktarilanMiktar;
+    }
+
     private void SepetGorselleriniGuncelle()
     {
         for (int i = 0; i < sepetOdunuGorselleri.Count; i++)
