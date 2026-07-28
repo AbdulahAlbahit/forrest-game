@@ -16,6 +16,7 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
         EfeWorkshopSelectionController.OnSelectionRequested += HandleSelectionRequested;
         EfeWorkshopSelectionController.OnRecipeSelected += HandleRecipeSelected;
         EfeWorkshopSelectionController.OnSelectionRejected += HandleSelectionRejected;
+        ResolveReferences();
         SubscribePanel();
     }
 
@@ -54,6 +55,14 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
+        // Kamyon bekleyen bir secim yoksa Uret butonu Efe'nin onay akisini degil,
+        // tarif tiklaninca zaten kuyruga giren WorkshopManager akisini kullanir.
+        if (!selectionController.IsAwaitingSelection)
+        {
+            WorkshopManager.Instance?.TryStartProduction(recipe, 1);
+            return;
+        }
+
         if (selectionController.ConfirmSelection())
         {
             workshopPanel.ClearExternalQueueDisplay();
@@ -68,7 +77,16 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
-        selectionController.SelectRecipe(recipe);
+        // Kamyon atolyede secim bekliyorsa Efe'nin mevcut secim akisi devam etsin.
+        if (selectionController.IsAwaitingSelection)
+        {
+            selectionController.SelectRecipe(recipe);
+            return;
+        }
+
+        // Bekleyen kamyon yoksa tarif dogrudan WorkshopManager kuyruguna girsin;
+        // PlayerData.WorkshopRawWood yeterliyse uretir, degilse kalici kuyrukta bekler.
+        WorkshopManager.Instance?.TryStartProduction(recipe, 1);
     }
 
     private void HandleRecipeSelected(RecipeConfig recipe, int amount, int remainingWood)
@@ -91,8 +109,16 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
-        NotificationUIController.Instance?.ShowNotification(
-            "Atölye seçimini tamamlamak için Üret düğmesine bas.");
+        // Kamyon bekleyen bir secim varsa panel kapanmasin, Uret'e yonlendir.
+        if (selectionController.IsAwaitingSelection)
+        {
+            NotificationUIController.Instance?.ShowNotification(
+                "Atölye seçimini tamamlamak için Üret düğmesine bas.");
+            return;
+        }
+
+        // Bekleyen secim yoksa panel normal sekilde kapanabilir.
+        workshopPanel.CloseImmediately();
     }
 
     private void HandleSelectionRejected(string reason)
