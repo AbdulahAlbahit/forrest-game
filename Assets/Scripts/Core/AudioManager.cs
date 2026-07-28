@@ -104,6 +104,8 @@ namespace ForrestGame.Core
             ambienceSource.Play();
         }
 
+        private Coroutine vehicleRoutine;
+
         /// <summary>
         /// Araç motoru gibi sürekli sesleri çalmak için kullanılır.
         /// </summary>
@@ -116,11 +118,30 @@ namespace ForrestGame.Core
                 return;
             }
 
+            if (vehicleRoutine != null)
+            {
+                StopCoroutine(vehicleRoutine);
+            }
+
+            vehicleRoutine = StartCoroutine(VehicleLoopRoutine(s));
+        }
+
+        private System.Collections.IEnumerator VehicleLoopRoutine(Sound s)
+        {
+            if (s.clip == null) yield break;
+
             vehicleSource.clip = s.clip;
             vehicleSource.volume = s.volume;
             vehicleSource.pitch = s.pitch;
-            vehicleSource.loop = true;
-            vehicleSource.Play();
+            vehicleSource.loop = false; // Unity'nin kendi loop özelliğini kapatıp manuel döngü yapıyoruz
+
+            float beklemeSuresi = s.clip.length;
+
+            while (true)
+            {
+                vehicleSource.Play();
+                yield return new WaitForSeconds(beklemeSuresi);
+            }
         }
 
         /// <summary>
@@ -138,7 +159,12 @@ namespace ForrestGame.Core
 
         public void StopVehicle()
         {
-            if(vehicleSource != null) vehicleSource.Stop();
+            if (vehicleRoutine != null)
+            {
+                StopCoroutine(vehicleRoutine);
+                vehicleRoutine = null;
+            }
+            if (vehicleSource != null) vehicleSource.Stop();
         }
     }
 }
