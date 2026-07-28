@@ -6,17 +6,13 @@ using TMPro;
 /// <summary>
 /// Oyun genelinde tost/pop-up bildirimlerini yöneten arayüz script'i.
 /// Ekranda ufak bir görsel (Image) ve yazı (TextMeshProUGUI) ile kısa süreli bildirim gösterir (Örn: "Yetersiz Odun!").
-///
-/// KULLANIM:
-/// 1. CanvasUI altına küçük bir Bildirim Paneli (Image + Text) ekleyin.
-/// 2. Bu scripti o objeye ekleyin ve NotificationUIController.Instance.ShowNotification("Mesajiniz") şeklinde çağırın.
 /// </summary>
 public class NotificationUIController : MonoBehaviour
 {
     public static NotificationUIController Instance { get; private set; }
 
     [Header("--- UI Elemanları ---")]
-    [Tooltip("Bildirim arka plan paneli/görseli (Image).")]
+    [Tooltip("Bildirim arka plan paneli/görseli (Image). Ayrı bir çocuk obje ise onu gizler; aynı objeyse Image/Text bileşenlerini kapatır.")]
     [SerializeField] private GameObject notificationPanel;
 
     [Tooltip("Bildirim mesajı metni.")]
@@ -27,34 +23,45 @@ public class NotificationUIController : MonoBehaviour
     [SerializeField] private float defaultDuration = 2f;
 
     private Coroutine currentNoticeCoroutine;
+    private Image panelImage;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance == null)
         {
-            Destroy(gameObject);
-            return;
+            Instance = this;
         }
-        Instance = this;
 
-        // Başlangıçta paneli gizle
-        if (notificationPanel != null)
-            notificationPanel.SetActive(false);
+        panelImage = GetComponent<Image>();
+
+        // Başlangıçta sadece görselleri gizle (Script objesi uyanık kalsın ki Coroutine çalışabilsin)
+        SetVisibility(false);
+    }
+
+    private void OnEnable()
+    {
+        NotificationManager.OnNotificationReceived += HandleNotificationReceived;
+    }
+
+    private void OnDisable()
+    {
+        NotificationManager.OnNotificationReceived -= HandleNotificationReceived;
+    }
+
+    private void HandleNotificationReceived(string message)
+    {
+        ShowNotification(message);
     }
 
     /// <summary>
     /// Ekranda kısa süreli bildirim pop-up'ı gösterir.
     /// </summary>
-    /// <param name="message">Gösterilecek bildirim mesajı.</param>
-    /// <param name="duration">Ekranda kalma süresi (Opsiyonel).</param>
     public void ShowNotification(string message, float duration = -1f)
     {
         if (duration <= 0) duration = defaultDuration;
 
-        // Önce paneli ve script objesini aktif et ki Coroutine başlayabilsin
-        gameObject.SetActive(true);
-        if (notificationPanel != null)
-            notificationPanel.SetActive(true);
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
 
         if (currentNoticeCoroutine != null)
             StopCoroutine(currentNoticeCoroutine);
@@ -67,14 +74,30 @@ public class NotificationUIController : MonoBehaviour
         if (notificationText != null)
             notificationText.text = message;
 
-        if (notificationPanel != null)
-            notificationPanel.SetActive(true);
+        SetVisibility(true);
 
         yield return new WaitForSeconds(duration);
 
-        if (notificationPanel != null)
-            notificationPanel.SetActive(false);
+        SetVisibility(false);
 
         currentNoticeCoroutine = null;
+    }
+
+    private void SetVisibility(bool visible)
+    {
+        // 1. Eğer notificationPanel ayrı bir çocuk obje ise onu aktif/pasif yap
+        if (notificationPanel != null && notificationPanel != gameObject)
+        {
+            notificationPanel.SetActive(visible);
+            return;
+        }
+
+        // 2. Eğer script doğrudan NotificationPanel üzerindeyse, GameObject'i kapatma (yoksa Coroutine durur)!
+        // Bunun yerine Image ve Text bileşenlerini kapat/aç.
+        if (panelImage != null)
+            panelImage.enabled = visible;
+
+        if (notificationText != null)
+            notificationText.enabled = visible;
     }
 }

@@ -7,6 +7,7 @@ public class PlayerData
     public int Para;
     public int XP;
     public int OyuncuSeviyesi;
+    public long LastSaveTime = 0;
 
     // --- Jenerik Upgrade Seviyeleri ---
     // Tum esyalarin seviyeleri bu sozlukte tutulur.
@@ -20,8 +21,20 @@ public class PlayerData
     // --- Acilan Bolgeler ---
     public List<string> AcilanBolgeler;
 
-    // --- Yeni Core System Verileri ---
+    // --- Odun Stoklari ---
+    /// <summary>
+    /// Oyuncunun genel odun deposu. Agac kesilince artar, kamyona yuklenince azalir.
+    /// Atolye ile dogrudan iliskisi YOKTUR.
+    /// </summary>
+    public int PlayerWoodStock;
+
+    /// <summary>
+    /// Atolye ham odun stogu. SADECE kamyonun atolyeye bıraktığı odunları tutar.
+    /// Uretim baslarken buradan duser, PlayerWoodStock ile karistirilmamalidir.
+    /// </summary>
     public int WorkshopRawWood;
+
+    // --- Diger Core System Verileri ---
     public SerializableDict ShopInventory;
     public SerializableDict WorkshopQueue;
     public SerializableDict ReadyForTruck;
@@ -46,6 +59,7 @@ public class PlayerData
 
         AcilanBolgeler = new List<string>();
         
+        PlayerWoodStock = 0;
         WorkshopRawWood = 0;
         ShopInventory = new SerializableDict();
         WorkshopQueue = new SerializableDict();
