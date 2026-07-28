@@ -27,21 +27,20 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketDurumuDegisti += OnHareketDurumuDegisti;
 
-            // --- LOOP SESLERİ İÇİN DİNLEYİCİLER (Hazır olduğunda başlarındaki // silinecek) ---
-            // TODO: Mevsim ve oyun yöneticisi (SeasonManager vb.) eventleri yazdığında aktif et:
-            // OyunEventleri.OyunBasladi += OnOyunBasladi;
-            // MevsimEventleri.KisBasladi += OnKisBasladi;
-            // MevsimEventleri.YazBasladi += OnYazBasladi;
-            // MevsimEventleri.SonbaharBasladi += OnSonbaharBasladi;
-            // MevsimEventleri.IlkbaharBasladi += OnIlkbaharBasladi;
             
-            TruckRouteController.OnTruckDepartedHome += OnKamyonCalisti;
-            TruckRouteController.OnTruckDeparture += OnKamyonCalisti;
-            TruckRouteController.OnTruckDepartedMarket += OnKamyonCalisti;
+            TruckRouteController.OnTruckDepartedHome += EvdenAyrilis;
+            TruckRouteController.OnTruckDeparture += DuraktanKalkis;
+            TruckRouteController.OnTruckDepartedMarket += DuraktanKalkis;
 
-            TruckRouteController.OnTruckArrival += OnKamyonDurdu;
-            TruckRouteController.OnMarketSale += OnKamyonDurdu;
-            TruckRouteController.OnTruckArrivedHome += OnKamyonDurdu;
+            TruckRouteController.OnTruckArrival += DuragaVaris;
+            TruckRouteController.OnMarketSale += SatisYapiliyor;
+            TruckRouteController.OnTruckArrivedHome += EveVaris;
+
+            // Atölye (Workshop) Üretim Eventleri
+            WorkshopProductionManager.OnHammerStrike += UretimCekicSesi;
+            WorkshopProductionManager.OnProductionSuccess += UretimBasariliSesi;
+            WorkshopProductionManager.OnCraftingStartedGlobal += UretimBasladi;
+            WorkshopProductionManager.OnCraftingFinishedGlobal += UretimBitti;
         }
 
         private void OnDisable()
@@ -61,19 +60,47 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketDurumuDegisti -= OnHareketDurumuDegisti;
 
-            // OyunEventleri.OyunBasladi -= OnOyunBasladi;
-            // MevsimEventleri.KisBasladi -= OnKisBasladi;
-            // MevsimEventleri.YazBasladi -= OnYazBasladi;
-            // MevsimEventleri.SonbaharBasladi -= OnSonbaharBasladi;
-            // MevsimEventleri.IlkbaharBasladi -= OnIlkbaharBasladi;
-            
-            TruckRouteController.OnTruckDepartedHome -= OnKamyonCalisti;
-            TruckRouteController.OnTruckDeparture -= OnKamyonCalisti;
-            TruckRouteController.OnTruckDepartedMarket -= OnKamyonCalisti;
 
-            TruckRouteController.OnTruckArrival -= OnKamyonDurdu;
-            TruckRouteController.OnMarketSale -= OnKamyonDurdu;
-            TruckRouteController.OnTruckArrivedHome -= OnKamyonDurdu;
+            TruckRouteController.OnTruckDepartedHome -= EvdenAyrilis;
+            TruckRouteController.OnTruckDeparture -= DuraktanKalkis;
+            TruckRouteController.OnTruckDepartedMarket -= DuraktanKalkis;
+
+            TruckRouteController.OnTruckArrival -= DuragaVaris;
+            TruckRouteController.OnMarketSale -= SatisYapiliyor;
+            TruckRouteController.OnTruckArrivedHome -= EveVaris;
+
+            WorkshopProductionManager.OnHammerStrike -= UretimCekicSesi;
+            WorkshopProductionManager.OnProductionSuccess -= UretimBasariliSesi;
+            WorkshopProductionManager.OnCraftingStartedGlobal -= UretimBasladi;
+            WorkshopProductionManager.OnCraftingFinishedGlobal -= UretimBitti;
+        }
+
+        private void Start()
+        {
+            // Instance (Singleton) objelerin eventlerine Start'ta abone oluyoruz ki 
+            // diğer scriptlerin Awake'te yüklenmesini beklemiş olalım.
+            if (EconomyManager.Instance != null)
+            {
+                EconomyManager.Instance.OnMoneyChanged += ParaDegisti;
+            }
+
+            if (UpgradeManager.Instance != null)
+            {
+                UpgradeManager.Instance.OnItemUpgraded += ElemanGelistirildi;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (EconomyManager.Instance != null)
+            {
+                EconomyManager.Instance.OnMoneyChanged -= ParaDegisti;
+            }
+
+            if (UpgradeManager.Instance != null)
+            {
+                UpgradeManager.Instance.OnItemUpgraded -= ElemanGelistirildi;
+            }
         }
 
         #region Ses Çalma Metotları
@@ -176,39 +203,120 @@ namespace ForrestGame.Audio
         // Sesin türü ne olursa olsun (SFX, Loop Müzik, Motor Sesi) buradan çağırabiliriz.
         // AudioManager zaten PlayMusic ve PlayVehicle fonksiyonlarında "loop=true" yapıyor.
 
-        private void OnOyunBasladi()
+
+        private void EvdenAyrilis()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("ArkaPlanMuzik");
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlaySFX("ArabaCalistirma");
+                StartCoroutine(YurumeSesiGecikmeli());
+            }
         }
 
-        private void OnKisBasladi()
+        private IEnumerator YurumeSesiGecikmeli()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("KisMuzik");
+            float beklemeSuresi = 1.0f; // Varsayılan bekleme süresi
+            
+            if (AudioManager.Instance != null)
+            {
+                // Ses listesinden "ArabaCalistirma" sesini bulup, tam uzunluğunu saniye cinsinden alıyoruz
+                Sound s = System.Array.Find(AudioManager.Instance.sfxSounds, x => x.name == "ArabaCalistirma");
+                if (s != null && s.clip != null)
+                {
+                    beklemeSuresi = s.clip.length; // Sesin tam uzunluğu kadar bekle
+                }
+            }
+
+            // Marş sesinin çalmasını bekliyoruz
+            yield return new WaitForSeconds(beklemeSuresi);
+
+            // Bekleme bitince yürüme (motor döngüsü) sesini başlatıyoruz
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlayVehicle("ArabaYurume");
+            }
         }
 
-        private void OnYazBasladi()
+        private void DuraktanKalkis()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("YazMuzik");
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlayVehicle("ArabaYurume");
+            }
         }
 
-        private void OnSonbaharBasladi()
+        private void DuragaVaris()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("SonbaharMuzik");
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlaySFX("ArabaFren");
+                AudioManager.Instance.PlayVehicle("ArabaRolanti");
+            }
         }
 
-        private void OnIlkbaharBasladi()
+        private void SatisYapiliyor()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("IlkbaharMuzik");
+            // Satis aninda tekrar fren sesi calinmasin diye sadece rolanti tutuyoruz
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlayVehicle("ArabaRolanti");
+            }
         }
 
-        private void OnKamyonCalisti()
+        private void EveVaris()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.PlayVehicle("ArabaMotoru");
+            if (AudioManager.Instance != null) 
+            {
+                AudioManager.Instance.PlaySFX("ArabaFren");
+                AudioManager.Instance.StopVehicle();
+            }
         }
 
-        private void OnKamyonDurdu()
+        #endregion
+
+        #region Atölye (Workshop) Üretim Sesleri
+
+        private void UretimCekicSesi()
         {
-            if (AudioManager.Instance != null) AudioManager.Instance.StopVehicle();
+            // İşçi çekiç vurdukça çalacak olan kısa efekt
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("CekicVurma");
+        }
+
+        private void UretimBasariliSesi()
+        {
+            // Kutu paketlendiğinde veya üretim başarıyla bittiğinde çalacak onay efekti
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("UretimTamamlandi");
+        }
+
+        private void UretimBasladi()
+        {
+            // Üretim boyunca arka planda çalacak döngüsel makine/testere sesi
+            // (Sürekli bir ses olduğu için Vehicle listesinden veya Ambience listesinden çalabiliriz. 
+            // AudioManager'da PlayVehicle'ı kullanmak motor sesiyle çakışabilir, bu yüzden istersen SFX kullanabilirsin ama loop olmaz, 
+            // ya da Ambience kullanabiliriz. Biz şimdilik Ambience (arka plan) üzerinden verelim ki araba motoruyla çakışmasın)
+            if (AudioManager.Instance != null) AudioManager.Instance.PlayAmbience("AtolyeMakine");
+        }
+
+        private void UretimBitti()
+        {
+            // Üretim bitince arka plandaki makine/testere sesini sustur
+            if (AudioManager.Instance != null) AudioManager.Instance.StopAmbience();
+        }
+
+        #endregion
+
+        #region Arayüz (UI) ve Ekonomi Sesleri
+
+        private void ElemanGelistirildi(string itemId, int yeniSeviye)
+        {
+            // Oyuncu balta, sepet veya arabayı geliştirdiğinde çalacak ses
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GelistirmeBasarili");
+        }
+
+        private void ParaDegisti(int yeniMiktar)
+        {
+            // Para miktarı her değiştiğinde (arttığında veya azaldığında) bu ses çalar
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("ParaSesi");
         }
 
         #endregion
