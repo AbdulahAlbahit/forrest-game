@@ -172,7 +172,8 @@ public class WorkshopManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Test amaciyla veya kapasiteden bagimsiz dogrudan odun bakiyesi ekler.
+    /// Kamyon teslimati veya test amaciyla atolye ham odun stoguna ekler.
+    /// WorkshopRawWood artar, PlayerWoodStock ayni miktar azalir (transfer tamamlandi).
     /// </summary>
     public void AddWood(int amount)
     {
@@ -184,9 +185,17 @@ public class WorkshopManager : MonoBehaviour
             return;
         }
 
-        CloudSaveManager.Instance.CurrentData.WorkshopRawWood += amount;
+        var data = CloudSaveManager.Instance.CurrentData;
+
+        // Atolye stogu artar
+        data.WorkshopRawWood += amount;
+
+        // Oyuncunun deposu azalir (kamyon odunlari buradan aldi ve atolyeye birakti)
+        data.PlayerWoodStock = Mathf.Max(0, data.PlayerWoodStock - amount);
+
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
-        GameLogger.Log($"WorkshopManager: Atolyeye {amount} odun dogrudan eklendi. Guncel bakiye: {MevcutKuyruk}");
+        GameLogger.Log($"WorkshopManager: {amount} odun atolyeye transfer edildi. " +
+                       $"WorkshopRawWood: {data.WorkshopRawWood}, PlayerWoodStock: {data.PlayerWoodStock}");
     }
 
     /// <summary>

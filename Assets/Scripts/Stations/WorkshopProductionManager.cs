@@ -87,9 +87,12 @@ public class WorkshopProductionManager : MonoBehaviour
         Transform startPoint = truckCargoPoint != null ? truckCargoPoint : (truck != null ? truck.transform : null);
         Transform endPoint = workshopTableTop;
 
+        int deliveredWoodAmount = 0;
+
         if (truckController != null && truckController.currentLoadedWood > 0 && logPrefab != null && startPoint != null && endPoint != null)
         {
             int totalLogs = truckController.currentLoadedWood;
+            deliveredWoodAmount = totalLogs; // Kaç odun teslim edildi — backend için saklıyoruz
             float timePerLog = unloadDuration / totalLogs;
             float flightDuration = Mathf.Clamp(timePerLog * 1.5f, 0.2f, 0.5f); // Her birinin havada kalma süresi
 
@@ -111,8 +114,21 @@ public class WorkshopProductionManager : MonoBehaviour
         else
         {
             // Eğer prefab yoksa veya sistem eksikse eski usül toptan sil
-            if (truckController != null) truckController.currentLoadedWood = 0;
+            if (truckController != null)
+            {
+                deliveredWoodAmount = truckController.currentLoadedWood;
+                truckController.currentLoadedWood = 0;
+            }
             yield return new WaitForSeconds(unloadDuration);
+        }
+
+        // ─── BACKEND: Teslim edilen odunları atölye stoguna ekle ───
+        // Animasyon bitti, odunlar masaya indi → WorkshopManager'a bildir.
+        // WorkshopRawWood bu sayede dolar ve uretim kuyruğu çalışabilir.
+        if (deliveredWoodAmount > 0 && WorkshopManager.Instance != null)
+        {
+            WorkshopManager.Instance.AddWood(deliveredWoodAmount);
+            GameLogger.Log($"[WorkshopProduction] {deliveredWoodAmount} odun atolye stoguna eklendi. Yeni bakiye: {WorkshopManager.Instance.MevcutKuyruk}", this);
         }
 
         // Tüm odunlar uçtuktan sonra masadaki küçük yığın görünür olsun

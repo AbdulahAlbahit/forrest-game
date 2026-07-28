@@ -253,12 +253,23 @@ public class SystemTester : MonoBehaviour
     }
 
 
-    [ContextMenu("Test 1: Odun Ekle")]
+    [ContextMenu("Test 1: Oyuncu Odun Topladi (PlayerWoodStock Ekle)")]
     public void TestAddWoodToWorkshop()
     {
-        if (WorkshopManager.Instance == null) { GameLogger.LogError("[Test 1] WorkshopManager bulunamadi!"); return; }
-        WorkshopManager.Instance.AddWood(testWoodAmount);
-        GameLogger.Log($"[Test 1] +{testWoodAmount} odun eklendi. Atolye Odun Bakiyesi: {WorkshopManager.Instance.MevcutKuyruk}");
+        if (CloudSaveManager.Instance?.CurrentData == null)
+        {
+            GameLogger.LogError("[Test 1] CloudSaveManager.CurrentData null! Oyun basladi mi?");
+            return;
+        }
+
+        // Oyuncu agac kesti, odunlari deposuna ekledi — PlayerWoodStock artar
+        CloudSaveManager.Instance.CurrentData.PlayerWoodStock += testWoodAmount;
+        int yeniStok = CloudSaveManager.Instance.CurrentData.PlayerWoodStock;
+        int workshopStok = CloudSaveManager.Instance.CurrentData.WorkshopRawWood;
+
+        GameLogger.Log($"[Test 1] Oyuncu +{testWoodAmount} odun topladi.");
+        GameLogger.Log($"[Test 1] PlayerWoodStock (oyuncu deposu) : {yeniStok}");
+        GameLogger.Log($"[Test 1] WorkshopRawWood (atolye stogu)  : {workshopStok}  ← bu degismedi");
     }
 
 
@@ -385,6 +396,131 @@ public class SystemTester : MonoBehaviour
         }
     }
 
+
+    // 6A'dan 6B'ye beklenen durumlari tasimak icin (test amacli)
+    private static int expectedPlayerWoodStock = -1;
+    private static int expectedWorkshopRawWood = -1;
+    private static int expectedPostProductionWood = -1;
+
+    // ─────────────────────────────────────────────────────────────
+    //  TEST 6A: KAMYON ODUN BIRAKTI (sadece WorkshopRawWood artar)
+    //  Kullanim:
+    //    1. Test 6A → kamyon teslimati yapar, odunu atolyeye aktarir
+    //    2. Test 2  → stog yeterliyse uretimi kuyruğa al
+    //    3. Test 6B → kalan odun ve ayrim tekrar dogrula
+    // ─────────────────────────────────────────────────────────────
+    [ContextMenu("Test 6A: Kamyon 30 Odun Birakti (Sadece Stog Ekler)")]
+    public void TestWoodRemainder_Setup()
+    {
+        if (WorkshopManager.Instance == null)
+        {
+            GameLogger.LogError("[Test 6A] WorkshopManager bulunamadi!");
+            return;
+        }
+        if (CloudSaveManager.Instance?.CurrentData == null)
+        {
+            GameLogger.LogError("[Test 6A] CloudSaveManager.CurrentData null! Oyun basladi mi?");
+            return;
+        }
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+
+        int eskiWorkshop = data.WorkshopRawWood;
+        int eskiPlayer   = data.PlayerWoodStock;
+        int kamyonOdunu  = 30;
+
+        GameLogger.Log($"[Test 6A] Kamyon gelmeden once: Workshop={eskiWorkshop}, PlayerDepo={eskiPlayer}");
+
+        if (eskiPlayer < kamyonOdunu)
+        {
+            GameLogger.LogWarning($"[Test 6A] UYARI: Oyuncunun deposunda sadece {eskiPlayer} odun var, kamyon {kamyonOdunu} tasimaya calisiyor. (Eksiye dusmeyecek, 0'da kalacak)");
+        }
+
+        // Kamyon 30 odun birakti
+        WorkshopManager.Instance.AddWood(kamyonOdunu);
+
+        // Beklenen sonuclar:
+        expectedWorkshopRawWood = eskiWorkshop + kamyonOdunu;
+        expectedPlayerWoodStock = Mathf.Max(0, eskiPlayer - kamyonOdunu);
+        
+        if (testRecipe != null)
+            expectedPostProductionWood = expectedWorkshopRawWood - testRecipe.RequiredWood;
+
+        GameLogger.Log($"[Test 6A] Kamyon {kamyonOdunu} odun atolyeye birakti.");
+        GameLogger.Log($"[Test 6A] WorkshopRawWood = {data.WorkshopRawWood}  (beklenen: {expectedWorkshopRawWood})");
+        GameLogger.Log($"[Test 6A] PlayerWoodStock = {data.PlayerWoodStock}  (beklenen: {expectedPlayerWoodStock})");
+
+        // Ayrim kontrolu
+        bool workshopDogru = data.WorkshopRawWood == expectedWorkshopRawWood;
+        bool playerDogru   = data.PlayerWoodStock == expectedPlayerWoodStock;
+
+        if (workshopDogru && playerDogru)
+            GameLogger.Log($"[Test 6A] ✅ TRANSFER DOGRU! WorkshopRawWood={expectedWorkshopRawWood}, PlayerWoodStock={expectedPlayerWoodStock}.");
+        else if (!workshopDogru)
+            GameLogger.LogError($"[Test 6A] ❌ WorkshopRawWood yanlis! Beklenen: {expectedWorkshopRawWood}, Gercek: {data.WorkshopRawWood}");
+        else
+            GameLogger.LogError($"[Test 6A] ❌ PlayerWoodStock yanlis! Beklenen: {expectedPlayerWoodStock}, Gercek: {data.PlayerWoodStock}");
+
+        GameLogger.Log("[Test 6A] Simdi 'Test 2: Atolyede Uretim Baslat' ile uretim kuyruğuna al, sonra Test 6B ile dogrula.");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  TEST 6B: DOGRULAMA (6A + Test 2 sonrasi birkaç saniye bekle)
+    //  - WorkshopRawWood dogru miktarda dustu mu?
+    //  - PlayerWoodStock hic etkilenmedi mi?
+    // ─────────────────────────────────────────────────────────────
+    [ContextMenu("Test 6B: Odun Dusumu Dogru Mu? (6A'dan Sonra Calistir)")]
+    public void TestWoodRemainder_Verify()
+    {
+        if (WorkshopManager.Instance == null || CloudSaveManager.Instance?.CurrentData == null || testRecipe == null)
+        {
+            GameLogger.LogError("[Test 6B] WorkshopManager, CloudSaveManager veya testRecipe eksik!");
+            return;
+        }
+
+        if (expectedPlayerWoodStock == -1)
+        {
+            GameLogger.LogError("[Test 6B] Beklenen degerler hesaplanmamis! Once Test 6A calistirilmalidir.");
+            return;
+        }
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        int mevcutOdun    = data.WorkshopRawWood;
+        int playerDepo    = data.PlayerWoodStock;
+        int gerekenOdun   = testRecipe.RequiredWood;
+        int kuyruktaki    = data.WorkshopQueue != null ? data.WorkshopQueue.Get(testRecipe.ItemID, 0) : -1;
+        int hazirKamyon   = data.ReadyForTruck  != null ? data.ReadyForTruck.Get(testRecipe.ItemID, 0)  : 0;
+
+        GameLogger.Log($"[Test 6B] === DOGRULAMA RAPORU ===");
+        GameLogger.Log($"  Tarif                      : {testRecipe.ItemID} (gereken: {gerekenOdun} odun)");
+        GameLogger.Log($"  Beklenen WorkshopRawWood   : {expectedPostProductionWood}");
+        GameLogger.Log($"  Gercek  WorkshopRawWood    : {mevcutOdun}");
+        GameLogger.Log($"  PlayerWoodStock            : {playerDepo}  (uretimden etkilenmemeli — beklenen: {expectedPlayerWoodStock})");
+        GameLogger.Log($"  WorkshopQueue[{testRecipe.ItemID}] : {kuyruktaki} (0 = uretim bitti)");
+        GameLogger.Log($"  ReadyForTruck[{testRecipe.ItemID}] : {hazirKamyon} adet hazir");
+
+        // WorkshopRawWood kontrolu
+        if (mevcutOdun == expectedPostProductionWood)
+            GameLogger.Log($"[Test 6B] ✅ WorkshopRawWood DOGRU: {expectedWorkshopRawWood} - {gerekenOdun} = {mevcutOdun} kaldi.");
+        else if (mevcutOdun == expectedWorkshopRawWood)
+            GameLogger.LogWarning($"[Test 6B] ⚠️ Odun henuz dusulmemis (hala {expectedWorkshopRawWood}). ProcessQueue calismadigindan bekleniyor, biraz bekle.");
+        else
+            GameLogger.LogWarning($"[Test 6B] ⚠️ Beklenmeyen WorkshopRawWood: {mevcutOdun}. Beklenen: {expectedPostProductionWood}.");
+
+        // PlayerWoodStock kontrolu: uretim sadece WorkshopRawWood'u dusurur, buraya dokunmaz
+        if (playerDepo == expectedPlayerWoodStock)
+            GameLogger.Log($"[Test 6B] ✅ PlayerWoodStock DOGRU: Uretim oyuncunun deposuna dokunmadi. ({expectedPlayerWoodStock} kaldi)");
+        else
+            GameLogger.LogError($"[Test 6B] ❌ PlayerWoodStock yanlis! Beklenen: {expectedPlayerWoodStock}, Gercek: {playerDepo}.");
+
+        // Uretim durumu
+        if (hazirKamyon > 0)
+            GameLogger.Log($"[Test 6B] ✅ Uretim TAMAMLANDI! {hazirKamyon} adet '{testRecipe.ItemID}' kamyon bekliyor.");
+        else if (kuyruktaki > 0)
+            GameLogger.Log($"[Test 6B] ⏳ Uretim devam ediyor. Biraz daha bekle.");
+        else
+            GameLogger.Log($"[Test 6B] ℹ️ Kuyruk bos — uretim bitmis ya da hic baslatilmamis.");
+    }
 
     [ContextMenu("Test 5: Yeni NPC Siparis Sistemi (Stok Yoksa BekleyenSiparise Atar)")]
     public void TestNPC_NewOrderSystem()

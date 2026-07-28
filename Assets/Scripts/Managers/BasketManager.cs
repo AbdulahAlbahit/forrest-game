@@ -172,6 +172,12 @@ public class BasketManager : MonoBehaviour
 
         mevcutDoluluk += eklenenMiktar;
 
+        // Oyuncunun genel odun deposunu da guncelle (bulut kayit icin)
+        if (CloudSaveManager.Instance?.CurrentData != null)
+        {
+            CloudSaveManager.Instance.CurrentData.PlayerWoodStock += eklenenMiktar;
+        }
+
         GameLogger.Log($"BasketManager: +{eklenenMiktar} odun eklendi. Doluluk: {mevcutDoluluk}/{maksKapasite}");
         OnBasketChanged?.Invoke(mevcutDoluluk, maksKapasite);
 
@@ -198,6 +204,9 @@ public class BasketManager : MonoBehaviour
 
         int bosaltilanMiktar = mevcutDoluluk;
         mevcutDoluluk = 0;
+
+        // NOT: PlayerWoodStock buradan dusurulmez.
+        // Odun kamyon araciligiyla atolyeye ulasinca WorkshopManager.AddWood() dusurur.
 
         GameLogger.Log($"BasketManager: Sepet bosaltildi. {bosaltilanMiktar} odun cikarildi.");
         OnBasketChanged?.Invoke(mevcutDoluluk, maksKapasite);

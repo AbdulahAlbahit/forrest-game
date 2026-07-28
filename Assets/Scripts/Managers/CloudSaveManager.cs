@@ -179,6 +179,7 @@ public class CloudSaveManager : MonoBehaviour
             { "MevsimZamani", data.MevsimZamani },
             { "OyunSuresi", data.OyunSuresi },
             { "WorkshopRawWood", data.WorkshopRawWood },
+            { "PlayerWoodStock", data.PlayerWoodStock },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp },
             { "LastSaveTime", data.LastSaveTime }
@@ -297,6 +298,7 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
                 if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
                 if (dict.ContainsKey("WorkshopRawWood")) data.WorkshopRawWood = Convert.ToInt32(dict["WorkshopRawWood"]);
+                if (dict.ContainsKey("PlayerWoodStock")) data.PlayerWoodStock = Convert.ToInt32(dict["PlayerWoodStock"]);
 
 
                 if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
