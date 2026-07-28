@@ -42,6 +42,21 @@ public class NotificationUIController : MonoBehaviour
             notificationPanel.SetActive(false);
     }
 
+    private void OnEnable()
+    {
+        NotificationManager.OnNotificationReceived += HandleNotificationReceived;
+    }
+
+    private void OnDisable()
+    {
+        NotificationManager.OnNotificationReceived -= HandleNotificationReceived;
+    }
+
+    private void HandleNotificationReceived(string message)
+    {
+        ShowNotification(message);
+    }
+
     /// <summary>
     /// Ekranda kısa süreli bildirim pop-up'ı gösterir.
     /// </summary>

@@ -20,9 +20,13 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Para miktarını gösteren metin.")]
     [SerializeField] private TextMeshProUGUI coinValueText;
 
-    [Header("--- Odun Göstergesi (Sağ Üst) ---")]
-    [Tooltip("Mevcut odun miktarını veya sepet doluluğunu gösteren metin.")]
+    [Header("--- Sepet Odun Göstergesi ---")]
+    [Tooltip("Sepetteki odun miktarını gösteren metin. Örn: 3/5")]
     [SerializeField] private TextMeshProUGUI woodValueText;
+
+    [Header("--- Atölye Ham Odun Göstergesi ---")]
+    [Tooltip("Atölyedeki ham odun miktarını gösteren metin. Örn: 10/25")]
+    [SerializeField] private TextMeshProUGUI workshopWoodText;
 
     [Header("--- XP & Seviye Göstergesi (Sol Üst & Sol Alt) ---")]
     [Tooltip("Mevcut XP değerini gösteren metin (Sol Üst).")]
@@ -48,6 +52,22 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("PauseMenuController scripti içeren Pause paneli objesi.")]
     [SerializeField] private GameObject pausePanel;
 
+    [Header("--- Atölye Paneli (HUD Butonu) ---")]
+    [Tooltip("HUD üzerindeki Atölye açma butonu. Fiziksel atölyeye gitmeden paneli açar.")]
+    [SerializeField] private Button workshopButton;
+
+    [Tooltip("Sahnede yer alan WorkshopPanelController objesi.")]
+    [SerializeField] private GameObject workshopPanel;
+
+    [Header("--- Depoya Odun Aktarma Kısayol Butonu ---")]
+    [Tooltip("Sepetteki odunları doğrudan atölye deposuna aktaran kısayol butonu.")]
+    [SerializeField] private Button depositWoodButton;
+
+    /// <summary>
+    /// Sepetteki odunlar depoya aktarıldığında veya butona basıldığında tetiklenir.
+    /// </summary>
+    public event System.Action OnDepositWoodRequested;
+
     [Header("--- Ses Ayarları ---")]
     [Tooltip("Butonlara basıldığında çalacak SFX sesinin ismi.")]
     [SerializeField] private string buttonSfxName = "";
@@ -71,11 +91,21 @@ public class MainHUDController : MonoBehaviour
         if (pauseButton != null)
             pauseButton.onClick.AddListener(OnPauseButtonClicked);
 
+        // Atölye butonu listener
+        if (workshopButton != null)
+            workshopButton.onClick.AddListener(OnWorkshopButtonClicked);
+
+        // Depoya odun aktarma butonu listener
+        if (depositWoodButton != null)
+            depositWoodButton.onClick.AddListener(OnDepositWoodButtonClicked);
+
         // Başlangıçta panelleri gizle
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
         if (pausePanel != null)
             pausePanel.SetActive(false);
+        if (workshopPanel != null)
+            workshopPanel.SetActive(false);
 
         // Tüm UI değerlerini başlangıçta güncelle
         RefreshAllHUD();
@@ -97,8 +127,6 @@ public class MainHUDController : MonoBehaviour
 
     private void Update()
     {
-        // Atölye Paneli kapalı olsa bile arka plan üretimini saniye saniye yürüt
-        WorkshopPanelController.TickBackgroundProduction(Time.deltaTime);
     }
 
     // ═══════════════════════════════════════════
@@ -118,13 +146,13 @@ public class MainHUDController : MonoBehaviour
             XPManager.Instance.OnLevelUp += UpdateLevelText;
         }
 
-        // Sepet / Odun event'i
+        // Sepet odun event'i
         if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged += UpdateWoodTextFromBasket;
+            BasketManager.Instance.OnBasketChanged += UpdateBasketWoodText;
 
-        // Atölye kuyruğu event'i (varsa)
+        // Atölye ham odun event'i
         if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged += UpdateWoodTextFromWorkshop;
+            WorkshopManager.Instance.OnQueueChanged += UpdateWorkshopWoodText;
 
         // Bulut verisi yüklendiğinde
         if (CloudSaveManager.Instance != null)
@@ -143,10 +171,10 @@ public class MainHUDController : MonoBehaviour
         }
 
         if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged -= UpdateWoodTextFromBasket;
+            BasketManager.Instance.OnBasketChanged -= UpdateBasketWoodText;
 
         if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged -= UpdateWoodTextFromWorkshop;
+            WorkshopManager.Instance.OnQueueChanged -= UpdateWorkshopWoodText;
 
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
@@ -175,13 +203,16 @@ public class MainHUDController : MonoBehaviour
             UpdateLevelText(XPManager.Instance.MevcutSeviye);
         }
 
+        // Sepet göstergesi
+        if (BasketManager.Instance != null)
+        {
+            UpdateBasketWoodText(BasketManager.Instance.MevcutDoluluk, BasketManager.Instance.MaksKapasite);
+        }
+
+        // Atölye ham odun göstergesi
         if (WorkshopManager.Instance != null)
         {
-            UpdateWoodTextFromWorkshop(WorkshopManager.Instance.MevcutKuyruk, WorkshopManager.Instance.GetWorkshopCapacity());
-        }
-        else if (BasketManager.Instance != null)
-        {
-            UpdateWoodTextFromBasket(BasketManager.Instance.MevcutDoluluk, BasketManager.Instance.MaksKapasite);
+            UpdateWorkshopWoodText(WorkshopManager.Instance.MevcutKuyruk, WorkshopManager.Instance.GetWorkshopCapacity());
         }
     }
 
@@ -220,21 +251,22 @@ public class MainHUDController : MonoBehaviour
             levelText.text = $"Level {level}";
     }
 
-    private void UpdateWoodTextFromBasket(int current, int max)
+    private void UpdateBasketWoodText(int current, int max)
     {
         if (woodValueText != null)
             woodValueText.text = $"{current} / {max}";
     }
 
-    private void UpdateWoodTextFromWorkshop(int current, int max)
+    private void UpdateWorkshopWoodText(int current, int max)
     {
-        SetWoodTextDirect(current, max);
+        if (workshopWoodText != null)
+            workshopWoodText.text = $"{current} / {max}";
     }
 
     public void SetWoodTextDirect(int current, int max)
     {
-        if (woodValueText != null)
-            woodValueText.text = $"{current} / {max}";
+        if (workshopWoodText != null)
+            workshopWoodText.text = $"{current} / {max}";
     }
 
     // ═══════════════════════════════════════════
@@ -266,6 +298,68 @@ public class MainHUDController : MonoBehaviour
         {
             // Fallback: PauseMenuController yoksa sadece paneli göster/gizle
             pausePanel.SetActive(!pausePanel.activeSelf);
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  Atölye Butonu İşlemi
+    // ═══════════════════════════════════════════
+
+    private void OnWorkshopButtonClicked()
+    {
+        PlayButtonClickSFX();
+
+        // WorkshopPanelController varsa onun OpenPanel metodunu kullan
+        if (workshopPanel != null)
+        {
+            WorkshopPanelController controller = workshopPanel.GetComponent<WorkshopPanelController>();
+            if (controller != null)
+            {
+                if (workshopPanel.activeSelf)
+                    controller.ClosePanel();
+                else
+                    controller.OpenPanel();
+                return;
+            }
+
+            // Fallback: WorkshopPanelController yoksa toggle yap
+            workshopPanel.SetActive(!workshopPanel.activeSelf);
+        }
+        // Instance üzerinden de dene
+        else if (WorkshopPanelController.Instance != null)
+        {
+            if (WorkshopPanelController.Instance.gameObject.activeSelf)
+                WorkshopPanelController.Instance.ClosePanel();
+            else
+                WorkshopPanelController.Instance.OpenPanel();
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  Depoya Odun Aktarma Butonu İşlemi
+    // ═══════════════════════════════════════════
+
+    private void OnDepositWoodButtonClicked()
+    {
+        PlayButtonClickSFX();
+
+        OnDepositWoodRequested?.Invoke();
+
+        // Varsayılan Akış: Sepetteki odunları boşaltıp atölyeye ekle
+        if (BasketManager.Instance != null && WorkshopManager.Instance != null)
+        {
+            if (BasketManager.Instance.IsEmpty)
+            {
+                NotificationUIController.Instance?.ShowNotification("Sepetiniz boş!");
+                return;
+            }
+
+            int amount = BasketManager.Instance.EmptyBasket();
+            if (amount > 0)
+            {
+                WorkshopManager.Instance.AddWood(amount);
+                NotificationUIController.Instance?.ShowNotification($"{amount} Odun depoya aktarıldı!");
+            }
         }
     }
 
