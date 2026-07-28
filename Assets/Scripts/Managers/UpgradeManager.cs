@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Utils;
 
-/
-/
-/
-/
-/
-/
-/
+
+
+
+
+
+
+
 public class UpgradeManager : MonoBehaviour
 {
     public static UpgradeManager Instance { get; private set; }
@@ -18,10 +18,10 @@ public class UpgradeManager : MonoBehaviour
     [Tooltip("Oyundaki tum upgrade edilebilir esyalarin config dosyalarini buraya surukleyin.")]
     [SerializeField] private List<ItemUpgradeConfig> configs = new List<ItemUpgradeConfig>();
 
-    /
-    /
-    /
-    /
+
+
+
+
     public event Action<string, int> OnItemUpgraded;
 
 
@@ -41,10 +41,10 @@ public class UpgradeManager : MonoBehaviour
         BuildConfigLookup();
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     private void BuildConfigLookup()
     {
         configLookup = new Dictionary<string, ItemUpgradeConfig>();
@@ -79,11 +79,11 @@ public class UpgradeManager : MonoBehaviour
 
 
 
-    /
-    /
-    /
-    /
-    /
+
+
+
+
+
     public bool UpgradeItem(string itemId)
     {
 
@@ -147,9 +147,9 @@ public class UpgradeManager : MonoBehaviour
         return true;
     }
 
-    /
-    /
-    /
+
+
+
     public int GetItemLevel(string itemId)
     {
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
@@ -158,10 +158,10 @@ public class UpgradeManager : MonoBehaviour
         return CloudSaveManager.Instance.CurrentData.GetItemLevel(itemId);
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public float GetItemValue(string itemId)
     {
         ItemUpgradeConfig config = FindConfig(itemId);
@@ -175,10 +175,10 @@ public class UpgradeManager : MonoBehaviour
         return config.GetStatValue(level);
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public int GetUpgradeCost(string itemId)
     {
         ItemUpgradeConfig config = FindConfig(itemId);
@@ -192,9 +192,9 @@ public class UpgradeManager : MonoBehaviour
         return config.GetUpgradeCost(level);
     }
 
-    /
-    /
-    /
+
+
+
     public bool IsMaxLevel(string itemId)
     {
         ItemUpgradeConfig config = FindConfig(itemId);
@@ -208,9 +208,9 @@ public class UpgradeManager : MonoBehaviour
 
 
 
-    /
-    /
-    /
+
+
+
     private ItemUpgradeConfig FindConfig(string itemId)
     {
         if (configLookup == null)

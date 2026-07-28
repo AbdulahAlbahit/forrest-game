@@ -13,19 +13,19 @@ public class XPManager : MonoBehaviour
     [Tooltip("Her seviyede gereken XP bu carpan ile artar. Ornek: 1.4 ise her seviye %40 daha fazla XP gerektirir.")]
     [SerializeField] private float seviyeCarpani = 1.4f;
 
-    /
-    /
-    /
+
+
+
     public event Action<int> OnXPChanged;
 
-    /
-    /
-    /
+
+
+
     public event Action<int> OnLevelUp;
 
-    /
-    /
-    /
+
+
+
     public int MevcutXP 
     {
         get 
@@ -36,9 +36,9 @@ public class XPManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     public int MevcutSeviye 
     {
         get 
@@ -77,19 +77,19 @@ public class XPManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     private void HandleDataLoaded(PlayerData data)
     {
         OnXPChanged?.Invoke(data.XP);
         GameLogger.Log($"XPManager: Bulut verisi ile senkronize edildi. XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public void AddXP(int amount)
     {
         if (amount <= 0)
@@ -125,19 +125,19 @@ public class XPManager : MonoBehaviour
         CloudSaveManager.Instance.SaveData(data);
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public int GetRequiredXPForLevel(int level)
     {
         float requiredXP = temelGerekenXP * Mathf.Pow(seviyeCarpani, level - 1);
         return Mathf.RoundToInt(requiredXP);
     }
 
-    /
-    /
-    /
+
+
+
     public float GetXPProgress()
     {
         int gerekenXP = GetRequiredXPForLevel(MevcutSeviye);

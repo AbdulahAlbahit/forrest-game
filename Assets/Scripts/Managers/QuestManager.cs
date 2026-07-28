@@ -4,17 +4,17 @@ using ForrestGame.Utils;
 
 namespace ForrestGame.Managers
 {
-    /
-    /
-    /
-    /
-    /
-    /
-    /
-    /
-    /
-    /
-    /
+
+
+
+
+
+
+
+
+
+
+
     public class QuestManager : MonoBehaviour
     {
         public static QuestManager Instance { get; private set; }
@@ -45,10 +45,10 @@ namespace ForrestGame.Managers
             ShopManager.OnItemSold -= HandleItemSold;
         }
 
-        /
-        /
-        /
-        /
+
+
+
+
         private void HandleItemSold(string itemId, int amount)
         {
             GameLogger.Log($"QuestManager: HandleItemSold tetiklendi! Item: {itemId}, Miktar: {amount}");
@@ -90,10 +90,10 @@ namespace ForrestGame.Managers
             }
         }
 
-        /
-        /
-        /
-        /
+
+
+
+
         private bool CheckAndRewardQuests(PlayerData data)
         {
             if (tumGorevler == null || tumGorevler.Count == 0)
@@ -126,9 +126,9 @@ namespace ForrestGame.Managers
             return anyCompleted;
         }
 
-        /
-        /
-        /
+
+
+
         private void AwardQuest(QuestConfig quest, PlayerData data)
         {
 
@@ -155,10 +155,10 @@ namespace ForrestGame.Managers
                       $"| Odul: +{quest.RewardGold} Altin, +{quest.RewardXP} XP");
         }
 
-        /
-        /
-        /
-        /
+
+
+
+
         public float GetQuestProgress(string questId)
         {
             if (CloudSaveManager.Instance?.CurrentData == null) return 0f;
@@ -171,10 +171,10 @@ namespace ForrestGame.Managers
             return Mathf.Clamp01((float)progress / quest.TargetAmount);
         }
 
-        /
-        /
-        /
-        /
+
+
+
+
         public bool IsQuestCompleted(string questId)
         {
             var data = CloudSaveManager.Instance?.CurrentData;

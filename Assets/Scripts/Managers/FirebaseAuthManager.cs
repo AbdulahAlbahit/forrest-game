@@ -12,29 +12,29 @@ public class FirebaseAuthManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseUser currentUser;
 
-    /
-    /
-    /
+
+
+
     public event Action OnLoginSuccess;
 
-    /
-    /
-    /
+
+
+
     public event Action<string> OnLoginFailed;
 
-    /
-    /
-    /
+
+
+
     public FirebaseUser CurrentUser => currentUser;
 
-    /
-    /
-    /
+
+
+
     public bool IsFirebaseReady { get; private set; }
 
-    /
-    /
-    /
+
+
+
     public bool IsLoggedIn => currentUser != null;
 
     private void Awake()
@@ -55,9 +55,9 @@ public class FirebaseAuthManager : MonoBehaviour
         InitializeFirebase();
     }
 
-    /
-    /
-    /
+
+
+
     private void InitializeFirebase()
     {
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -97,9 +97,9 @@ public class FirebaseAuthManager : MonoBehaviour
         });
     }
 
-    /
-    /
-    /
+
+
+
     private void SignInAsGuest()
     {
         GameLogger.Log("FirebaseAuthManager: Misafir girisi yapiliyor...");
@@ -134,9 +134,9 @@ public class FirebaseAuthManager : MonoBehaviour
         });
     }
 
-    /
-    /
-    /
+
+
+
     public void SignOut()
     {
         if (auth != null)

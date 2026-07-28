@@ -7,15 +7,15 @@ public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }
 
-    /
-    /
-    /
+
+
+
     public event Action<int> OnMoneyChanged;
 
-    /
-    /
-    /
-    /
+
+
+
+
     public int MevcutPara
     {
         get
@@ -54,19 +54,19 @@ public class EconomyManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     private void HandleDataLoaded(PlayerData data)
     {
         OnMoneyChanged?.Invoke(data.Para);
         GameLogger.Log($"EconomyManager: Bulut verisi yuklendi. Para: {data.Para}");
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public void AddMoney(int amount)
     {
         if (amount <= 0)
@@ -96,10 +96,10 @@ public class EconomyManager : MonoBehaviour
         return 1f;
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public bool SpendMoney(int amount)
     {
         if (amount <= 0)
@@ -128,9 +128,9 @@ public class EconomyManager : MonoBehaviour
         return true;
     }
 
-    /
-    /
-    /
+
+
+
     private void OnApplicationQuit()
     {
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)

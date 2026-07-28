@@ -2,18 +2,18 @@ using System;
 using UnityEngine;
 using ForrestGame.Utils;
 
-/
-/
-/
-/
+
+
+
+
 public class NotificationManager : MonoBehaviour
 {
     public static NotificationManager Instance { get; private set; }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public static event Action<string> OnNotificationReceived;
 
     private void Awake()
@@ -28,10 +28,10 @@ public class NotificationManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public void SendNotification(string message)
     {
         if (string.IsNullOrEmpty(message)) return;

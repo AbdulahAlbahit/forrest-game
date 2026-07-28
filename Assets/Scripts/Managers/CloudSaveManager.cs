@@ -21,24 +21,24 @@ public class CloudSaveManager : MonoBehaviour
 
     private Coroutine autoSaveCoroutine;
 
-    /
-    /
-    /
+
+
+
     public event Action<PlayerData> OnDataLoaded;
 
-    /
-    /
-    /
+
+
+
     public event Action OnDataSaved;
 
-    /
-    /
-    /
+
+
+
     public event Action<string> OnCloudError;
 
-    /
-    /
-    /
+
+
+
     public PlayerData CurrentData { get; private set; }
 
     private void Awake()
@@ -111,9 +111,9 @@ public class CloudSaveManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     private void HandleLoginSuccess()
     {
         GameLogger.Log("CloudSaveManager: Giris basarili, Firestore baglantisi kuruluyor...");
@@ -132,19 +132,19 @@ public class CloudSaveManager : MonoBehaviour
         autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     private DocumentReference GetPlayerDocument()
     {
         return db.Collection("players").Document(userId);
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public void SaveData(PlayerData data)
     {
         if (data == null)
@@ -251,11 +251,11 @@ public class CloudSaveManager : MonoBehaviour
         });
     }
 
-    /
-    /
-    /
-    /
-    /
+
+
+
+
+
     public void LoadData()
     {
         if (db == null || string.IsNullOrEmpty(userId))
@@ -445,10 +445,10 @@ public class CloudSaveManager : MonoBehaviour
 
 
 
-    /
-    /
-    /
-    /
+
+
+
+
     private void SaveToLocal(PlayerData data)
     {
         try
@@ -482,9 +482,9 @@ public class CloudSaveManager : MonoBehaviour
         OnDataLoaded?.Invoke(newData);
     }
 
-    /
-    /
-    /
+
+
+
     public PlayerData GetLocalData()
     {
         if (PlayerPrefs.HasKey(LOCAL_SAVE_KEY))
@@ -519,10 +519,10 @@ public class CloudSaveManager : MonoBehaviour
 
 
 
-    /
-    /
-    /
-    /
+
+
+
+
     private IEnumerator AutoSaveRoutine()
     {
         GameLogger.Log($"CloudSaveManager: Otomatik kayit basladi. Aralik: {autoSaveInterval} saniye.");

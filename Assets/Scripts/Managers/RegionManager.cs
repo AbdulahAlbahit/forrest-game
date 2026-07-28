@@ -10,9 +10,6 @@ public class RegionManager : MonoBehaviour
     [Header("Bolge Ayarlari")]
     [SerializeField] private RegionConfig config;
 
-    /
-    /
-    /
     public event Action<string> OnRegionUnlocked;
 
     private void Awake()
@@ -27,9 +24,6 @@ public class RegionManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    /
-    /
-    /
     public bool IsRegionUnlocked(string regionName)
     {
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
@@ -46,10 +40,7 @@ public class RegionManager : MonoBehaviour
         return acilanBolgeler.Contains(regionName);
     }
 
-    /
-    /
-    /
-    /
+
     public int GetRegionCost(int regionId)
     {
         if (config == null)
@@ -61,10 +52,7 @@ public class RegionManager : MonoBehaviour
         return config.GetRegionData(regionId).UnlockCost;
     }
 
-    /
-    /
-    /
-    /
+  
     public bool UnlockRegion(int regionId)
     {
         if (config == null)
@@ -125,10 +113,6 @@ public class RegionManager : MonoBehaviour
         return true;
     }
 
-    /
-    /
-    /
-    /
     public bool UnlockRegion(string regionName)
     {
         if (config == null)

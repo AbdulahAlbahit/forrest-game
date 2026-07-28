@@ -9,41 +9,41 @@ public class BasketManager : MonoBehaviour
     private int mevcutDoluluk;
     private int maksKapasite;
 
-    /
-    /
-    /
-    /
+
+
+
+
     public event Action<int, int> OnBasketChanged;
 
-    /
-    /
-    /
-    /
+
+
+
+
     public event Action OnBasketFull;
 
-    /
-    /
-    /
+
+
+
     public event Action<int> OnBasketEmptied;
 
-    /
-    /
-    /
+
+
+
     public int MevcutDoluluk => mevcutDoluluk;
 
-    /
-    /
-    /
+
+
+
     public int MaksKapasite => maksKapasite;
 
-    /
-    /
-    /
+
+
+
     public bool IsFull => mevcutDoluluk >= maksKapasite;
 
-    /
-    /
-    /
+
+
+
     public bool IsEmpty => mevcutDoluluk <= 0;
 
     private void Awake()
@@ -88,18 +88,18 @@ public class BasketManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     private void HandleDataLoaded(PlayerData data)
     {
         RefreshCapacity();
         GameLogger.Log($"BasketManager: Bulut verisi ile senkronize edildi. Kapasite: {maksKapasite}");
     }
 
-    /
-    /
-    /
+
+
+
     private void HandleItemUpgraded(string itemId, int newLevel)
     {
         if (itemId == "Basket")
@@ -109,9 +109,9 @@ public class BasketManager : MonoBehaviour
         }
     }
 
-    /
-    /
-    /
+
+
+
     private void RefreshCapacity()
     {
         if (UpgradeManager.Instance != null)
@@ -128,9 +128,9 @@ public class BasketManager : MonoBehaviour
         OnBasketChanged?.Invoke(mevcutDoluluk, maksKapasite);
     }
 
-    /
-    /
-    /
+
+
+
     public int GetBasketCapacity()
     {
         if (UpgradeManager.Instance != null)
@@ -145,12 +145,12 @@ public class BasketManager : MonoBehaviour
 
 
 
-    /
-    /
-    /
-    /
-    /
-    /
+
+
+
+
+
+
     public int AddWood(int amount)
     {
         if (amount <= 0)
@@ -184,10 +184,10 @@ public class BasketManager : MonoBehaviour
         return eklenenMiktar;
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public int EmptyBasket()
     {
         if (IsEmpty)
@@ -206,11 +206,11 @@ public class BasketManager : MonoBehaviour
         return bosaltilanMiktar;
     }
 
-    /
-    /
-    /
-    /
-    /
+
+
+
+
+
     public int RemoveWood(int amount)
     {
         if (amount <= 0)
@@ -234,10 +234,10 @@ public class BasketManager : MonoBehaviour
         return cikarilanMiktar;
     }
 
-    /
-    /
-    /
-    /
+
+
+
+
     public float GetFillPercentage()
     {
         if (maksKapasite <= 0) return 0f;
