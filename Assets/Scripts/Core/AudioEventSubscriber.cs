@@ -1,5 +1,6 @@
 using UnityEngine;
 using ForrestGame.Core;
+using System.Collections;
 
 namespace ForrestGame.Audio
 {
@@ -15,8 +16,7 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.BaltaSallandi += OnBaltaSallandi;
             EfeOynanisEventleri.BaltaAgacaVurdu += OnBaltaAgacaVurdu;
             
-            // TODO: Efe kendi koduna "AgacYikildi" anonsunu eklediğinde aşağıdaki satırın başındaki // işaretlerini sil.
-            // EfeOynanisEventleri.AgacYikildi += OnAgacYikildi;
+            TreeManager.OnTreeFelledAction += OnAgacYikildi;
             
             EfeOynanisEventleri.OdunToplandi += OnOdunToplandi;
             EfeOynanisEventleri.SepetDoldu += OnSepetDoldu;
@@ -25,8 +25,7 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.OdunKamyonaYuklendi += OnOdunKamyonaYuklendi;
             EfeOynanisEventleri.KamyonYuklemeBitti += OnKamyonYuklemeBitti;
             
-            EfeOynanisEventleri.HareketBasladi += OnHareketBasladi;
-            EfeOynanisEventleri.KosuBasladi += OnKosuBasladi;
+            EfeOynanisEventleri.HareketDurumuDegisti += OnHareketDurumuDegisti;
 
             // --- LOOP SESLERİ İÇİN DİNLEYİCİLER (Hazır olduğunda başlarındaki // silinecek) ---
             // TODO: Mevsim ve oyun yöneticisi (SeasonManager vb.) eventleri yazdığında aktif et:
@@ -36,9 +35,13 @@ namespace ForrestGame.Audio
             // MevsimEventleri.SonbaharBasladi += OnSonbaharBasladi;
             // MevsimEventleri.IlkbaharBasladi += OnIlkbaharBasladi;
             
-            // TODO: Efe araba/kamyon motoru için event yazdığında aktif et:
-            // EfeOynanisEventleri.KamyonCalisti += OnKamyonCalisti;
-            // EfeOynanisEventleri.KamyonDurdu += OnKamyonDurdu;
+            TruckRouteController.OnTruckDepartedHome += OnKamyonCalisti;
+            TruckRouteController.OnTruckDeparture += OnKamyonCalisti;
+            TruckRouteController.OnTruckDepartedMarket += OnKamyonCalisti;
+
+            TruckRouteController.OnTruckArrival += OnKamyonDurdu;
+            TruckRouteController.OnMarketSale += OnKamyonDurdu;
+            TruckRouteController.OnTruckArrivedHome += OnKamyonDurdu;
         }
 
         private void OnDisable()
@@ -47,8 +50,7 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.BaltaSallandi -= OnBaltaSallandi;
             EfeOynanisEventleri.BaltaAgacaVurdu -= OnBaltaAgacaVurdu;
             
-            // TODO: Efe eventi eklediğinde burayı da aktif et.
-            // EfeOynanisEventleri.AgacYikildi -= OnAgacYikildi;
+            TreeManager.OnTreeFelledAction -= OnAgacYikildi;
             
             EfeOynanisEventleri.OdunToplandi -= OnOdunToplandi;
             EfeOynanisEventleri.SepetDoldu -= OnSepetDoldu;
@@ -57,8 +59,7 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.OdunKamyonaYuklendi -= OnOdunKamyonaYuklendi;
             EfeOynanisEventleri.KamyonYuklemeBitti -= OnKamyonYuklemeBitti;
             
-            EfeOynanisEventleri.HareketBasladi -= OnHareketBasladi;
-            EfeOynanisEventleri.KosuBasladi -= OnKosuBasladi;
+            EfeOynanisEventleri.HareketDurumuDegisti -= OnHareketDurumuDegisti;
 
             // OyunEventleri.OyunBasladi -= OnOyunBasladi;
             // MevsimEventleri.KisBasladi -= OnKisBasladi;
@@ -66,8 +67,13 @@ namespace ForrestGame.Audio
             // MevsimEventleri.SonbaharBasladi -= OnSonbaharBasladi;
             // MevsimEventleri.IlkbaharBasladi -= OnIlkbaharBasladi;
             
-            // EfeOynanisEventleri.KamyonCalisti -= OnKamyonCalisti;
-            // EfeOynanisEventleri.KamyonDurdu -= OnKamyonDurdu;
+            TruckRouteController.OnTruckDepartedHome -= OnKamyonCalisti;
+            TruckRouteController.OnTruckDeparture -= OnKamyonCalisti;
+            TruckRouteController.OnTruckDepartedMarket -= OnKamyonCalisti;
+
+            TruckRouteController.OnTruckArrival -= OnKamyonDurdu;
+            TruckRouteController.OnMarketSale -= OnKamyonDurdu;
+            TruckRouteController.OnTruckArrivedHome -= OnKamyonDurdu;
         }
 
         #region Ses Çalma Metotları
@@ -84,7 +90,7 @@ namespace ForrestGame.Audio
                 AudioManager.Instance.PlaySFX("BaltaVurma");
         }
 
-        private void OnAgacYikildi(Transform kaynak)
+        private void OnAgacYikildi(Vector3 agacPozisyonu)
         {
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("AgacDusme");
@@ -120,16 +126,47 @@ namespace ForrestGame.Audio
                 AudioManager.Instance.PlaySFX("KamyonDoldu");
         }
 
-        private void OnHareketBasladi(Transform kaynak)
+        private Coroutine hareketSesCoroutine;
+
+        private void OnHareketDurumuDegisti(Transform kaynak, EfeHareketDurumu durum)
         {
-            if (AudioManager.Instance != null) 
-                AudioManager.Instance.PlaySFX("YurumeSesi");
+            if (AudioManager.Instance == null) return;
+
+            // Mevcut hareket sesini durdur (yeni hıza geçiş yaparken veya tamamen dururken)
+            if (hareketSesCoroutine != null)
+            {
+                StopCoroutine(hareketSesCoroutine);
+                hareketSesCoroutine = null;
+            }
+
+            if (durum == EfeHareketDurumu.Yuruyor)
+            {
+                hareketSesCoroutine = StartCoroutine(HareketSesiCal("YurumeSesi"));
+            }
+            else if (durum == EfeHareketDurumu.Kosuyor)
+            {
+                hareketSesCoroutine = StartCoroutine(HareketSesiCal("KosmaSesi"));
+            }
         }
 
-        private void OnKosuBasladi(Transform kaynak)
+        private IEnumerator HareketSesiCal(string sesAdi)
         {
-            if (AudioManager.Instance != null) 
-                AudioManager.Instance.PlaySFX("KosmaSesi");
+            Sound s = System.Array.Find(AudioManager.Instance.sfxSounds, x => x.name == sesAdi);
+            
+            if (s == null || s.clip == null)
+            {
+                Debug.LogWarning($"[AudioEventSubscriber] {sesAdi} bulunamadı veya AudioClip atanmamış!");
+                yield break;
+            }
+
+            // Mükemmel döngü: Dosyanın kendi saniye uzunluğunu alıyoruz
+            float beklemeSuresi = s.clip.length;
+
+            while (true)
+            {
+                AudioManager.Instance.PlaySFX(sesAdi);
+                yield return new WaitForSeconds(beklemeSuresi);
+            }
         }
 
         #endregion
@@ -164,15 +201,13 @@ namespace ForrestGame.Audio
             if (AudioManager.Instance != null) AudioManager.Instance.PlayMusic("IlkbaharMuzik");
         }
 
-        private void OnKamyonCalisti(Transform kaynak)
+        private void OnKamyonCalisti()
         {
-            // Motor sesini başlatır ve sonsuza kadar döngüye alır (loop)
             if (AudioManager.Instance != null) AudioManager.Instance.PlayVehicle("ArabaMotoru");
         }
 
-        private void OnKamyonDurdu(Transform kaynak)
+        private void OnKamyonDurdu()
         {
-            // Motoru durdurur
             if (AudioManager.Instance != null) AudioManager.Instance.StopVehicle();
         }
 
