@@ -1,4 +1,5 @@
 using UnityEngine;
+using ForrestGame.Utils;
 using ForrestGame.Managers;
 
 public class SystemTester : MonoBehaviour
@@ -18,9 +19,9 @@ public class SystemTester : MonoBehaviour
     public int testWoodAmount = 50;
     public int testDeliveryAmount = 5;
 
-    // ═══════════════════════════════════════════
-    //  Ekonomi Testleri
-    // ═══════════════════════════════════════════
+
+
+
 
     [ContextMenu("Test 1: 1000 Altin Ekle")]
     public void TestAddMoney()
@@ -28,17 +29,17 @@ public class SystemTester : MonoBehaviour
         if (EconomyManager.Instance != null)
         {
             EconomyManager.Instance.AddMoney(1000);
-            Debug.Log($"[Test 1] 1000 Altin Eklendi. Guncel Para: {EconomyManager.Instance.MevcutPara}");
+            GameLogger.Log($"[Test 1] 1000 Altin Eklendi. Guncel Para: {EconomyManager.Instance.MevcutPara}");
         }
         else
         {
-            Debug.LogError("[Test 1] EconomyManager bulunamadi!");
+            GameLogger.LogError("[Test 1] EconomyManager bulunamadi!");
         }
     }
 
-    // ═══════════════════════════════════════════
-    //  XP Testleri
-    // ═══════════════════════════════════════════
+
+
+
 
     [ContextMenu("Test 2: 500 XP Ekle (Level Testi)")]
     public void TestAddXP()
@@ -47,47 +48,47 @@ public class SystemTester : MonoBehaviour
         {
             XPManager.Instance.AddXP(500);
             int guncelSeviye = CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
-            Debug.Log($"[Test 2] 500 XP Eklendi. PlayerData'dan okunan guncel seviye: {guncelSeviye}");
+            GameLogger.Log($"[Test 2] 500 XP Eklendi. PlayerData'dan okunan guncel seviye: {guncelSeviye}");
         }
         else
         {
-            Debug.LogError("[Test 2] XPManager veya CloudSaveManager (CurrentData) bulunamadi!");
+            GameLogger.LogError("[Test 2] XPManager veya CloudSaveManager (CurrentData) bulunamadi!");
         }
     }
 
-    // ═══════════════════════════════════════════
-    //  Jenerik Upgrade Testleri (Yeni Sistem)
-    // ═══════════════════════════════════════════
+
+
+
 
     [ContextMenu("Test: Secili Esyayi Gelistir")]
     public void TestUpgradeItem()
     {
         if (UpgradeManager.Instance == null)
         {
-            Debug.LogError($"[Test Upgrade] UpgradeManager bulunamadi!");
+            GameLogger.LogError($"[Test Upgrade] UpgradeManager bulunamadi!");
             return;
         }
 
         if (EconomyManager.Instance == null)
         {
-            Debug.LogError($"[Test Upgrade] EconomyManager bulunamadi!");
+            GameLogger.LogError($"[Test Upgrade] EconomyManager bulunamadi!");
             return;
         }
 
         int eskiSeviye = UpgradeManager.Instance.GetItemLevel(testItemId);
         int maliyet = UpgradeManager.Instance.GetUpgradeCost(testItemId);
-        Debug.Log($"[Test Upgrade] '{testItemId}' yukseltme deneniyor. Mevcut Seviye: {eskiSeviye}, Maliyet: {maliyet}, Para: {EconomyManager.Instance.MevcutPara}");
+        GameLogger.Log($"[Test Upgrade] '{testItemId}' yukseltme deneniyor. Mevcut Seviye: {eskiSeviye}, Maliyet: {maliyet}, Para: {EconomyManager.Instance.MevcutPara}");
 
         bool basarili = UpgradeManager.Instance.UpgradeItem(testItemId);
         if (basarili)
         {
             int yeniSeviye = UpgradeManager.Instance.GetItemLevel(testItemId);
             float yeniDeger = UpgradeManager.Instance.GetItemValue(testItemId);
-            Debug.Log($"[Test Upgrade] '{testItemId}' yukseltildi! Seviye: {eskiSeviye} -> {yeniSeviye}, Deger: {yeniDeger:F1}, Kalan Para: {EconomyManager.Instance.MevcutPara}");
+            GameLogger.Log($"[Test Upgrade] '{testItemId}' yukseltildi! Seviye: {eskiSeviye} -> {yeniSeviye}, Deger: {yeniDeger:F1}, Kalan Para: {EconomyManager.Instance.MevcutPara}");
         }
         else
         {
-            Debug.LogWarning($"[Test Upgrade] '{testItemId}' yukseltme basarisiz. (Max seviye, yetersiz para veya config eksik)");
+            GameLogger.LogWarning($"[Test Upgrade] '{testItemId}' yukseltme basarisiz. (Max seviye, yetersiz para veya config eksik)");
         }
     }
 
@@ -96,7 +97,7 @@ public class SystemTester : MonoBehaviour
     {
         if (UpgradeManager.Instance == null)
         {
-            Debug.LogError("[Test Info] UpgradeManager bulunamadi!");
+            GameLogger.LogError("[Test Info] UpgradeManager bulunamadi!");
             return;
         }
 
@@ -105,32 +106,32 @@ public class SystemTester : MonoBehaviour
         int sonrakiMaliyet = UpgradeManager.Instance.GetUpgradeCost(testItemId);
         bool maxMi = UpgradeManager.Instance.IsMaxLevel(testItemId);
 
-        Debug.Log($"[Test Info] === {testItemId} ===\n" +
+        GameLogger.Log($"[Test Info] === {testItemId} ===\n" +
                   $"  Seviye      : {seviye}\n" +
                   $"  Guncel Deger: {deger:F1}\n" +
                   $"  Sonraki Maliyet: {sonrakiMaliyet}\n" +
                   $"  Max Seviye Mi: {maxMi}");
     }
 
-    // ═══════════════════════════════════════════
-    //  Bolge Testleri (Degistirilmedi)
-    // ═══════════════════════════════════════════
+
+
+
 
     [ContextMenu("Test: Secili Bolgeyi Ac (Config)")]
     public void TestUnlockSelectedRegion()
     {
         if (CloudSaveManager.Instance?.CurrentData == null)
         {
-            Debug.LogError("[Test Bolge] CloudSaveManager veya CurrentData hazir degil!");
+            GameLogger.LogError("[Test Bolge] CloudSaveManager veya CurrentData hazir degil!");
             return;
         }
         if (RegionManager.Instance == null)
         {
-            Debug.LogError("[Test Bolge] RegionManager bulunamadi!");
+            GameLogger.LogError("[Test Bolge] RegionManager bulunamadi!");
             return;
         }
 
-        // RegionID'den bolge adini oku (Config varsa)
+
         string regionName = null;
         if (testRegionConfig != null)
         {
@@ -140,75 +141,75 @@ public class SystemTester : MonoBehaviour
 
         if (string.IsNullOrEmpty(regionName))
         {
-            Debug.LogWarning($"[Test Bolge] RegionConfig'den ID={testRegionId} bolgesi okunamadi. RegionManager.UnlockRegion(int) ile devam ediliyor.");
+            GameLogger.LogWarning($"[Test Bolge] RegionConfig'den ID={testRegionId} bolgesi okunamadi. RegionManager.UnlockRegion(int) ile devam ediliyor.");
         }
         else
         {
-            Debug.Log($"[Test Bolge] Acilacak bolge: '{regionName}' (ID={testRegionId})");
+            GameLogger.Log($"[Test Bolge] Acilacak bolge: '{regionName}' (ID={testRegionId})");
         }
 
-        // RegionManager iceride SaveData'yi cagiriyor
+
         bool basarili = RegionManager.Instance.UnlockRegion(testRegionId);
         if (basarili)
         {
             string ad = regionName ?? $"ID:{testRegionId}";
-            Debug.Log($"[Test Bolge] '{ad}' kilidi acildi ve aninda Firestore'a kaydedildi!");
+            GameLogger.Log($"[Test Bolge] '{ad}' kilidi acildi ve aninda Firestore'a kaydedildi!");
         }
         else
         {
-            Debug.LogWarning($"[Test Bolge] Bolge ID={testRegionId} acilamadi. (Zaten acik, para yetersiz veya config eksik)");
+            GameLogger.LogWarning($"[Test Bolge] Bolge ID={testRegionId} acilamadi. (Zaten acik, para yetersiz veya config eksik)");
         }
     }
 
     [ContextMenu("Test: Bolgelerin Durumunu Kontrol Et")]
     public void TestCheckRegionStatus()
     {
-        if (RegionManager.Instance == null) { Debug.LogError("[Test Durum] RegionManager bulunamadi!"); return; }
-        if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test Durum] CurrentData null!"); return; }
+        if (RegionManager.Instance == null) { GameLogger.LogError("[Test Durum] RegionManager bulunamadi!"); return; }
+        if (CloudSaveManager.Instance?.CurrentData == null) { GameLogger.LogError("[Test Durum] CurrentData null!"); return; }
 
         var acilanBolgeler = CloudSaveManager.Instance.CurrentData.AcilanBolgeler;
 
         if (acilanBolgeler == null || acilanBolgeler.Count == 0)
         {
-            Debug.Log("[Test Durum] Hic acilmis bolge yok.");
+            GameLogger.Log("[Test Durum] Hic acilmis bolge yok.");
             return;
         }
 
-        Debug.Log($"[Test Durum] Acik Bolge Sayisi: {acilanBolgeler.Count}");
+        GameLogger.Log($"[Test Durum] Acik Bolge Sayisi: {acilanBolgeler.Count}");
         foreach (string bolge in acilanBolgeler)
         {
-            Debug.Log($"[Test Durum]   ✓ {bolge}");
+            GameLogger.Log($"[Test Durum]   ✓ {bolge}");
         }
 
-        // Secili test bolgesi kontrol
+
         if (testRegionConfig != null)
         {
             RegionData rd = testRegionConfig.GetRegionData(testRegionId);
             if (!string.IsNullOrEmpty(rd.RegionName))
             {
                 bool acikMi = RegionManager.Instance.IsRegionUnlocked(rd.RegionName);
-                Debug.Log($"[Test Durum] Secili bolge '{rd.RegionName}' acik mi: {acikMi}");
+                GameLogger.Log($"[Test Durum] Secili bolge '{rd.RegionName}' acik mi: {acikMi}");
             }
         }
     }
 
-    // ═══════════════════════════════════════════
-    //  Atolye ve Dukkan Testleri (YENI SISTEM)
-    // ═══════════════════════════════════════════
 
-    // Oncelikle bu metodu cagirarak sistemlerin hazir olup olmadigini kontrol et!
+
+
+
+
     [ContextMenu("TEST 0: Sistem Durumunu Kontrol Et")]
     public void TestDiagnostic()
     {
-        if (CloudSaveManager.Instance == null) { Debug.LogError("[DIAGNOZ] CloudSaveManager YOK!"); return; }
-        if (CloudSaveManager.Instance.CurrentData == null) { Debug.LogError("[DIAGNOZ] CurrentData NULL - Firebase login oldu mu?"); return; }
-        if (WorkshopManager.Instance == null) { Debug.LogError("[DIAGNOZ] WorkshopManager YOK!"); return; }
-        if (ShopManager.Instance == null) { Debug.LogError("[DIAGNOZ] ShopManager YOK!"); return; }
+        if (CloudSaveManager.Instance == null) { GameLogger.LogError("[DIAGNOZ] CloudSaveManager YOK!"); return; }
+        if (CloudSaveManager.Instance.CurrentData == null) { GameLogger.LogError("[DIAGNOZ] CurrentData NULL - Firebase login oldu mu?"); return; }
+        if (WorkshopManager.Instance == null) { GameLogger.LogError("[DIAGNOZ] WorkshopManager YOK!"); return; }
+        if (ShopManager.Instance == null) { GameLogger.LogError("[DIAGNOZ] ShopManager YOK!"); return; }
 
         PlayerData d = CloudSaveManager.Instance.CurrentData;
 
-        Debug.Log($"[DIAGNOZ] === GENEL DURUM RAPORU ===");
-        Debug.Log($"  Atolye Ham Odun Bakiyesi : {WorkshopManager.Instance.MevcutKuyruk}");
+        GameLogger.Log($"[DIAGNOZ] === GENEL DURUM RAPORU ===");
+        GameLogger.Log($"  Atolye Ham Odun Bakiyesi : {WorkshopManager.Instance.MevcutKuyruk}");
 
         LogDict("WorkshopQueue (Uretim Sirasi)", d.WorkshopQueue);
         LogDict("ReadyForTruck (Kamyon Bekliyor)", d.ReadyForTruck);
@@ -226,11 +227,11 @@ public class SystemTester : MonoBehaviour
                 }
             }
             if (!tarifVar)
-                Debug.LogError($"[DIAGNOZ] !!! KRITIK: WorkshopManager Inspector'unda 'Tum Tarifler' dizisine '{itemId}' RecipeConfig'ini SURUKLE! Yoksa uretim sessizce iptal ediliyor.");
+                GameLogger.LogError($"[DIAGNOZ] !!! KRITIK: WorkshopManager Inspector'unda 'Tum Tarifler' dizisine '{itemId}' RecipeConfig'ini SURUKLE! Yoksa uretim sessizce iptal ediliyor.");
         }
         else
         {
-            Debug.LogWarning("[DIAGNOZ] testRecipe atanmamis, test icin atayin.");
+            GameLogger.LogWarning("[DIAGNOZ] testRecipe atanmamis, test icin atayin.");
         }
     }
 
@@ -238,7 +239,7 @@ public class SystemTester : MonoBehaviour
     {
         if (dict == null || dict.keys.Count == 0)
         {
-            Debug.Log($"  {title} : BOS");
+            GameLogger.Log($"  {title} : BOS");
             return;
         }
         string s = $"  {title} : ";
@@ -248,30 +249,41 @@ public class SystemTester : MonoBehaviour
             if (System.Convert.ToInt32(kvp.Value) > 0)
                 s += $"[{kvp.Key}: {kvp.Value}] ";
         }
-        Debug.Log(s);
+        GameLogger.Log(s);
     }
 
-    // ADIM 1: Atolyenin odun deposuna odun ekle (bellekte tutulur)
-    [ContextMenu("Test 1: Odun Ekle")]
+
+    [ContextMenu("Test 1: Oyuncu Odun Topladi (PlayerWoodStock Ekle)")]
     public void TestAddWoodToWorkshop()
     {
-        if (WorkshopManager.Instance == null) { Debug.LogError("[Test 1] WorkshopManager bulunamadi!"); return; }
-        WorkshopManager.Instance.AddWood(testWoodAmount);
-        Debug.Log($"[Test 1] +{testWoodAmount} odun eklendi. Atolye Odun Bakiyesi: {WorkshopManager.Instance.MevcutKuyruk}");
+        if (CloudSaveManager.Instance?.CurrentData == null)
+        {
+            GameLogger.LogError("[Test 1] CloudSaveManager.CurrentData null! Oyun basladi mi?");
+            return;
+        }
+
+        // Oyuncu agac kesti, odunlari deposuna ekledi — PlayerWoodStock artar
+        CloudSaveManager.Instance.CurrentData.PlayerWoodStock += testWoodAmount;
+        int yeniStok = CloudSaveManager.Instance.CurrentData.PlayerWoodStock;
+        int workshopStok = CloudSaveManager.Instance.CurrentData.WorkshopRawWood;
+
+        GameLogger.Log($"[Test 1] Oyuncu +{testWoodAmount} odun topladi.");
+        GameLogger.Log($"[Test 1] PlayerWoodStock (oyuncu deposu) : {yeniStok}");
+        GameLogger.Log($"[Test 1] WorkshopRawWood (atolye stogu)  : {workshopStok}  ← bu degismedi");
     }
 
-    // ADIM 2: Siparis ver — odun dusulur, WorkshopQueue'ya eklenir, Firestore'a yazilir
+
     [ContextMenu("Test 2: Atolyede Uretim Baslat")]
     public void TestStartProduction()
     {
         if (WorkshopManager.Instance == null || testRecipe == null)
         {
-            Debug.LogError("[Test 2] WorkshopManager veya testRecipe bulunamadi!");
+            GameLogger.LogError("[Test 2] WorkshopManager veya testRecipe bulunamadi!");
             return;
         }
         if (CloudSaveManager.Instance?.CurrentData == null)
         {
-            Debug.LogError("[Test 2] CloudSaveManager.CurrentData null! Oyun basladi mi?");
+            GameLogger.LogError("[Test 2] CloudSaveManager.CurrentData null! Oyun basladi mi?");
             return;
         }
 
@@ -280,7 +292,7 @@ public class SystemTester : MonoBehaviour
 
         if (odunBakiye < gerekenOdun)
         {
-            Debug.LogWarning($"[Test 2] Yetersiz odun! Gereken: {gerekenOdun}, Mevcut: {odunBakiye}. Once 'Test 1: Odun Ekle' calistir.");
+            GameLogger.LogWarning($"[Test 2] Yetersiz odun! Gereken: {gerekenOdun}, Mevcut: {odunBakiye}. Once 'Test 1: Odun Ekle' calistir.");
             return;
         }
 
@@ -288,23 +300,23 @@ public class SystemTester : MonoBehaviour
 
         if (basarili)
         {
-            // Sonucu hemen goster
+
             PlayerData d = CloudSaveManager.Instance.CurrentData;
             int sirada = d.WorkshopQueue != null ? d.WorkshopQueue.Get(testRecipe.ItemID, 0) : 0;
-            Debug.Log($"[Test 2] Siparis verildi! WorkshopQueue[{testRecipe.ItemID}] = {sirada}. Atölye zamanlayici caliştıgında uretilecek.");
+            GameLogger.Log($"[Test 2] Siparis verildi! WorkshopQueue[{testRecipe.ItemID}] = {sirada}. Atölye zamanlayici caliştıgında uretilecek.");
         }
         else
         {
-            Debug.LogWarning("[Test 2] Siparis verilemedi (TryStartProduction false dondu).");
+            GameLogger.LogWarning("[Test 2] Siparis verilemedi (TryStartProduction false dondu).");
         }
     }
 
-    // ADIM 3: Uretim bitti, ReadyForTruck'taki mallari al, dukkana ekle
+
     [ContextMenu("Test 3: Kamyon Teslimati (Dukkana Ekle)")]
     public void TestTruckDelivery()
     {
-        if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test 3] CurrentData null!"); return; }
-        if (ShopManager.Instance == null) { Debug.LogError("[Test 3] ShopManager bulunamadi!"); return; }
+        if (CloudSaveManager.Instance?.CurrentData == null) { GameLogger.LogError("[Test 3] CurrentData null!"); return; }
+        if (ShopManager.Instance == null) { GameLogger.LogError("[Test 3] ShopManager bulunamadi!"); return; }
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
@@ -320,31 +332,31 @@ public class SystemTester : MonoBehaviour
             
             if (hazirMiktar > 0)
             {
-                // ReadyForTruck'tan temizle
+
                 data.ReadyForTruck.Set(itemId, 0);
-                // Dukkana ekle (AddStock iceride SaveData cagiriyor)
+
                 ShopManager.Instance.AddStock(itemId, hazirMiktar);
-                Debug.Log($"[Test 3] Kamyon {hazirMiktar} adet '{itemId}' alip dukkana teslim etti!");
+                GameLogger.Log($"[Test 3] Kamyon {hazirMiktar} adet '{itemId}' alip dukkana teslim etti!");
                 anyLoaded = true;
             }
         }
 
         if (!anyLoaded)
         {
-            Debug.LogWarning($"[Test 3] ReadyForTruck bombos! Kamyona yuklenecek hazir urun yok. Once 'Test 2: Uretim Baslat' cagir ve atolye uretmesini bekle.");
+            GameLogger.LogWarning($"[Test 3] ReadyForTruck bombos! Kamyona yuklenecek hazir urun yok. Once 'Test 2: Uretim Baslat' cagir ve atolye uretmesini bekle.");
         }
     }
 
-    // ADIM 4: NPC geldi, dukkan stogunu dusurup parayı ekle
+
     [ContextMenu("Test 4: NPC Satisi (Stok Dus ve Para Ekle)")]
     public void TestNPCSell()
     {
         if (ShopManager.Instance == null || EconomyManager.Instance == null)
         {
-            Debug.LogError("[Test 4] ShopManager veya EconomyManager bulunamadi!");
+            GameLogger.LogError("[Test 4] ShopManager veya EconomyManager bulunamadi!");
             return;
         }
-        if (CloudSaveManager.Instance?.CurrentData == null) { Debug.LogError("[Test 4] CurrentData null!"); return; }
+        if (CloudSaveManager.Instance?.CurrentData == null) { GameLogger.LogError("[Test 4] CurrentData null!"); return; }
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
         if (data.ShopInventory == null) data.ShopInventory = new SerializableDict();
@@ -372,7 +384,7 @@ public class SystemTester : MonoBehaviour
                 if (sold)
                 {
                     EconomyManager.Instance.AddMoney(price);
-                    Debug.Log($"[Test 4] BASARILI: 1 adet '{itemId}' satildi! +{price} para. Kalan stok: {data.ShopInventory.Get(itemId, 0)}");
+                    GameLogger.Log($"[Test 4] BASARILI: 1 adet '{itemId}' satildi! +{price} para. Kalan stok: {data.ShopInventory.Get(itemId, 0)}");
                     anySold = true;
                 }
             }
@@ -380,17 +392,142 @@ public class SystemTester : MonoBehaviour
 
         if (!anySold)
         {
-            Debug.LogWarning($"[Test 4] Satis basarisiz: Dukkan stokta hicbir urun yok! Once Test 3 ile kamyonu calistir.");
+            GameLogger.LogWarning($"[Test 4] Satis basarisiz: Dukkan stokta hicbir urun yok! Once Test 3 ile kamyonu calistir.");
         }
     }
 
-    // ADIM 5: Yeni NPC Siparis Sistemi Testi
+
+    // 6A'dan 6B'ye beklenen durumlari tasimak icin (test amacli)
+    private static int expectedPlayerWoodStock = -1;
+    private static int expectedWorkshopRawWood = -1;
+    private static int expectedPostProductionWood = -1;
+
+    // ─────────────────────────────────────────────────────────────
+    //  TEST 6A: KAMYON ODUN BIRAKTI (sadece WorkshopRawWood artar)
+    //  Kullanim:
+    //    1. Test 6A → kamyon teslimati yapar, odunu atolyeye aktarir
+    //    2. Test 2  → stog yeterliyse uretimi kuyruğa al
+    //    3. Test 6B → kalan odun ve ayrim tekrar dogrula
+    // ─────────────────────────────────────────────────────────────
+    [ContextMenu("Test 6A: Kamyon 30 Odun Birakti (Sadece Stog Ekler)")]
+    public void TestWoodRemainder_Setup()
+    {
+        if (WorkshopManager.Instance == null)
+        {
+            GameLogger.LogError("[Test 6A] WorkshopManager bulunamadi!");
+            return;
+        }
+        if (CloudSaveManager.Instance?.CurrentData == null)
+        {
+            GameLogger.LogError("[Test 6A] CloudSaveManager.CurrentData null! Oyun basladi mi?");
+            return;
+        }
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+
+        int eskiWorkshop = data.WorkshopRawWood;
+        int eskiPlayer   = data.PlayerWoodStock;
+        int kamyonOdunu  = 30;
+
+        GameLogger.Log($"[Test 6A] Kamyon gelmeden once: Workshop={eskiWorkshop}, PlayerDepo={eskiPlayer}");
+
+        if (eskiPlayer < kamyonOdunu)
+        {
+            GameLogger.LogWarning($"[Test 6A] UYARI: Oyuncunun deposunda sadece {eskiPlayer} odun var, kamyon {kamyonOdunu} tasimaya calisiyor. (Eksiye dusmeyecek, 0'da kalacak)");
+        }
+
+        // Kamyon 30 odun birakti
+        WorkshopManager.Instance.AddWood(kamyonOdunu);
+
+        // Beklenen sonuclar:
+        expectedWorkshopRawWood = eskiWorkshop + kamyonOdunu;
+        expectedPlayerWoodStock = Mathf.Max(0, eskiPlayer - kamyonOdunu);
+        
+        if (testRecipe != null)
+            expectedPostProductionWood = expectedWorkshopRawWood - testRecipe.RequiredWood;
+
+        GameLogger.Log($"[Test 6A] Kamyon {kamyonOdunu} odun atolyeye birakti.");
+        GameLogger.Log($"[Test 6A] WorkshopRawWood = {data.WorkshopRawWood}  (beklenen: {expectedWorkshopRawWood})");
+        GameLogger.Log($"[Test 6A] PlayerWoodStock = {data.PlayerWoodStock}  (beklenen: {expectedPlayerWoodStock})");
+
+        // Ayrim kontrolu
+        bool workshopDogru = data.WorkshopRawWood == expectedWorkshopRawWood;
+        bool playerDogru   = data.PlayerWoodStock == expectedPlayerWoodStock;
+
+        if (workshopDogru && playerDogru)
+            GameLogger.Log($"[Test 6A] ✅ TRANSFER DOGRU! WorkshopRawWood={expectedWorkshopRawWood}, PlayerWoodStock={expectedPlayerWoodStock}.");
+        else if (!workshopDogru)
+            GameLogger.LogError($"[Test 6A] ❌ WorkshopRawWood yanlis! Beklenen: {expectedWorkshopRawWood}, Gercek: {data.WorkshopRawWood}");
+        else
+            GameLogger.LogError($"[Test 6A] ❌ PlayerWoodStock yanlis! Beklenen: {expectedPlayerWoodStock}, Gercek: {data.PlayerWoodStock}");
+
+        GameLogger.Log("[Test 6A] Simdi 'Test 2: Atolyede Uretim Baslat' ile uretim kuyruğuna al, sonra Test 6B ile dogrula.");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  TEST 6B: DOGRULAMA (6A + Test 2 sonrasi birkaç saniye bekle)
+    //  - WorkshopRawWood dogru miktarda dustu mu?
+    //  - PlayerWoodStock hic etkilenmedi mi?
+    // ─────────────────────────────────────────────────────────────
+    [ContextMenu("Test 6B: Odun Dusumu Dogru Mu? (6A'dan Sonra Calistir)")]
+    public void TestWoodRemainder_Verify()
+    {
+        if (WorkshopManager.Instance == null || CloudSaveManager.Instance?.CurrentData == null || testRecipe == null)
+        {
+            GameLogger.LogError("[Test 6B] WorkshopManager, CloudSaveManager veya testRecipe eksik!");
+            return;
+        }
+
+        if (expectedPlayerWoodStock == -1)
+        {
+            GameLogger.LogError("[Test 6B] Beklenen degerler hesaplanmamis! Once Test 6A calistirilmalidir.");
+            return;
+        }
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        int mevcutOdun    = data.WorkshopRawWood;
+        int playerDepo    = data.PlayerWoodStock;
+        int gerekenOdun   = testRecipe.RequiredWood;
+        int kuyruktaki    = data.WorkshopQueue != null ? data.WorkshopQueue.Get(testRecipe.ItemID, 0) : -1;
+        int hazirKamyon   = data.ReadyForTruck  != null ? data.ReadyForTruck.Get(testRecipe.ItemID, 0)  : 0;
+
+        GameLogger.Log($"[Test 6B] === DOGRULAMA RAPORU ===");
+        GameLogger.Log($"  Tarif                      : {testRecipe.ItemID} (gereken: {gerekenOdun} odun)");
+        GameLogger.Log($"  Beklenen WorkshopRawWood   : {expectedPostProductionWood}");
+        GameLogger.Log($"  Gercek  WorkshopRawWood    : {mevcutOdun}");
+        GameLogger.Log($"  PlayerWoodStock            : {playerDepo}  (uretimden etkilenmemeli — beklenen: {expectedPlayerWoodStock})");
+        GameLogger.Log($"  WorkshopQueue[{testRecipe.ItemID}] : {kuyruktaki} (0 = uretim bitti)");
+        GameLogger.Log($"  ReadyForTruck[{testRecipe.ItemID}] : {hazirKamyon} adet hazir");
+
+        // WorkshopRawWood kontrolu
+        if (mevcutOdun == expectedPostProductionWood)
+            GameLogger.Log($"[Test 6B] ✅ WorkshopRawWood DOGRU: {expectedWorkshopRawWood} - {gerekenOdun} = {mevcutOdun} kaldi.");
+        else if (mevcutOdun == expectedWorkshopRawWood)
+            GameLogger.LogWarning($"[Test 6B] ⚠️ Odun henuz dusulmemis (hala {expectedWorkshopRawWood}). ProcessQueue calismadigindan bekleniyor, biraz bekle.");
+        else
+            GameLogger.LogWarning($"[Test 6B] ⚠️ Beklenmeyen WorkshopRawWood: {mevcutOdun}. Beklenen: {expectedPostProductionWood}.");
+
+        // PlayerWoodStock kontrolu: uretim sadece WorkshopRawWood'u dusurur, buraya dokunmaz
+        if (playerDepo == expectedPlayerWoodStock)
+            GameLogger.Log($"[Test 6B] ✅ PlayerWoodStock DOGRU: Uretim oyuncunun deposuna dokunmadi. ({expectedPlayerWoodStock} kaldi)");
+        else
+            GameLogger.LogError($"[Test 6B] ❌ PlayerWoodStock yanlis! Beklenen: {expectedPlayerWoodStock}, Gercek: {playerDepo}.");
+
+        // Uretim durumu
+        if (hazirKamyon > 0)
+            GameLogger.Log($"[Test 6B] ✅ Uretim TAMAMLANDI! {hazirKamyon} adet '{testRecipe.ItemID}' kamyon bekliyor.");
+        else if (kuyruktaki > 0)
+            GameLogger.Log($"[Test 6B] ⏳ Uretim devam ediyor. Biraz daha bekle.");
+        else
+            GameLogger.Log($"[Test 6B] ℹ️ Kuyruk bos — uretim bitmis ya da hic baslatilmamis.");
+    }
+
     [ContextMenu("Test 5: Yeni NPC Siparis Sistemi (Stok Yoksa BekleyenSiparise Atar)")]
     public void TestNPC_NewOrderSystem()
     {
         if (ShopManager.Instance == null)
         {
-            Debug.LogError("[Test 5] ShopManager bulunamadi!");
+            GameLogger.LogError("[Test 5] ShopManager bulunamadi!");
             return;
         }
 
@@ -398,14 +535,14 @@ public class SystemTester : MonoBehaviour
         int siparisMiktari = 3;
         int fiyat = 100;
 
-        Debug.Log($"[Test 5] NPC Geldi! {siparisMiktari} adet {itemId} istiyor.");
+        GameLogger.Log($"[Test 5] NPC Geldi! {siparisMiktari} adet {itemId} istiyor.");
         ShopManager.Instance.ProcessCustomerOrder(itemId, siparisMiktari, fiyat);
 
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             PlayerData d = CloudSaveManager.Instance.CurrentData;
             int bekleyenSiparis = d.PendingCustomerOrders != null ? d.PendingCustomerOrders.Get(itemId, 0) : 0;
-            Debug.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis miktari: {bekleyenSiparis}");
+            GameLogger.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis miktari: {bekleyenSiparis}");
         }
     }
 }
