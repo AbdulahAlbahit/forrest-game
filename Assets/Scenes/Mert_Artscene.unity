@@ -8006,6 +8006,83 @@ Transform:
   - {fileID: 2056989466}
   m_Father: {fileID: 1867951782}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &356937873
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2419292612478867452, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_Name
+      value: AudioManager
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 83.07629
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 20.0156
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 113.20933
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2419292612478867452, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 356937875}
+  m_SourcePrefab: {fileID: 100100000, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+--- !u!1 &356937874 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2419292612478867452, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+  m_PrefabInstance: {fileID: 356937873}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &356937875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 356937874}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9e58ebb89a924048ab7224e7239fa47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Audio.AudioEventSubscriber
 --- !u!1 &357414891 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
@@ -35978,6 +36055,7 @@ MonoBehaviour:
   defaultTreeHealth: 3
   searchRadius: 2.5
   fallTorque: 23.3
+  nonTreePrototypeIndices: 03000000
   disappearDelay: 2
   logDisappearDelay: 8
   shrinkDuration: 0.5
@@ -39190,6 +39268,7 @@ MonoBehaviour:
   snowTerrainLayerIndex: 1
   roadTerrainLayerIndex: 2
   roadSnowTerrainLayerIndex: 3
+  terrainHeavyUpdateInterval: 0.3
   directionalLight: {fileID: 944944470}
   ilkbaharLightColor: {r: 1, g: 1, b: 1, a: 1}
   yazLightColor: {r: 1, g: 0.968, b: 0.78, a: 1}
@@ -39199,6 +39278,15 @@ MonoBehaviour:
   yazLightIntensity: 1
   sonbaharLightIntensity: 1
   kisLightIntensity: 0.7
+  fogMode: 3
+  ilkbaharFogColor: {r: 0.58, g: 0.58, b: 0.58, a: 1}
+  ilkbaharFogDensity: 0.01
+  yazFogColor: {r: 0.58, g: 0.58, b: 0.58, a: 1}
+  yazFogDensity: 0.006
+  sonbaharFogColor: {r: 0.22, g: 0.22, b: 0.22, a: 1}
+  sonbaharFogDensity: 0.06
+  kisFogColor: {r: 0.85, g: 0.88, b: 0.92, a: 1}
+  kisFogDensity: 0.06
 --- !u!1 &1640547400 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 9302610bf57565942ac9a13227393373, type: 3}
@@ -59622,3 +59710,4 @@ SceneRoots:
   - {fileID: 2086307483}
   - {fileID: 642368473}
   - {fileID: 1611404722}
+  - {fileID: 356937873}

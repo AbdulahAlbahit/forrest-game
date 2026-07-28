@@ -95,11 +95,11 @@ MonoBehaviour:
     volume: 1
     pitch: 0.1
   - name: YurumeSesi
-    clip: {fileID: 8300000, guid: bed7a85b0fc3b4042a095672b0fc8cd5, type: 3}
+    clip: {fileID: 8300000, guid: 9547b3db197f22345a450da5c7bea3cf, type: 3}
     volume: 1
     pitch: 0
   - name: KosmaSesi
-    clip: {fileID: 8300000, guid: e312a11dfe5107642ac528d18ccffcf9, type: 3}
+    clip: {fileID: 8300000, guid: fb7c2a65aad60c344acb2ab00121dbdc, type: 3}
     volume: 1
     pitch: 0.1
   - name: SepetDoldu
@@ -112,6 +112,10 @@ MonoBehaviour:
     pitch: 0.1
   - name: YeniBolge
     clip: {fileID: 8300000, guid: 21a7f842ba917ac40bacd8f2af3a5969, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: KamyonaOdunAtma
+    clip: {fileID: 8300000, guid: 55772a57f521e3c45b7acb3082277b74, type: 3}
     volume: 1
     pitch: 0.1
   ambienceSounds:
@@ -135,7 +139,7 @@ MonoBehaviour:
   - name: ArabaMotoru
     clip: {fileID: 8300000, guid: b22be34c2b0e4514fa211e3c2c0dfac2, type: 3}
     volume: 1
-    pitch: 0
+    pitch: 1
 --- !u!82 &-781825273070750688
 AudioSource:
   m_ObjectHideFlags: 0

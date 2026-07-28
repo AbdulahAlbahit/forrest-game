@@ -48,6 +48,13 @@ namespace ForrestGame.Core
         public TerrainDetailBaseline[] ilkbaharCicekBaselineleri;
         private float lastAppliedFlowerAmount = -1f;
 
+        private SnowStormController[] _sonbaharSnowStormControllers;
+        private ParticleSystem _sonbaharRainParticles;
+        private bool _sonbaharVFXCached;
+
+        private SnowStormController _kisSnowStorm;
+        private bool _kisVFXCached;
+
         [Header("Terrain Snow Blend")]
         [Tooltip("Terrain'deki toprak (ground) Terrain Layer'inin index'i.")]
         public int groundTerrainLayerIndex = 0;
@@ -58,7 +65,14 @@ namespace ForrestGame.Core
         [Tooltip("Terrain'deki karli yol (roadSnow) Terrain Layer'inin index'i.")]
         public int roadSnowTerrainLayerIndex = 3;
 
+        [Tooltip("Kar/yaprak materyal degisimlerinin agir terrain islemlerini (RefreshPrototypes, alphamap blend) en fazla ne siklikta tetikleyecegi. Mevsim gecisinde FPS dususunu onlemek icin var.")]
+        public float terrainHeavyUpdateInterval = 0.3f;
+
         private float lastAppliedTerrainSnowAmount = -1f;
+        private float lastAppliedAutumnLeafAmount = -1f;
+        private bool _terrainTreeMaterialsDirty;
+        private bool _terrainSnowBlendDirty;
+        private float _lastTerrainHeavyUpdateTime = -999f;
 
         [Header("Directional Light Renk Gecisi")]
         [Tooltip("Sahnedeki gunes/ay isigi (Directional Light).")]
@@ -71,6 +85,18 @@ namespace ForrestGame.Core
         public float yazLightIntensity = 1f;
         public float sonbaharLightIntensity = 1f;
         public float kisLightIntensity = 0.7f; // kapali/kararmis hava hissi
+
+        [Header("Mevsimsel Sis (Fog)")]
+        [Tooltip("Ilkbahar/Yaz'da az yogunluklu, Sonbahar/Kis'ta yogun sis. Arka plani kapatarak render mesafesini kisaltir.")]
+        public FogMode fogMode = FogMode.ExponentialSquared;
+        public Color ilkbaharFogColor = new Color(0.58f, 0.58f, 0.58f);
+        public float ilkbaharFogDensity = 0.02f;
+        public Color yazFogColor = new Color(0.58f, 0.58f, 0.58f);
+        public float yazFogDensity = 0.02f;
+        public Color sonbaharFogColor = new Color(0.22f, 0.22f, 0.22f); // koyu gri
+        public float sonbaharFogDensity = 0.08f;
+        public Color kisFogColor = new Color(0.85f, 0.88f, 0.92f); // beyaza calan
+        public float kisFogDensity = 0.08f;
 
         private static readonly int SnowAmountID = Shader.PropertyToID("_KarMiktari");
         private static readonly int BaseColorID = Shader.PropertyToID("_TabanRengi");
@@ -88,6 +114,9 @@ namespace ForrestGame.Core
 
         private void Start()
         {
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = fogMode;
+
             HesaplaCevrimdisiZaman();
             MevsimVFXAktifligiUygula();
         }
@@ -143,18 +172,54 @@ namespace ForrestGame.Core
         private void ApplyContinuousSeasonEffects()
         {
             ApplyContinuousLight();
+            ApplyContinuousFog();
 
             float kisMiktari = GetSeasonPulseAmount(MevsimTuru.Kis);
             ApplySnowAmount(kisMiktari);
             if (kisVFX != null)
             {
-                SnowStormController snowStorm = kisVFX.GetComponent<SnowStormController>();
-                if (snowStorm != null) snowStorm.SetIntensityScale(kisMiktari);
+                if (!_kisVFXCached)
+                {
+                    _kisSnowStorm = kisVFX.GetComponent<SnowStormController>();
+                    _kisVFXCached = true;
+                }
+                if (_kisSnowStorm != null) _kisSnowStorm.SetIntensityScale(kisMiktari);
             }
 
             float sonbaharMiktari = GetSeasonPulseAmount(MevsimTuru.Sonbahar);
             ApplyAutumnLeafColor(sonbaharMiktari);
             ApplySonbaharVFXYogunlugu(sonbaharMiktari);
+
+            ApplyPendingHeavyTerrainUpdates(kisMiktari);
+        }
+
+        /// <summary>
+        /// RefreshPrototypes ve alphamap blend, terrain'in tamamini tarayan agir islemlerdir.
+        /// Mevsim gecisinde her frame degisen kar/yaprak miktarina birebir baglanirsa saniyede
+        /// onlarca kez tetiklenip FPS dususune yol acar. Bunun yerine sadece bir cooldown suresinde
+        /// bir kere calisirlar, materyal renkleri ise (ucuz oldugu icin) her frame guncellenmeye devam eder.
+        /// </summary>
+        private void ApplyPendingHeavyTerrainUpdates(float currentSnowAmount)
+        {
+            if (!_terrainTreeMaterialsDirty && !_terrainSnowBlendDirty) return;
+            if (Time.time - _lastTerrainHeavyUpdateTime < terrainHeavyUpdateInterval) return;
+            if (Terrain.activeTerrain == null || Terrain.activeTerrain.terrainData == null) return;
+
+            TerrainData terrainData = Terrain.activeTerrain.terrainData;
+
+            if (_terrainSnowBlendDirty)
+            {
+                _terrainSnowBlendDirty = false;
+                ApplyTerrainSnowBlend(terrainData, currentSnowAmount);
+            }
+
+            if (_terrainTreeMaterialsDirty)
+            {
+                _terrainTreeMaterialsDirty = false;
+                terrainData.RefreshPrototypes();
+            }
+
+            _lastTerrainHeavyUpdateTime = Time.time;
         }
 
         /// <summary>
@@ -196,16 +261,18 @@ namespace ForrestGame.Core
             }
         }
 
-        private void ApplyContinuousLight()
+        /// <summary>
+        /// Isik ve sis gibi tum mevsimlerde farkli bir hedefi olan surekli kanallarin ortak
+        /// komsu-mevsim blend hesabi. Mevsim sinirinda ani sicrama olmamasi icin GetOwnSeasonWeight
+        /// ile simetrik karisir.
+        /// </summary>
+        private void GetBlendedNeighborSeason(out MevsimTuru komsuMevsim, out float agirlik)
         {
-            if (directionalLight == null) return;
-
-            float agirlik = GetOwnSeasonWeight();
+            agirlik = GetOwnSeasonWeight();
             float edge = EdgeDuration;
             float toplamSure = ayarlar.mevsimSuresiDakika * 60f;
             float gecenSure = toplamSure - kalanSaniye;
 
-            MevsimTuru komsuMevsim;
             if (edge > 0f && gecenSure < edge)
             {
                 komsuMevsim = OncekiMevsimiBul(aktifMevsim);
@@ -218,12 +285,27 @@ namespace ForrestGame.Core
             {
                 komsuMevsim = aktifMevsim;
             }
+        }
+
+        private void ApplyContinuousLight()
+        {
+            if (directionalLight == null) return;
+
+            GetBlendedNeighborSeason(out MevsimTuru komsuMevsim, out float agirlik);
 
             Color hedefRenk = Color.Lerp(GetLightColorForSeason(komsuMevsim), GetLightColorForSeason(aktifMevsim), agirlik);
             float hedefYogunluk = Mathf.Lerp(GetLightIntensityForSeason(komsuMevsim), GetLightIntensityForSeason(aktifMevsim), agirlik);
 
             directionalLight.color = hedefRenk;
             directionalLight.intensity = hedefYogunluk;
+        }
+
+        private void ApplyContinuousFog()
+        {
+            GetBlendedNeighborSeason(out MevsimTuru komsuMevsim, out float agirlik);
+
+            RenderSettings.fogColor = Color.Lerp(GetFogColorForSeason(komsuMevsim), GetFogColorForSeason(aktifMevsim), agirlik);
+            RenderSettings.fogDensity = Mathf.Lerp(GetFogDensityForSeason(komsuMevsim), GetFogDensityForSeason(aktifMevsim), agirlik);
         }
 
         private void HesaplaCevrimdisiZaman()
@@ -338,9 +420,36 @@ namespace ForrestGame.Core
             }
         }
 
+        private Color GetFogColorForSeason(MevsimTuru mevsim)
+        {
+            switch (mevsim)
+            {
+                case MevsimTuru.Ilkbahar: return ilkbaharFogColor;
+                case MevsimTuru.Yaz: return yazFogColor;
+                case MevsimTuru.Sonbahar: return sonbaharFogColor;
+                case MevsimTuru.Kis: return kisFogColor;
+                default: return Color.gray;
+            }
+        }
+
+        private float GetFogDensityForSeason(MevsimTuru mevsim)
+        {
+            switch (mevsim)
+            {
+                case MevsimTuru.Ilkbahar: return ilkbaharFogDensity;
+                case MevsimTuru.Yaz: return yazFogDensity;
+                case MevsimTuru.Sonbahar: return sonbaharFogDensity;
+                case MevsimTuru.Kis: return kisFogDensity;
+                default: return 0f;
+            }
+        }
+
         private void ApplyAutumnLeafColor(float amount)
         {
             if (autumnLeafMaterials == null) return;
+            if (Mathf.Abs(amount - lastAppliedAutumnLeafAmount) <= 0.01f) return;
+
+            lastAppliedAutumnLeafAmount = amount;
 
             for (int i = 0; i < autumnLeafMaterials.Length; i++)
             {
@@ -352,29 +461,41 @@ namespace ForrestGame.Core
                 Color blended = Color.Lerp(baseLeafColors[i], autumnLeafColors[i], amount);
                 mat.SetColor(BaseColorID, blended);
             }
+
+            _terrainTreeMaterialsDirty = true;
         }
 
         private void ApplySonbaharVFXYogunlugu(float amount)
         {
             if (sonbaharVFX == null) return;
 
-            foreach (SnowStormController controller in sonbaharVFX.GetComponentsInChildren<SnowStormController>(true))
+            if (!_sonbaharVFXCached)
+            {
+                _sonbaharSnowStormControllers = sonbaharVFX.GetComponentsInChildren<SnowStormController>(true);
+
+                Transform rainTransform = sonbaharVFX.transform.Find("Rain");
+                _sonbaharRainParticles = rainTransform != null ? rainTransform.GetComponent<ParticleSystem>() : null;
+
+                _sonbaharVFXCached = true;
+            }
+
+            foreach (SnowStormController controller in _sonbaharSnowStormControllers)
             {
                 controller.SetIntensityScale(amount);
             }
 
-            Transform rainTransform = sonbaharVFX.transform.Find("Rain");
-            if (rainTransform == null) return;
+            if (_sonbaharRainParticles == null) return;
 
-            ParticleSystem rainParticles = rainTransform.GetComponent<ParticleSystem>();
-            if (rainParticles == null) return;
-
-            ParticleSystem.EmissionModule emission = rainParticles.emission;
+            ParticleSystem.EmissionModule emission = _sonbaharRainParticles.emission;
             emission.rateOverTime = amount * sonbaharRainMaxEmissionRate;
         }
 
         private void ApplySnowAmount(float snowAmount)
         {
+            if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) <= 0.001f) return;
+
+            lastAppliedTerrainSnowAmount = snowAmount;
+
             if (snowTreeMaterials != null)
             {
                 foreach (Material mat in snowTreeMaterials)
@@ -383,17 +504,8 @@ namespace ForrestGame.Core
                 }
             }
 
-            if (Terrain.activeTerrain != null && Terrain.activeTerrain.terrainData != null)
-            {
-                TerrainData terrainData = Terrain.activeTerrain.terrainData;
-                terrainData.RefreshPrototypes();
-
-                if (Mathf.Abs(snowAmount - lastAppliedTerrainSnowAmount) > 0.01f)
-                {
-                    lastAppliedTerrainSnowAmount = snowAmount;
-                    ApplyTerrainSnowBlend(terrainData, snowAmount);
-                }
-            }
+            _terrainTreeMaterialsDirty = true;
+            _terrainSnowBlendDirty = true;
         }
 
         private void ApplyTerrainSnowBlend(TerrainData terrainData, float snowAmount)

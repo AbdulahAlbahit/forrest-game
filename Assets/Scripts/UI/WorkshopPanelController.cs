@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,6 +57,7 @@ public class WorkshopPanelController : MonoBehaviour
     private RecipeConfig selectedRecipe;
     private List<RecipeItemUI> spawnedRecipeItems = new List<RecipeItemUI>();
     private List<QueueItemUI> spawnedQueueItems = new List<QueueItemUI>();
+    private bool externalQueueDisplayActive;
 
     // SÜREKLİ ARKA PLAN ZAMANLAYICISI (Panel Kapalı Olsa Bile Çalışır)
     public class OfflineOrder
@@ -68,6 +70,18 @@ public class WorkshopPanelController : MonoBehaviour
     public static int OfflineWoodBalance = 25;
 
     private static List<RecipeConfig> testRecipes = new List<RecipeConfig>();
+
+    /// <summary>
+    /// Harici bir oynanis sistemi panele baglandiginda Uret butonu dogrudan
+    /// WorkshopManager'i calistirmak yerine secilen tarifi bu olayla bildirir.
+    /// Dinleyici yoksa panelin mevcut uretim davranisi aynen devam eder.
+    /// </summary>
+    public event Action<RecipeConfig> ProductionRequested;
+    public event Action<RecipeConfig> RecipeChosen;
+    public event Action CloseRequested;
+
+    public RecipeConfig SelectedRecipe => selectedRecipe;
+    public bool HasExternalProductionHandler => ProductionRequested != null;
 
     // ═══════════════════════════════════════════
     //  Unity Lifecycle
@@ -215,7 +229,7 @@ public class WorkshopPanelController : MonoBehaviour
 
             if (itemUI != null)
             {
-                itemUI.Setup(recipe, OnRecipeSelected);
+                itemUI.Setup(recipe, OnRecipeClicked);
                 spawnedRecipeItems.Add(itemUI);
             }
         }
@@ -231,12 +245,14 @@ public class WorkshopPanelController : MonoBehaviour
         if (testRecipes.Count == 0)
         {
             string[] testNames = { "Masa", "Sandalye", "Ahşap Dolap" };
-            foreach (var name in testNames)
+            int[] testPrices = { 500, 250, 450 };
+            for (int i = 0; i < testNames.Length; i++)
             {
                 RecipeConfig config = ScriptableObject.CreateInstance<RecipeConfig>();
-                config.ItemID = name;
+                config.ItemID = testNames[i];
                 config.RequiredWood = 5;
                 config.BaseProductionTime = 5f;
+                config.BaseSalePrice = testPrices[i];
                 testRecipes.Add(config);
             }
         }
@@ -268,6 +284,24 @@ public class WorkshopPanelController : MonoBehaviour
             produceButton.interactable = true;
     }
 
+    private void OnRecipeClicked(RecipeConfig recipe)
+    {
+        OnRecipeSelected(recipe);
+
+        if (RecipeChosen == null) return;
+        foreach (Action<RecipeConfig> handler in RecipeChosen.GetInvocationList())
+        {
+            try
+            {
+                handler(recipe);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception, this);
+            }
+        }
+    }
+
     // ═══════════════════════════════════════════
     //  Sağ Taraf: Üretim Butonu İşlemi
     // ═══════════════════════════════════════════
@@ -277,6 +311,23 @@ public class WorkshopPanelController : MonoBehaviour
         PlayButtonClickSFX();
 
         if (selectedRecipe == null) return;
+
+        if (ProductionRequested != null)
+        {
+            foreach (Action<RecipeConfig> handler in ProductionRequested.GetInvocationList())
+            {
+                try
+                {
+                    handler(selectedRecipe);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
+
+            return;
+        }
 
         int cost = selectedRecipe.RequiredWood > 0 ? selectedRecipe.RequiredWood : 5;
 
@@ -335,6 +386,8 @@ public class WorkshopPanelController : MonoBehaviour
 
     public void RefreshQueueUI()
     {
+        if (externalQueueDisplayActive) return;
+
         foreach (var item in spawnedQueueItems)
         {
             if (item != null) Destroy(item.gameObject);
@@ -385,6 +438,8 @@ public class WorkshopPanelController : MonoBehaviour
 
     private void UpdateActiveQueueProgress()
     {
+        if (externalQueueDisplayActive) return;
+
         if (WorkshopManager.Instance != null && spawnedQueueItems.Count > 0)
         {
             float progress = WorkshopManager.Instance.GetProcessingProgress();
@@ -421,7 +476,83 @@ public class WorkshopPanelController : MonoBehaviour
     public void ClosePanel()
     {
         PlayButtonClickSFX();
+
+        if (CloseRequested != null)
+        {
+            foreach (Action handler in CloseRequested.GetInvocationList())
+            {
+                try
+                {
+                    handler();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception, this);
+                }
+            }
+            return;
+        }
+
         gameObject.SetActive(false);
+    }
+
+    public void CloseImmediately()
+    {
+        gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Efe'nin secimli uretim kuyrugunu Bulut'un mevcut queue alaninda gosterir.
+    /// Kaynak WorkshopManager kuyrugunu veya kalici veriyi degistirmez.
+    /// </summary>
+    public void ShowExternalQueue(IReadOnlyList<RecipeConfig> queuedRecipes, int remainingWood)
+    {
+        externalQueueDisplayActive = true;
+
+        foreach (QueueItemUI item in spawnedQueueItems)
+        {
+            if (item != null) Destroy(item.gameObject);
+        }
+        spawnedQueueItems.Clear();
+
+        if (queuedRecipes != null)
+        {
+            for (int i = 0; i < queuedRecipes.Count; i++)
+            {
+                RecipeConfig recipe = queuedRecipes[i];
+                if (recipe == null || queueItemPrefab == null || queueListContent == null) continue;
+
+                GameObject obj = Instantiate(queueItemPrefab, queueListContent);
+                QueueItemUI queueUI = obj.GetComponent<QueueItemUI>();
+                if (queueUI != null)
+                {
+                    queueUI.Setup(recipe.ItemID, 1, i == 0);
+                    spawnedQueueItems.Add(queueUI);
+                }
+            }
+        }
+
+        if (productionTimeText != null)
+        {
+            productionTimeText.text = $"Kalan Odun: {Mathf.Max(0, remainingWood)} | Üret: Kuyruğu Başlat";
+        }
+    }
+
+    public void ClearExternalQueueDisplay()
+    {
+        externalQueueDisplayActive = false;
+    }
+
+    /// <summary>
+    /// Atolye secimi zorunluyken panelin kapatilip kamyonun beklemede kalmasini
+    /// engellemek icin harici baglanti tarafindan kullanilir.
+    /// </summary>
+    public void SetCloseButtonInteractable(bool interactable)
+    {
+        if (closeButton != null)
+        {
+            closeButton.interactable = interactable;
+        }
     }
 
     private void PlayButtonClickSFX()

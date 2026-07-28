@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using ForrestGame.Utils;
 
-public class WorkshopProductionManager : MonoBehaviour 
+public class WorkshopProductionManager : MonoBehaviour
 {
     [Header("Spawn Points")]
     public Transform workshopTableTop;
@@ -34,6 +35,7 @@ public class WorkshopProductionManager : MonoBehaviour
     public static event Action OnCraftingFinishedGlobal;
 
     private bool _isProducing = false;
+    private readonly Queue<GameObject> _flyingLogPool = new Queue<GameObject>();
 
     private void Start() 
     { 
@@ -96,18 +98,11 @@ public class WorkshopProductionManager : MonoBehaviour
                 // Kamyonun kasasındaki odun sayısını 1 düşür (Efe'nin scripti anında 1 tane görseli silecek)
                 truckController.currentLoadedWood--;
 
-                // Havada uçacak sahte bir kütük oluştur
-                GameObject flyingLog = Instantiate(logPrefab, startPoint.position, startPoint.rotation);
-                
-                // Kütük fiziksel olarak düşmesin diye Rigidbody'sini sil
-                Rigidbody rb = flyingLog.GetComponent<Rigidbody>();
-                if (rb != null) Destroy(rb);
-                
-                // Çarpışmaları engelle
-                foreach (Collider col in flyingLog.GetComponentsInChildren<Collider>()) col.enabled = false;
+                // Havada uçacak sahte bir kütük al (havuzdan, yoksa oluştur)
+                GameObject flyingLog = GetPooledFlyingLog(logPrefab, startPoint.position, startPoint.rotation);
 
-                // Uçuşu başlat ve ulaştığında yok et
-                StartCoroutine(AnimateBoxFlight(flyingLog, startPoint, endPoint, flightDuration, true));
+                // Uçuşu başlat ve ulaştığında havuza iade et
+                StartCoroutine(AnimateBoxFlight(flyingLog, startPoint, endPoint, flightDuration, true, ReturnFlyingLogToPool));
 
                 // Bir sonraki kütüğün fırlaması için biraz bekle
                 yield return new WaitForSeconds(timePerLog);
@@ -209,7 +204,7 @@ public class WorkshopProductionManager : MonoBehaviour
         GameLogger.Log("[WorkshopProduction] Cycle complete. Truck departing.", this);
     }
 
-    private IEnumerator AnimateBoxFlight(GameObject box, Transform startTransform, Transform endTransform, float duration, bool destroyAtEnd = false) 
+    private IEnumerator AnimateBoxFlight(GameObject box, Transform startTransform, Transform endTransform, float duration, bool destroyAtEnd = false, Action<GameObject> onDestroyAtEnd = null)
     {
         float elapsed = 0f;
         Vector3 startPos = startTransform.position;
@@ -241,7 +236,42 @@ public class WorkshopProductionManager : MonoBehaviour
         {
             box.transform.position = endPos;
             box.transform.rotation = endRot;
-            if (destroyAtEnd) Destroy(box);
+            if (destroyAtEnd)
+            {
+                if (onDestroyAtEnd != null) onDestroyAtEnd(box);
+                else Destroy(box);
+            }
         }
+    }
+
+    private GameObject GetPooledFlyingLog(GameObject logPrefab, Vector3 position, Quaternion rotation)
+    {
+        GameObject flyingLog;
+
+        if (_flyingLogPool.Count > 0)
+        {
+            flyingLog = _flyingLogPool.Dequeue();
+            flyingLog.transform.SetPositionAndRotation(position, rotation);
+            flyingLog.SetActive(true);
+        }
+        else
+        {
+            flyingLog = Instantiate(logPrefab, position, rotation);
+
+            // Kütük fiziksel olarak düşmesin diye Rigidbody'sini sil (havuzdaki her kütükte tek seferlik)
+            Rigidbody rb = flyingLog.GetComponent<Rigidbody>();
+            if (rb != null) Destroy(rb);
+
+            // Çarpışmaları engelle
+            foreach (Collider col in flyingLog.GetComponentsInChildren<Collider>()) col.enabled = false;
+        }
+
+        return flyingLog;
+    }
+
+    private void ReturnFlyingLogToPool(GameObject flyingLog)
+    {
+        flyingLog.SetActive(false);
+        _flyingLogPool.Enqueue(flyingLog);
     }
 }
