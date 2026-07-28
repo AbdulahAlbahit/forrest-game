@@ -11,30 +11,12 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
     [SerializeField] private EfeWorkshopSelectionController selectionController;
     [SerializeField] private WorkshopPanelController workshopPanel;
 
-    private void Start()
-    {
-        if (!ResolveReferences())
-        {
-            return;
-        }
-
-        SubscribePanel();
-
-        // Prefab ekip tarafinda aktif kaydedilse bile Efe sahnesinde panel kendi
-        // kendine acilmasin. Paneli yalnizca kamyonun secim olayi acabilir.
-        if (!selectionController.IsAwaitingSelection && !selectionController.HasPendingTruck)
-        {
-            workshopPanel.ClearExternalQueueDisplay();
-            workshopPanel.CloseImmediately();
-        }
-    }
-
     private void OnEnable()
     {
         EfeWorkshopSelectionController.OnSelectionRequested += HandleSelectionRequested;
         EfeWorkshopSelectionController.OnRecipeSelected += HandleRecipeSelected;
         EfeWorkshopSelectionController.OnSelectionRejected += HandleSelectionRejected;
-        EfeWorkshopSelectionController.OnProductionQueueCompleted += HandleProductionQueueCompleted;
+        ResolveReferences();
         SubscribePanel();
     }
 
@@ -43,7 +25,6 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
         EfeWorkshopSelectionController.OnSelectionRequested -= HandleSelectionRequested;
         EfeWorkshopSelectionController.OnRecipeSelected -= HandleRecipeSelected;
         EfeWorkshopSelectionController.OnSelectionRejected -= HandleSelectionRejected;
-        EfeWorkshopSelectionController.OnProductionQueueCompleted -= HandleProductionQueueCompleted;
         UnsubscribePanel();
     }
 
@@ -74,6 +55,14 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
+        // Kamyon bekleyen bir secim yoksa Uret butonu Efe'nin onay akisini degil,
+        // tarif tiklaninca zaten kuyruga giren WorkshopManager akisini kullanir.
+        if (!selectionController.IsAwaitingSelection)
+        {
+            WorkshopManager.Instance?.TryStartProduction(recipe, 1);
+            return;
+        }
+
         if (selectionController.ConfirmSelection())
         {
             workshopPanel.ClearExternalQueueDisplay();
@@ -88,7 +77,16 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
-        selectionController.SelectRecipe(recipe);
+        // Kamyon atolyede secim bekliyorsa Efe'nin mevcut secim akisi devam etsin.
+        if (selectionController.IsAwaitingSelection)
+        {
+            selectionController.SelectRecipe(recipe);
+            return;
+        }
+
+        // Bekleyen kamyon yoksa tarif dogrudan WorkshopManager kuyruguna girsin;
+        // PlayerData.WorkshopRawWood yeterliyse uretir, degilse kalici kuyrukta bekler.
+        WorkshopManager.Instance?.TryStartProduction(recipe, 1);
     }
 
     private void HandleRecipeSelected(RecipeConfig recipe, int amount, int remainingWood)
@@ -99,20 +97,9 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
         }
 
         workshopPanel.ShowExternalQueue(selectionController.QueuedRecipes, remainingWood);
-        workshopPanel.SetCloseButtonInteractable(selectionController.IsProductionStarted);
+        workshopPanel.SetCloseButtonInteractable(false);
         NotificationUIController.Instance?.ShowNotification(
-            $"{recipe.ItemID} kuyruğa eklendi; üretim otomatik başladı.");
-    }
-
-    private void HandleProductionQueueCompleted()
-    {
-        if (workshopPanel == null)
-        {
-            return;
-        }
-
-        workshopPanel.ClearExternalQueueDisplay();
-        workshopPanel.CloseImmediately();
+            $"{recipe.ItemID} kuyruğa eklendi. Seçimin bitince Üret'e bas.");
     }
 
     private void HandleCloseRequested()
@@ -122,16 +109,16 @@ public sealed class EfeWorkshopPanelBridge : MonoBehaviour
             return;
         }
 
-        if (!selectionController.IsProductionStarted)
+        // Kamyon bekleyen bir secim varsa panel kapanmasin, Uret'e yonlendir.
+        if (selectionController.IsAwaitingSelection)
         {
             NotificationUIController.Instance?.ShowNotification(
-                "Atölyeden çıkmadan önce en az bir ürün seç.");
+                "Atölye seçimini tamamlamak için Üret düğmesine bas.");
             return;
         }
 
+        // Bekleyen secim yoksa panel normal sekilde kapanabilir.
         workshopPanel.CloseImmediately();
-        NotificationUIController.Instance?.ShowNotification(
-            "Atölye kapatıldı; üretim arka planda devam ediyor.");
     }
 
     private void HandleSelectionRejected(string reason)
