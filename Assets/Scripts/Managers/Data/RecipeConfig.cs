@@ -7,4 +7,5 @@ public class RecipeConfig : ScriptableObject
     public int RequiredWood;
     public float BaseProductionTime;
     public int BaseSalePrice;
+    public Sprite Icon;
 }

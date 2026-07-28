@@ -42,8 +42,9 @@ public class RecipeItemUI : MonoBehaviour
         {
             if (itemNameText != null)
                 itemNameText.text = recipe.ItemID;
-            
-            // İleride ikonu RecipeConfig'e eklenirse buradan çekilebilir
+
+            if (itemIcon != null)
+                itemIcon.sprite = recipe.Icon;
         }
 
         SetSelected(false);
