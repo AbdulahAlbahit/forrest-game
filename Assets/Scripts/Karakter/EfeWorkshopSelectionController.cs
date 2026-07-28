@@ -59,6 +59,11 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         }
 
         Instance = this;
+
+        if (workshopProduction == null)
+        {
+            workshopProduction = FindFirstObjectByType<WorkshopProductionManager>();
+        }
     }
 
     private void OnEnable()
@@ -217,38 +222,41 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             return false;
         }
 
-        if (option1Recipe == null && option2Recipe == null)
-        {
-            Debug.LogWarning(
-                "[EfeWorkshopSelection] Tarif secenegi yok; Mert'in otomatik akisi kullanilacak.",
-                this);
-            return false;
-        }
-
         int incomingWood = Mathf.Max(0, truck.currentLoadedWood);
         if (incomingWood <= 0)
         {
             return false;
         }
 
+        // Secim mini-oyunu kaldirildi: kamyon eve gelince sadece odunu atolye
+        // stoguna bosaltir ve hemen markete gider. Uretim, kalici WorkshopQueue'yu
+        // arka planda isleyen WorkshopManager.ProcessQueue() tarafindan, kamyon
+        // zamanlamasindan tamamen bagimsiz olarak yurutulur.
         _pendingTruck = truck;
-        _deliveredWood = incomingWood;
-        _remainingWood = incomingWood;
-        _selectedRecipe = null;
-        _selectedAmount = 0;
-        _queuedRecipes.Clear();
-        _isAwaitingSelection = true;
-
-        string option1 = DescribeOption(1, option1Recipe);
-        string option2 = DescribeOption(2, option2Recipe);
-        Debug.LogWarning(
-            $"[ATOLYE SECIMI] Kamyon atolyeye geldi. Urun secin: " +
-            $"klavyeden [{option1}] veya [{option2}]. Teslim edilen odun: {_deliveredWood}. " +
-            "Her tus bir urunu kuyruga ekler; Enter kuyrugu onaylar. " +
-            "Mobil arayuz SelectRecipe ve ConfirmSelection metodlarini kullanir.",
-            this);
-        InvokeSafely(OnSelectionRequested, truck, _deliveredWood);
+        _productionStarted = true;
+        _completionRoutine = StartCoroutine(UnloadWoodOnlyRoutine(truck));
         return true;
+    }
+
+    private IEnumerator UnloadWoodOnlyRoutine(TruckRouteController truck)
+    {
+        yield return StartCoroutine(UnloadTruckWood(truck));
+
+        // Su an fiilen uretilen bir urun varsa bitmesini bekle; odun yetersizliginden
+        // beklemede olan (henuz baslamamis) siparisler icin sonsuza kadar beklenmez.
+        while (WorkshopManager.Instance != null && WorkshopManager.Instance.IsActivelyProducing)
+        {
+            yield return null;
+        }
+
+        yield return StartCoroutine(workshopProduction.LoadFinishedBoxesOntoTruck(truck.transform));
+
+        Debug.Log(
+            "[EfeWorkshopSelection] Bekleyen uretim tamamlandi. Kamyon markete gidiyor.",
+            this);
+
+        truck.OnWorkshopProcessComplete();
+        ResetPendingState();
     }
 
     private IEnumerator ProcessSelectedQueue()
@@ -291,6 +299,14 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         workshopProduction.ResetVisuals();
 
         int totalLogs = Mathf.Max(0, truck.currentLoadedWood);
+
+        // Teslim edilen odun atolye stoguna (PlayerData.WorkshopRawWood) aktarilsin,
+        // yoksa kuyruga alinan urunler icin odun hicbir zaman yeterli olmaz.
+        if (totalLogs > 0 && WorkshopManager.Instance != null)
+        {
+            WorkshopManager.Instance.AddWood(totalLogs);
+        }
+
         Transform startPoint = workshopProduction.truckCargoPoint != null
             ? workshopProduction.truckCargoPoint
             : truck.transform;
