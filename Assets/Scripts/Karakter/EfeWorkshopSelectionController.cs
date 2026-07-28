@@ -27,8 +27,10 @@ public class EfeWorkshopSelectionController : MonoBehaviour
     public static event Action<RecipeConfig, int, int> OnRecipeSelected;
     public static event Action<string> OnSelectionRejected;
     public static event Action<RecipeConfig, int> OnSelectedProductionCompleted;
+    public static event Action OnProductionQueueCompleted;
 
     public bool IsAwaitingSelection => _isAwaitingSelection;
+    public bool IsProductionStarted => _productionStarted;
     public bool HasPendingTruck => _pendingTruck != null;
     public int DeliveredWood => _deliveredWood;
     public int RemainingWood => _remainingWood;
@@ -137,11 +139,6 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             return Reject("Atolyede secim bekleyen bir kamyon yok.");
         }
 
-        if (_productionStarted)
-        {
-            return Reject("Uretim basladigi icin kuyruga yeni urun eklenemez.");
-        }
-
         if (recipe == null || string.IsNullOrWhiteSpace(recipe.ItemID) || recipe.RequiredWood <= 0)
         {
             return Reject("Tarif bilgisi gecersiz.");
@@ -166,9 +163,15 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         Debug.Log(
             $"[EfeWorkshopSelection] Kuyruga eklendi: 1x {recipe.ItemID}. " +
             $"Kuyruk: {_queuedRecipes.Count} urun, kalan odun: {_remainingWood}. " +
-            "Baska urun secin veya panelde Uret ile kuyrugu baslatin.",
+            "Uretim otomatik olarak devam ediyor.",
             this);
         InvokeSafely(OnRecipeSelected, recipe, 1, _remainingWood);
+
+        if (!_productionStarted)
+        {
+            ConfirmSelection();
+        }
+
         return true;
     }
 
@@ -189,7 +192,6 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             return Reject("Uretim zaten basladi.");
         }
 
-        _isAwaitingSelection = false;
         _productionStarted = true;
 
         if (_completionRoutine != null)
@@ -199,7 +201,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         _completionRoutine = StartCoroutine(ProcessSelectedQueue());
 
         Debug.Log(
-            $"[EfeWorkshopSelection] {_queuedRecipes.Count} urunluk kuyruk onaylandi. " +
+            $"[EfeWorkshopSelection] Otomatik uretim basladi. Kuyruk: {_queuedRecipes.Count} urun. " +
             $"Kullanilan odun: {_deliveredWood - _remainingWood}, kalan: {_remainingWood}.",
             this);
         return true;
@@ -244,8 +246,8 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         Debug.LogWarning(
             $"[ATOLYE SECIMI] Kamyon atolyeye geldi. Urun secin: " +
             $"klavyeden [{option1}] veya [{option2}]. Teslim edilen odun: {_deliveredWood}. " +
-            "Her tus bir urunu kuyruga ekler; Enter kuyrugu onaylar. " +
-            "Mobil arayuz SelectRecipe ve ConfirmSelection metodlarini kullanir.",
+            "Her secim urunu kuyruga ekler ve uretimi otomatik baslatir. " +
+            "Mobil arayuz SelectRecipe metodunu kullanir.",
             this);
         InvokeSafely(OnSelectionRequested, truck, _deliveredWood);
         return true;
@@ -254,7 +256,7 @@ public class EfeWorkshopSelectionController : MonoBehaviour
     private IEnumerator ProcessSelectedQueue()
     {
         TruckRouteController truck = _pendingTruck;
-        List<RecipeConfig> productionOrders = new List<RecipeConfig>(_queuedRecipes);
+        int completedOrderCount = 0;
 
         if (truck == null || workshopProduction == null)
         {
@@ -266,23 +268,31 @@ public class EfeWorkshopSelectionController : MonoBehaviour
 
         yield return StartCoroutine(UnloadTruckWood(truck));
 
-        for (int i = 0; i < productionOrders.Count; i++)
+        while (completedOrderCount < _queuedRecipes.Count)
         {
-            RecipeConfig recipe = productionOrders[i];
-            yield return StartCoroutine(CraftSingleProduct(recipe, truck, i + 1, productionOrders.Count));
+            RecipeConfig recipe = _queuedRecipes[completedOrderCount];
+            yield return StartCoroutine(CraftSingleProduct(
+                recipe,
+                truck,
+                completedOrderCount + 1,
+                _queuedRecipes.Count));
+
+            completedOrderCount++;
 
             Debug.Log(
                 $"[EfeWorkshopSelection] Paket hazir: 1x {recipe.ItemID} " +
-                $"({i + 1}/{productionOrders.Count}).",
+                $"({completedOrderCount}/{_queuedRecipes.Count}).",
                 this);
             InvokeSafely(OnSelectedProductionCompleted, recipe, 1);
         }
 
+        _isAwaitingSelection = false;
         PrepareTruckCargoVisual(truck);
         truck.OnWorkshopProcessComplete();
         Debug.Log(
-            $"[EfeWorkshopSelection] Tum kuyruk tamamlandi: {productionOrders.Count} koli. Kamyon serbest.",
+            $"[EfeWorkshopSelection] Tum kuyruk tamamlandi: {completedOrderCount} koli. Kamyon serbest.",
             this);
+        InvokeSafely(OnProductionQueueCompleted);
         ResetPendingState();
     }
 
@@ -623,6 +633,22 @@ public class EfeWorkshopSelectionController : MonoBehaviour
             try
             {
                 handler(value);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+    }
+
+    private static void InvokeSafely(Action handlers)
+    {
+        if (handlers == null) return;
+        foreach (Action handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler();
             }
             catch (Exception exception)
             {
