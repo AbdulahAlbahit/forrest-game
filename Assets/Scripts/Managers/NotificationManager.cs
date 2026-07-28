@@ -37,5 +37,6 @@ public class NotificationManager : MonoBehaviour
         if (string.IsNullOrEmpty(message)) return;
         GameLogger.Log($"[NotificationManager] {message}");
         OnNotificationReceived?.Invoke(message);
+        NotificationUIController.Instance?.ShowNotification(message);
     }
 }

@@ -139,15 +139,24 @@ public class QuestHUDController : MonoBehaviour
         // Görev verileri değiştiğinde güncelle
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+
+        ShopManager.OnItemSold += HandleItemSold;
     }
 
     private void OnDisable()
     {
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+
+        ShopManager.OnItemSold -= HandleItemSold;
     }
 
     private void HandleDataLoaded(PlayerData data)
+    {
+        RefreshQuestDisplay();
+    }
+
+    private void HandleItemSold(string itemId, int amount)
     {
         RefreshQuestDisplay();
     }
@@ -187,19 +196,19 @@ public class QuestHUDController : MonoBehaviour
         {
             case QuestDisplayMode.ShowThree:
                 if (questPanel != null) questPanel.SetActive(true);
-                UpdateToggleButtonText("📋 3");
+                UpdateToggleButtonText("Görevler (3)");
                 RefreshQuestDisplay();
                 break;
 
             case QuestDisplayMode.ShowOne:
                 if (questPanel != null) questPanel.SetActive(true);
-                UpdateToggleButtonText("📋 1");
+                UpdateToggleButtonText("Görevler (1)");
                 RefreshQuestDisplay();
                 break;
 
             case QuestDisplayMode.Hidden:
                 if (questPanel != null) questPanel.SetActive(false);
-                UpdateToggleButtonText("📋");
+                UpdateToggleButtonText("Görevler");
                 break;
         }
 
@@ -248,7 +257,7 @@ public class QuestHUDController : MonoBehaviour
         QuestDisplayData quest = data[index];
 
         if (nameText != null)
-            nameText.text = quest.IsCompleted ? $"✅ {quest.Name}" : quest.Name;
+            nameText.text = quest.IsCompleted ? $"{quest.Name} (Bitti)" : quest.Name;
 
         if (progressText != null)
             progressText.text = quest.IsCompleted ? "Tamamlandı!" : $"{quest.CurrentProgress} / {quest.TargetAmount}";
@@ -290,14 +299,6 @@ public class QuestHUDController : MonoBehaviour
                     IsCompleted = isCompleted
                 });
             }
-        }
-
-        // 2. QuestManager yoksa veya görev listesi boşsa → test verileri göster
-        if (result.Count == 0)
-        {
-            result.Add(new QuestDisplayData { Name = "İlk Masanı Üret", CurrentProgress = 0, TargetAmount = 1, ProgressRatio = 0f, IsCompleted = false });
-            result.Add(new QuestDisplayData { Name = "3 Sandalye Sat", CurrentProgress = 1, TargetAmount = 3, ProgressRatio = 0.33f, IsCompleted = false });
-            result.Add(new QuestDisplayData { Name = "5 Odun Topla", CurrentProgress = 5, TargetAmount = 5, ProgressRatio = 1f, IsCompleted = true });
         }
 
         // Tamamlanmamış görevleri öne al

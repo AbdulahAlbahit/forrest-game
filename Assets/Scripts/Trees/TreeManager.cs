@@ -194,6 +194,18 @@ public class TreeManager : MonoBehaviour
             OnTreeFelled?.Invoke(treeWorldPos);
             OnTreeFelledAction?.Invoke(treeWorldPos);
 
+            // --- ÖDÜLLER ---
+            if (XPManager.Instance != null)
+            {
+                XPManager.Instance.AddXP(20); // Ağaç başına 20 XP
+                GameLogger.Log("[TreeManager] +20 XP kazanildi!", this);
+            }
+            else
+            {
+                GameLogger.LogWarning("[TreeManager] UYARI: XPManager bulunamadi! XP verilemedi.", this);
+            }
+            // ---------------
+
             GameLogger.Log($"[TreeManager] Tree Felled! Type: {typeIndex}. Respawn in {effectiveRespawnTime}s.", this);
         }
     }

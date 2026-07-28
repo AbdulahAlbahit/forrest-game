@@ -7,14 +7,11 @@ using ForrestGame.Core;
 
 /// <summary>
 /// Tüm Görevler Paneli (FullQuestPanel) kontrolcüsü.
-/// Ekran görüntüsündeki çizime uygun olarak 2 sekme içerir:
+/// Sol tarafta sekmesine göre görev isimlerini listeler, sağ tarafta seçilen görevin detaylarını gösterir.
+/// 
+/// SEKMELER:
 /// 1. "Mevcut Questler" (Aktif görevler)
 /// 2. "Tamamlanan Questler" (Bitmiş görevler)
-/// Ayrıca sağ üstte Kapat (X) butonu yer alır.
-///
-/// KULLANIM:
-/// 1. CanvasUI altına FullQuestPanel prefab/objesini koyun.
-/// 2. Bu scripti o panel objesine ekleyin ve Inspector referanslarını sürükleyin.
 /// </summary>
 public class FullQuestPanelController : MonoBehaviour
 {
@@ -47,12 +44,34 @@ public class FullQuestPanelController : MonoBehaviour
     [Tooltip("Sağ üstteki (X) kapatma butonu.")]
     [SerializeField] private Button closeButton;
 
-    [Header("--- Görev Liste İçeriği ---")]
+    [Header("--- Sol Taraf: Görev Liste İçeriği ---")]
     [Tooltip("Görev öğelerinin dizileceği ScrollRect/Content transform'u.")]
     [SerializeField] private Transform questListContent;
 
     [Tooltip("Görev öğesi prefab'ı (FullQuestItemUI bileşeni içermelidir).")]
     [SerializeField] private GameObject questItemPrefab;
+
+    [Header("--- Sağ Taraf: Seçili Görev Detayları ---")]
+    [Tooltip("Sağ taraftaki detay panelinin kapsayıcı objesi (Opsiyonel).")]
+    [SerializeField] private GameObject detailPanelContainer;
+
+    [Tooltip("Seçili görevin adı metni.")]
+    [SerializeField] private TextMeshProUGUI selectedQuestNameText;
+
+    [Tooltip("Seçili görevin açıklama metni.")]
+    [SerializeField] private TextMeshProUGUI selectedQuestDescriptionText;
+
+    [Tooltip("Seçili görevin ilerleme miktarı metni (Örn: '2 / 5' veya 'Tamamlandı!').")]
+    [SerializeField] private TextMeshProUGUI selectedQuestProgressText;
+
+    [Tooltip("Seçili görevin ödül bilgisi metni (Örn: '+100 Altın, +50 XP').")]
+    [SerializeField] private TextMeshProUGUI selectedQuestRewardText;
+
+    [Tooltip("Seçili görevin canlı dolan ilerleme barı.")]
+    [SerializeField] private Image selectedQuestProgressFillImage;
+
+    [Tooltip("Seçili görev tamamlandı rozeti.")]
+    [SerializeField] private GameObject selectedQuestCompletedBadge;
 
     [Header("--- Boş Liste Durum Metni ---")]
     [Tooltip("Hiç görev olmadığında gösterilecek bilgilendirme metni.")]
@@ -69,6 +88,7 @@ public class FullQuestPanelController : MonoBehaviour
     // Dahili Durum
     private QuestTab currentTab = QuestTab.Active;
     private List<FullQuestItemUI> spawnedItems = new List<FullQuestItemUI>();
+    private QuestDataWrapper selectedQuest;
 
     // ═══════════════════════════════════════════
     //  Unity Lifecycle
@@ -83,7 +103,6 @@ public class FullQuestPanelController : MonoBehaviour
         }
         Instance = this;
 
-        // Dinleyicileri Awake'te bağla ki panel açıldığında tıklamalar kesinleşmiş olsun
         if (activeQuestsTabButton != null)
             activeQuestsTabButton.onClick.AddListener(() => SwitchTab(QuestTab.Active));
 
@@ -96,7 +115,6 @@ public class FullQuestPanelController : MonoBehaviour
 
     private void Start()
     {
-        // Başlangıçta paneli sadece oyun esnasında kapalıysa gizle
         if (mainPanel != null && !mainPanel.activeSelf)
             mainPanel.SetActive(false);
     }
@@ -106,7 +124,8 @@ public class FullQuestPanelController : MonoBehaviour
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
 
-        // Panel her aktif olduğunda varsayılan olarak 'Mevcut Questler' sekmesini aç ve doldur
+        ShopManager.OnItemSold += HandleItemSold;
+
         SwitchTab(QuestTab.Active);
     }
 
@@ -114,9 +133,17 @@ public class FullQuestPanelController : MonoBehaviour
     {
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+
+        ShopManager.OnItemSold -= HandleItemSold;
     }
 
     private void HandleDataLoaded(PlayerData data)
+    {
+        if (mainPanel != null && mainPanel.activeSelf)
+            RefreshList();
+    }
+
+    private void HandleItemSold(string itemId, int amount)
     {
         if (mainPanel != null && mainPanel.activeSelf)
             RefreshList();
@@ -130,12 +157,13 @@ public class FullQuestPanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        if (mainPanel != null && !mainPanel.activeSelf)
+        if (mainPanel != null)
             mainPanel.SetActive(true);
-        else if (!gameObject.activeSelf)
+
+        if (!gameObject.activeSelf)
             gameObject.SetActive(true);
-        else
-            SwitchTab(QuestTab.Active);
+
+        SwitchTab(QuestTab.Active);
     }
 
     public void ClosePanel()
@@ -166,10 +194,7 @@ public class FullQuestPanelController : MonoBehaviour
         PlayButtonClickSFX();
         currentTab = tab;
 
-        // Sekme Buton Görsellerini Güncelle
         UpdateTabButtonStyles();
-
-        // Görev Listesini Yenile
         RefreshList();
     }
 
@@ -181,7 +206,6 @@ public class FullQuestPanelController : MonoBehaviour
         if (completedTabImage != null)
             completedTabImage.color = (currentTab == QuestTab.Completed) ? activeTabColor : inactiveTabColor;
 
-        // Sekme butonlarının tıklanabilirlik durumlarını ayarla
         if (activeQuestsTabButton != null)
             activeQuestsTabButton.interactable = (currentTab != QuestTab.Active);
 
@@ -195,10 +219,10 @@ public class FullQuestPanelController : MonoBehaviour
 
     public void RefreshList()
     {
-        // Eski objeleri temizle
         ClearSpawnedItems();
 
         List<QuestDataWrapper> questList = CollectQuestsForCurrentTab();
+        Debug.Log($"[FullQuestPanel] Sekme: {currentTab}, Bulunan Görev Sayısı: {questList.Count}");
 
         string emptyMessage = currentTab == QuestTab.Active 
             ? "Şu an aktif görev bulunmuyor." 
@@ -219,28 +243,38 @@ public class FullQuestPanelController : MonoBehaviour
 
         if (questListContent == null) return;
 
-        // Liste boşsa ve prefab varsa (ya da emptyListText bağlanmamışsa) bilgilendirme satırı ekle
-        if (questList.Count == 0 && emptyListText == null && questItemPrefab != null)
+        if (questList.Count == 0)
         {
-            GameObject emptyObj = Instantiate(questItemPrefab, questListContent);
-            FullQuestItemUI itemUI = emptyObj.GetComponent<FullQuestItemUI>();
-            if (itemUI != null)
-            {
-                itemUI.Setup("Bilgilendirme", emptyMessage, 0, 0, 0, 0, false);
-                spawnedItems.Add(itemUI);
-            }
+            ClearRightDetailPanel(emptyMessage);
             return;
         }
 
         if (questItemPrefab == null) return;
 
-        foreach (var quest in questList)
+        FullQuestItemUI firstItemUI = null;
+        QuestDataWrapper firstQuestData = null;
+
+        for (int i = 0; i < questList.Count; i++)
         {
-            GameObject obj = Instantiate(questItemPrefab, questListContent);
+            var quest = questList[i];
+
+            GameObject obj = Instantiate(questItemPrefab, questListContent, false);
+            obj.SetActive(true);
+
+            RectTransform rect = obj.GetComponent<RectTransform>();
+            if (rect != null)
+            {
+                rect.localScale = Vector3.one;
+                rect.anchoredPosition3D = Vector3.zero;
+            }
+
             FullQuestItemUI itemUI = obj.GetComponent<FullQuestItemUI>();
 
             if (itemUI != null)
             {
+                FullQuestItemUI capturedItemUI = itemUI;
+                QuestDataWrapper capturedQuestData = quest;
+
                 itemUI.Setup(
                     quest.Name,
                     quest.Description,
@@ -248,22 +282,121 @@ public class FullQuestPanelController : MonoBehaviour
                     quest.TargetAmount,
                     quest.RewardGold,
                     quest.RewardXP,
-                    quest.IsCompleted
+                    quest.IsCompleted,
+                    () => OnQuestSelected(capturedQuestData, capturedItemUI)
                 );
+
                 spawnedItems.Add(itemUI);
+
+                if (i == 0)
+                {
+                    firstItemUI = itemUI;
+                    firstQuestData = quest;
+                }
             }
         }
+
+        if (questListContent is RectTransform rectTransform)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+        }
+
+        // İlk görevi otomatik seç
+        if (firstQuestData != null && firstItemUI != null)
+        {
+            OnQuestSelected(firstQuestData, firstItemUI);
+        }
+    }
+
+    private void OnQuestSelected(QuestDataWrapper quest, FullQuestItemUI itemUI)
+    {
+        PlayButtonClickSFX();
+        selectedQuest = quest;
+
+        // Sol listedeki diğer öğelerin vurgusunu kaldır
+        foreach (var item in spawnedItems)
+        {
+            if (item != null) item.SetSelected(false);
+        }
+
+        if (itemUI != null)
+            itemUI.SetSelected(true);
+
+        // Sağ Taraf Detay Panelini Güncelle
+        UpdateRightDetailPanel(quest);
+    }
+
+    private void UpdateRightDetailPanel(QuestDataWrapper quest)
+    {
+        if (detailPanelContainer != null)
+            detailPanelContainer.SetActive(true);
+
+        if (quest == null) return;
+
+        if (selectedQuestNameText != null)
+            selectedQuestNameText.text = quest.IsCompleted ? $"{quest.Name} (Tamamlandı)" : quest.Name;
+
+        if (selectedQuestDescriptionText != null)
+            selectedQuestDescriptionText.text = string.IsNullOrEmpty(quest.Description) ? "Görev hedefini tamamla." : quest.Description;
+
+        if (selectedQuestProgressText != null)
+        {
+            if (quest.IsCompleted)
+                selectedQuestProgressText.text = "Tamamlandı!";
+            else
+                selectedQuestProgressText.text = $"{quest.CurrentProgress} / {quest.TargetAmount}";
+        }
+
+        if (selectedQuestRewardText != null)
+        {
+            string rewardStr = "";
+            if (quest.RewardGold > 0) rewardStr += $"+{quest.RewardGold} Altın ";
+            if (quest.RewardXP > 0) rewardStr += $"+{quest.RewardXP} XP";
+            selectedQuestRewardText.text = string.IsNullOrEmpty(rewardStr) ? "Ödül Yok" : rewardStr.Trim();
+        }
+
+        if (selectedQuestProgressFillImage != null)
+        {
+            float ratio = quest.IsCompleted ? 1f : (quest.TargetAmount > 0 ? Mathf.Clamp01((float)quest.CurrentProgress / quest.TargetAmount) : 0f);
+            selectedQuestProgressFillImage.fillAmount = ratio;
+        }
+
+        if (selectedQuestCompletedBadge != null)
+        {
+            selectedQuestCompletedBadge.SetActive(quest.IsCompleted);
+        }
+    }
+
+    private void ClearRightDetailPanel(string emptyMessage)
+    {
+        if (selectedQuestNameText != null)
+            selectedQuestNameText.text = "";
+
+        if (selectedQuestDescriptionText != null)
+            selectedQuestDescriptionText.text = emptyMessage;
+
+        if (selectedQuestProgressText != null)
+            selectedQuestProgressText.text = "";
+
+        if (selectedQuestRewardText != null)
+            selectedQuestRewardText.text = "";
+
+        if (selectedQuestProgressFillImage != null)
+            selectedQuestProgressFillImage.fillAmount = 0f;
+
+        if (selectedQuestCompletedBadge != null)
+            selectedQuestCompletedBadge.SetActive(false);
     }
 
     private void ClearSpawnedItems()
     {
-        // questListContent altındaki TÜM çocuk objeleri derhal listeden ayırıp sil
         if (questListContent != null)
         {
             for (int i = questListContent.childCount - 1; i >= 0; i--)
             {
                 Transform child = questListContent.GetChild(i);
-                child.SetParent(null); // Layout gruptan anında çıkar
+                child.gameObject.SetActive(false);
+                child.SetParent(null);
                 Destroy(child.gameObject);
             }
         }
@@ -278,7 +411,6 @@ public class FullQuestPanelController : MonoBehaviour
     {
         List<QuestDataWrapper> list = new List<QuestDataWrapper>();
 
-        // 1. Gerçek QuestManager sistemi
         if (QuestManager.Instance != null && QuestManager.Instance.tumGorevler != null)
         {
             PlayerData data = CloudSaveManager.Instance?.CurrentData;
@@ -290,9 +422,9 @@ public class FullQuestPanelController : MonoBehaviour
                 bool isCompleted = data?.CompletedQuests != null && data.CompletedQuests.Contains(quest.QuestID);
                 int progress = data?.ActiveQuests != null ? data.ActiveQuests.Get(quest.QuestID, 0) : 0;
 
-                // Sekme filtresi: Active tab → tamamlanmamışlar, Completed tab → tamamlanmışlar
                 if (currentTab == QuestTab.Active && !isCompleted)
                 {
+                    Debug.Log($"[FullQuestPanel] Aktif Görev Eklendi: {quest.QuestName} ({progress}/{quest.TargetAmount})");
                     list.Add(new QuestDataWrapper
                     {
                         Name = quest.QuestName,
@@ -317,20 +449,6 @@ public class FullQuestPanelController : MonoBehaviour
                         IsCompleted = true
                     });
                 }
-            }
-        }
-
-        // 2. Fallback: QuestManager yoksa test verisi üret
-        if (list.Count == 0 && (QuestManager.Instance == null || QuestManager.Instance.tumGorevler == null || QuestManager.Instance.tumGorevler.Count == 0))
-        {
-            if (currentTab == QuestTab.Active)
-            {
-                list.Add(new QuestDataWrapper { Name = "İlk Masanı Üret", Description = "Atölyede 1 adet masa üret.", CurrentProgress = 0, TargetAmount = 1, RewardGold = 100, RewardXP = 50, IsCompleted = false });
-                list.Add(new QuestDataWrapper { Name = "3 Sandalye Sat", Description = "Markette 3 sandalye satışı yap.", CurrentProgress = 1, TargetAmount = 3, RewardGold = 250, RewardXP = 100, IsCompleted = false });
-            }
-            else
-            {
-                list.Add(new QuestDataWrapper { Name = "5 Odun Topla", Description = "Ormandan 5 adet ham odun topla.", CurrentProgress = 5, TargetAmount = 5, RewardGold = 50, RewardXP = 20, IsCompleted = true });
             }
         }
 
