@@ -113,7 +113,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 1
-    - _KarMiktari: 0.00076812366
+    - _KarMiktari: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -138,6 +138,6 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _KarRengi: {r: 0.9215686, g: 0.9529411, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _TabanRengi: {r: 0.4392157, g: 0.9019608, b: 0.8392157, a: 1}
+    - _TabanRengi: {r: 0.8235295, g: 0.4117647, b: 0.1176471, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
