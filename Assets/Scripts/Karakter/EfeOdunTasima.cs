@@ -666,6 +666,61 @@ public class EfeOdunTasima : MonoBehaviour
         return aktarilanMiktar;
     }
 
+    /// <summary>
+    /// Kalici ambardan, sepetteki bos yer kadar odunu karaktere geri verir.
+    /// Kalici stoktan dusme ve kayit islemi EfeWoodStorageBridge sorumlulugundadir.
+    /// </summary>
+    public int AmbardanOdunAl(int istenenMiktar, Vector3 ambarDunyaKonumu)
+    {
+        if (kamyonYuklemeAnimasyonuCalisiyor || istenenMiktar <= 0 || SepetDolu)
+        {
+            return 0;
+        }
+
+        if (sepetOdunuGorselleri.Count == 0)
+        {
+            odunYuvasi = AltNesneyiAdaGoreBul(transform, odunYuvasiAdi);
+            SepetGorselleriniHazirla();
+        }
+
+        int bosKapasite = Mathf.Max(0, tasimaKapasitesi - TasinanOdunSayisi);
+        int alinacakMiktar = Mathf.Min(istenenMiktar, bosKapasite);
+        int baslangicSayisi = TasinanOdunSayisi;
+
+        for (int i = 0; i < alinacakMiktar; i++)
+        {
+            int sepetSirasi = baslangicSayisi + i;
+            TasinanOdunSayisi++;
+            EfeOynanisEventleri.OdunToplandiginiYayinla(
+                transform,
+                TasinanOdunSayisi,
+                tasimaKapasitesi);
+
+            if (odunYuvasi != null && sepetSirasi < sepetOdunuGorselleri.Count)
+            {
+                Vector3 dagitilmisBaslangic = ambarDunyaKonumu
+                    + Vector3.up * (0.12f * (i / 2))
+                    + transform.right * (i % 2 == 0 ? -0.12f : 0.12f);
+                OdunuAnimasyonlaSepeteYerlestir(
+                    sepetSirasi,
+                    dagitilmisBaslangic,
+                    Quaternion.Euler(0f, 90f, 0f));
+            }
+        }
+
+        if (alinacakMiktar > 0 && SepetDolu)
+        {
+            EfeOynanisEventleri.SepetDoldugunuYayinla(transform);
+        }
+
+        if (sepetOdunuGorselleri.Count < TasinanOdunSayisi)
+        {
+            SepetGorselleriniGuncelle();
+        }
+
+        return alinacakMiktar;
+    }
+
     private void SepetGorselleriniGuncelle()
     {
         for (int i = 0; i < sepetOdunuGorselleri.Count; i++)
