@@ -4,6 +4,23 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ForrestGame.Managers;
+using ForrestGame.Core;
+
+/// <summary>
+/// Balta kademesi için Inspector'dan ayarlanabilir veri yapısı.
+/// </summary>
+[System.Serializable]
+public class AxeTierData
+{
+    [Tooltip("Kademe adı (Örn: Paslı Balta, Çelik Balta vb.)")]
+    public string tierName = "Balta Seviyesi";
+
+    [Tooltip("Kartta gösterilecek balta ikonu.")]
+    public Sprite icon;
+
+    [Tooltip("AxeVisualManager için 3D görsel model ID'si (Örn: lowpoly_axe, axe_tier_2 vb.)")]
+    public string visualAxeId = "";
+}
 
 /// <summary>
 /// Evdeki Balta Masası (AxeTable) etkileşiminde açılan panel kontrolcüsü.
@@ -24,8 +41,9 @@ public class AxeTablePanelController : MonoBehaviour
     [Tooltip("Axe.asset (ItemUpgradeConfig) referansı. Boşsa UpgradeManager'dan otomatik çekilir.")]
     [SerializeField] private ItemUpgradeConfig axeUpgradeConfig;
 
-    [Tooltip("Balta kademeleri için ikon görselleri (Seviye 1, 2, 3, 4, 5...).")]
-    [SerializeField] private List<Sprite> axeTierIcons = new List<Sprite>();
+    [Header("--- Balta Kademeleri (Inspector Ayarları) ---")]
+    [Tooltip("Inspector'dan özel kademe isimleri, ikonları ve 3D model ID'leri eklemek için liste.")]
+    [SerializeField] private List<AxeTierData> axeTiers = new List<AxeTierData>();
 
     [Header("--- Balta Liste İçeriği ---")]
     [Tooltip("Kaydırma alanı (ScrollRect). Kaydırma konumunun korunmasını sağlar.")]
@@ -54,6 +72,10 @@ public class AxeTablePanelController : MonoBehaviour
     [Tooltip("Gösterilecek toplam balta kademe sayısı (Varsayılan: 5).")]
     [SerializeField] private int displayTierCount = 5;
 
+    [Header("--- Ses Ayarları ---")]
+    [Tooltip("Butonlara basıldığında çalacak SFX ismi.")]
+    [SerializeField] private string buttonSfxName = "";
+
     private const string AXE_ITEM_ID = "Axe";
     private List<AxeItemUI> spawnedItems = new List<AxeItemUI>();
 
@@ -75,6 +97,24 @@ public class AxeTablePanelController : MonoBehaviour
 
     private void Start()
     {
+        // Inspector'da axeUpgradeConfig boşsa UpgradeManager'dan otomatik çek
+        if (axeUpgradeConfig == null && UpgradeManager.Instance != null)
+        {
+            // UpgradeManager'ın configs listesinden "Axe" ID'li config'i bul
+            var configField = typeof(UpgradeManager).GetField("configs",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (configField != null)
+            {
+                var configs = configField.GetValue(UpgradeManager.Instance) as List<ItemUpgradeConfig>;
+                if (configs != null)
+                {
+                    axeUpgradeConfig = configs.Find(c => c != null && c.ItemID == AXE_ITEM_ID);
+                    if (axeUpgradeConfig != null)
+                        Debug.Log("[AxeTablePanel] axeUpgradeConfig, UpgradeManager'dan otomatik çekildi.");
+                }
+            }
+        }
+
         SyncEquippedTierFromManager();
 
         if (mainPanel != null && !mainPanel.activeSelf)
@@ -88,6 +128,9 @@ public class AxeTablePanelController : MonoBehaviour
 
         if (UpgradeManager.Instance != null)
             UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
+
+        if (CloudSaveManager.Instance != null)
+            CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
 
         AxeVisualManager.OnAxeChanged += HandleAxeChanged;
 
@@ -104,6 +147,9 @@ public class AxeTablePanelController : MonoBehaviour
 
         if (UpgradeManager.Instance != null)
             UpgradeManager.Instance.OnItemUpgraded -= HandleItemUpgraded;
+
+        if (CloudSaveManager.Instance != null)
+            CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
 
         AxeVisualManager.OnAxeChanged -= HandleAxeChanged;
     }
@@ -127,12 +173,21 @@ public class AxeTablePanelController : MonoBehaviour
             RefreshPanel();
     }
 
+    private void HandleDataLoaded(PlayerData data)
+    {
+        SyncEquippedTierFromManager();
+        if (mainPanel != null && mainPanel.activeSelf)
+            RefreshPanel();
+    }
+
     // ═══════════════════════════════════════════
     //  Panel Aç / Kapat
     // ═══════════════════════════════════════════
 
     public void OpenPanel()
     {
+        PlayButtonClickSFX();
+
         if (mainPanel != null)
             mainPanel.SetActive(true);
 
@@ -145,6 +200,8 @@ public class AxeTablePanelController : MonoBehaviour
 
     public void ClosePanel()
     {
+        PlayButtonClickSFX();
+
         if (mainPanel != null)
             mainPanel.SetActive(false);
         else
@@ -226,7 +283,7 @@ public class AxeTablePanelController : MonoBehaviour
                 bool isNextUpgrade = (tier == currentAxeLevel + 1);
                 bool isEquipped = (tier == currentlyEquippedTier);
 
-                Sprite icon = (axeTierIcons != null && tier - 1 < axeTierIcons.Count) ? axeTierIcons[tier - 1] : null;
+                Sprite icon = GetTierIcon(tier);
                 string tierName = GetTierName(tier);
                 int capturedTier = tier;
 
@@ -269,18 +326,22 @@ public class AxeTablePanelController : MonoBehaviour
 
     private void OnAxeTierClicked(int tier, bool isUnlocked, bool isNextUpgrade)
     {
+        PlayButtonClickSFX();
+
+        string visualAxeId = GetVisualAxeId(tier);
+
         if (isUnlocked)
         {
             // Kazanılmış seviyedeki balta görselini giy
             currentlyEquippedTier = tier;
-            string visualAxeId = (tier == 1) ? "lowpoly_axe" : $"axe_tier_{tier}";
 
             if (AxeVisualManager.Instance != null)
             {
                 AxeVisualManager.Instance.EquipAxe(visualAxeId);
             }
 
-            NotificationUIController.Instance?.ShowNotification($"Seviye {tier} balta kuşanıldı!");
+            string nameStr = GetTierName(tier);
+            NotificationUIController.Instance?.ShowNotification($"{nameStr} kuşanıldı!");
         }
         else if (isNextUpgrade)
         {
@@ -291,14 +352,18 @@ public class AxeTablePanelController : MonoBehaviour
                 if (success)
                 {
                     currentlyEquippedTier = tier;
-                    string visualAxeId = (tier == 1) ? "lowpoly_axe" : $"axe_tier_{tier}";
 
                     if (AxeVisualManager.Instance != null)
                     {
                         AxeVisualManager.Instance.EquipAxe(visualAxeId);
                     }
 
-                    NotificationUIController.Instance?.ShowNotification($"Balta Seviye {tier}'e yükseltildi!");
+                    string nameStr = GetTierName(tier);
+                    NotificationUIController.Instance?.ShowNotification($"{nameStr} seviyesine yükseltildi!");
+                }
+                else
+                {
+                    NotificationUIController.Instance?.ShowNotification("Yetersiz Altın!");
                 }
             }
         }
@@ -311,7 +376,28 @@ public class AxeTablePanelController : MonoBehaviour
         if (AxeVisualManager.Instance == null) return;
 
         string id = AxeVisualManager.Instance.currentAxeId;
-        if (string.IsNullOrEmpty(id) || id == "lowpoly_axe" || id == "axe_tier_1")
+        if (string.IsNullOrEmpty(id))
+        {
+            currentlyEquippedTier = 1;
+            return;
+        }
+
+        // Önce Inspector'daki axeTiers listesinden eşleşen visualAxeId ara
+        if (axeTiers != null)
+        {
+            for (int i = 0; i < axeTiers.Count; i++)
+            {
+                if (axeTiers[i] != null && !string.IsNullOrEmpty(axeTiers[i].visualAxeId) &&
+                    axeTiers[i].visualAxeId.Equals(id, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    currentlyEquippedTier = i + 1;
+                    return;
+                }
+            }
+        }
+
+        // Fallback varsayılan kontrol
+        if (id == "lowpoly_axe" || id == "axe_tier_1")
         {
             currentlyEquippedTier = 1;
             return;
@@ -350,15 +436,39 @@ public class AxeTablePanelController : MonoBehaviour
 
     private string GetTierName(int tier)
     {
-        switch (tier)
+        // 1. Önce Inspector'daki axeTiers listesine bak
+        if (axeTiers != null && tier - 1 < axeTiers.Count && axeTiers[tier - 1] != null &&
+            !string.IsNullOrEmpty(axeTiers[tier - 1].tierName))
         {
-            case 1: return "Başlangıç Baltası";
-            case 2: return "Paslı Balta";
-            case 3: return "Çelik Balta";
-            case 4: return "Altın Balta";
-            case 5: return "Elmas Balta";
-            default: return $"Seviye {tier} Balta";
+            return axeTiers[tier - 1].tierName;
         }
+
+        // 2. Varsayılan dinamik isim (fallback)
+        return $"Seviye {tier} Balta";
+    }
+
+    private Sprite GetTierIcon(int tier)
+    {
+        // Inspector'daki axeTiers listesinden ikonu al
+        if (axeTiers != null && tier - 1 < axeTiers.Count && axeTiers[tier - 1] != null)
+        {
+            return axeTiers[tier - 1].icon;
+        }
+
+        return null;
+    }
+
+    private string GetVisualAxeId(int tier)
+    {
+        // 1. Önce Inspector'daki axeTiers listesine bak
+        if (axeTiers != null && tier - 1 < axeTiers.Count && axeTiers[tier - 1] != null &&
+            !string.IsNullOrEmpty(axeTiers[tier - 1].visualAxeId))
+        {
+            return axeTiers[tier - 1].visualAxeId;
+        }
+
+        // 2. Varsayılan ID kuralı (fallback)
+        return (tier == 1) ? "lowpoly_axe" : $"axe_tier_{tier}";
     }
 
     private void ClearSpawnedItems()
@@ -374,5 +484,17 @@ public class AxeTablePanelController : MonoBehaviour
             }
         }
         spawnedItems.Clear();
+    }
+
+    // ═══════════════════════════════════════════
+    //  Ses
+    // ═══════════════════════════════════════════
+
+    private void PlayButtonClickSFX()
+    {
+        if (!string.IsNullOrEmpty(buttonSfxName) && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(buttonSfxName);
+        }
     }
 }

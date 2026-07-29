@@ -223,12 +223,22 @@ public class WorkshopManager : MonoBehaviour
         }
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
+
+        int requiredWood = recipe.RequiredWood * amount;
+        if (data.WorkshopRawWood < requiredWood)
+        {
+            GameLogger.LogWarning($"WorkshopManager: Yetersiz odun! Gereken: {requiredWood}, Mevcut: {data.WorkshopRawWood}");
+            return false;
+        }
+
+        data.WorkshopRawWood -= requiredWood;
+
         if (data.WorkshopQueue == null) data.WorkshopQueue = new SerializableDict();
 
         int existingQueue = data.WorkshopQueue.Get(recipe.ItemID, 0);
         data.WorkshopQueue.Set(recipe.ItemID, existingQueue + amount);
 
-        GameLogger.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim sirasina alindi.");
+        GameLogger.Log($"WorkshopManager: {amount} adet {recipe.ItemID} uretim sirasina alindi. Harcanan odun: {requiredWood}, Kalan odun: {data.WorkshopRawWood}");
         NotificationManager.Instance?.SendNotification($"{amount} adet üretime eklendi!");
 
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
@@ -310,18 +320,7 @@ public class WorkshopManager : MonoBehaviour
 
         if (uretimZamanlayicisi <= 0f)
         {
-            if (data.WorkshopRawWood >= currentRecipe.RequiredWood)
-            {
-                data.WorkshopRawWood -= currentRecipe.RequiredWood;
-                OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
-                workshopVisuals?.PlayQueueCraftingStart();
-            }
-            else
-            {
-                // Kuyrukta urun var ama odun yetersiz: aktif uretim sayilmaz, kamyon beklemesin.
-                IsActivelyProducing = false;
-                return;
-            }
+            workshopVisuals?.PlayQueueCraftingStart();
         }
 
         IsActivelyProducing = true;
