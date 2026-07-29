@@ -65,6 +65,30 @@ namespace ForrestGame.Managers
             });
         }
 
+        // ── Gecici Test Tuslari (sadece Editor'de aktif) ──
+#if UNITY_EDITOR
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.X))
+            {
+                GameLogger.Log("AnalyticsManager: [TEST] X tusuna basildi -> LogUserLogin cagriliyor.");
+                LogUserLogin();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Y))
+            {
+                GameLogger.Log("AnalyticsManager: [TEST] Y tusuna basildi -> LogAdImpression cagriliyor.");
+                LogAdImpression();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Z))
+            {
+                GameLogger.Log("AnalyticsManager: [TEST] Z tusuna basildi -> LogSessionEnd cagriliyor.");
+                LogSessionEnd();
+            }
+        }
+#endif
+
         public void LogCustomEvent(string eventName, string parameterName, string parameterValue)
         {
             if (!firebaseInitialized) return;
