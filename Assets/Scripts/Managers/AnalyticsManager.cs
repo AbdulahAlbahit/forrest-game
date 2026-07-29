@@ -4,6 +4,7 @@ using Firebase;
 using Firebase.Analytics;
 using Firebase.Extensions;
 using System;
+using UnityEngine.InputSystem;
 
 namespace ForrestGame.Managers
 {
@@ -69,19 +70,21 @@ namespace ForrestGame.Managers
 #if UNITY_EDITOR
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.X))
+            if (Keyboard.current == null) return;
+
+            if (Keyboard.current.xKey.wasPressedThisFrame)
             {
                 GameLogger.Log("AnalyticsManager: [TEST] X tusuna basildi -> LogUserLogin cagriliyor.");
                 LogUserLogin();
             }
 
-            if (Input.GetKeyDown(KeyCode.Y))
+            if (Keyboard.current.yKey.wasPressedThisFrame)
             {
                 GameLogger.Log("AnalyticsManager: [TEST] Y tusuna basildi -> LogAdImpression cagriliyor.");
                 LogAdImpression();
             }
 
-            if (Input.GetKeyDown(KeyCode.Z))
+            if (Keyboard.current.zKey.wasPressedThisFrame)
             {
                 GameLogger.Log("AnalyticsManager: [TEST] Z tusuna basildi -> LogSessionEnd cagriliyor.");
                 LogSessionEnd();
