@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bc18dda94ef4624aa4980988641fecc, type: 3}
+  m_Name: Chair1Data
+  m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
+  ItemID: Chair1
+  RequiredWood: 20
+  BaseProductionTime: 3
+  BaseSalePrice: 200
+  ItemIcon: {fileID: 21300000, guid: d4844e650601a36459e7a722134be95c, type: 3}
+  FurniturePrefab: {fileID: 8120295347698400126, guid: a5ae5ced381f2654c9bba0178da5090a, type: 3}
+  Description: 

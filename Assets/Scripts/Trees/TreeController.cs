@@ -114,6 +114,18 @@ public class TreeController : MonoBehaviour
         OnTreeFelled?.Invoke();
         OnTreeFelledAction?.Invoke();
 
+        // --- ÖDÜLLER ---
+        if (XPManager.Instance != null)
+        {
+            GameLogger.Log("[Tree] XPManager bulundu, XP veriliyor...");
+            XPManager.Instance.AddXP(20); // Ağaç başına 20 XP
+        }
+        else
+        {
+            GameLogger.LogWarning("[Tree] UYARI: XPManager bulunamadi! Sahnede MANAGERS objesi var mi?");
+        }
+        // ---------------
+
         yield return new WaitForSeconds(disappearDelay);
         Destroy(gameObject);
 

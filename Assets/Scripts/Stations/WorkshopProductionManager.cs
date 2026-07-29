@@ -52,14 +52,85 @@ public class WorkshopProductionManager : MonoBehaviour
         if (workerAnimator) workerAnimator.SetBool("isCrafting", false);
     }
 
-    public bool StartProductionCycle(GameObject truck) 
+    public bool StartProductionCycle(GameObject truck)
     {
         if (_isProducing) return false;
         StartCoroutine(ProductionRoutine(truck));
         return true;
     }
 
-    private void SnapToPoint(GameObject obj, Transform targetPoint) 
+    /// <summary>
+    /// WorkshopManager.ProcessQueue() kamyondan bagimsiz, arka planda bir tarif
+    /// uretmeye basladiginda cagirir. Kamyon iceren eski ProductionRoutine'den
+    /// farkli olarak sadece isci/halka gorsellerini yonetir.
+    /// </summary>
+    public void PlayQueueCraftingStart()
+    {
+        if (normalBoxes) normalBoxes.SetActive(false);
+        if (workerAnimator) workerAnimator.SetBool("isCrafting", true);
+        if (loadingRingCanvas)
+        {
+            loadingRingCanvas.SetActive(true);
+            if (loadingRingProgress) loadingRingProgress.fillAmount = 0f;
+        }
+        OnCraftingStartedGlobal?.Invoke();
+    }
+
+    /// <summary>
+    /// Aktif kuyruk uretiminin 0-1 arasi ilerlemesini halka gorseline yansitir.
+    /// </summary>
+    public void PlayQueueCraftingProgress(float progress01)
+    {
+        if (loadingRingProgress) loadingRingProgress.fillAmount = Mathf.Clamp01(progress01);
+    }
+
+    /// <summary>
+    /// Kuyruktaki bir tarif uretimi bittiginde cagirir: isci animasyonunu durdurur,
+    /// masaya (kamyon bekleniyormus gibi) bir kutu birakir.
+    /// </summary>
+    public void PlayQueueCraftingComplete()
+    {
+        if (workerAnimator) workerAnimator.SetBool("isCrafting", false);
+        if (loadingRingCanvas) loadingRingCanvas.SetActive(false);
+
+        if (normalBoxes != null)
+        {
+            Transform point = boxSpawnPoint != null ? boxSpawnPoint : workshopTableTop;
+            if (point != null) SnapToPoint(normalBoxes, point);
+            normalBoxes.SetActive(true);
+        }
+
+        OnProductionSuccess?.Invoke();
+        OnCraftingFinishedGlobal?.Invoke();
+    }
+
+    /// <summary>
+    /// Kamyon atolyeden ayrilmadan hemen once, masada bekleyen kutuyu (varsa)
+    /// kamyonun kasasina ucurur ve yerine kalici bir kargo gorseli birakir.
+    /// </summary>
+    public IEnumerator LoadFinishedBoxesOntoTruck(Transform truckTransform)
+    {
+        Transform target = truckCargoPoint != null ? truckCargoPoint : truckTransform;
+        if (target == null) yield break;
+
+        if (normalBoxes != null && normalBoxes.activeSelf)
+        {
+            Transform startPoint = boxSpawnPoint != null ? boxSpawnPoint : workshopTableTop;
+            if (startPoint != null)
+            {
+                yield return StartCoroutine(AnimateBoxFlight(normalBoxes, startPoint, target, 0.75f));
+            }
+            normalBoxes.SetActive(false);
+        }
+
+        if (largeBoxes != null)
+        {
+            SnapToPoint(largeBoxes, target);
+            largeBoxes.SetActive(true);
+        }
+    }
+
+    private void SnapToPoint(GameObject obj, Transform targetPoint)
     {
         if (obj != null && targetPoint != null) 
         {
