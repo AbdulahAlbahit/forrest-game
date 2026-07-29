@@ -4,7 +4,6 @@ using Firebase;
 using Firebase.Analytics;
 using Firebase.Extensions;
 using System;
-using UnityEngine.InputSystem;
 
 namespace ForrestGame.Managers
 {
@@ -58,6 +57,9 @@ namespace ForrestGame.Managers
                     LogCustomEvent("game_session_start", "daily_session_count", dailySessionCount);
                     sessionStartTime = Time.realtimeSinceStartup;
                     sessionStartDateTime = DateTime.Now;
+
+                    // Oyun acildiginda otomatik login eventi
+                    LogUserLogin("guest");
                 }
                 else
                 {
@@ -65,32 +67,6 @@ namespace ForrestGame.Managers
                 }
             });
         }
-
-        // ── Gecici Test Tuslari (sadece Editor'de aktif) ──
-#if UNITY_EDITOR
-        private void Update()
-        {
-            if (Keyboard.current == null) return;
-
-            if (Keyboard.current.xKey.wasPressedThisFrame)
-            {
-                GameLogger.Log("AnalyticsManager: [TEST] X tusuna basildi -> LogUserLogin cagriliyor.");
-                LogUserLogin();
-            }
-
-            if (Keyboard.current.yKey.wasPressedThisFrame)
-            {
-                GameLogger.Log("AnalyticsManager: [TEST] Y tusuna basildi -> LogAdImpression cagriliyor.");
-                LogAdImpression();
-            }
-
-            if (Keyboard.current.zKey.wasPressedThisFrame)
-            {
-                GameLogger.Log("AnalyticsManager: [TEST] Z tusuna basildi -> LogSessionEnd cagriliyor.");
-                LogSessionEnd();
-            }
-        }
-#endif
 
         public void LogCustomEvent(string eventName, string parameterName, string parameterValue)
         {

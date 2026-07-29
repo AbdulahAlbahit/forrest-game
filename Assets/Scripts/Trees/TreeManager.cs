@@ -206,6 +206,14 @@ public class TreeManager : MonoBehaviour
             }
             // ---------------
 
+            // --- REKLAM ANALITIGI (Test) ---
+            if (ForrestGame.Managers.AnalyticsManager.Instance != null)
+            {
+                ForrestGame.Managers.AnalyticsManager.Instance.LogAdImpression("tree_cut_ad_test");
+                GameLogger.Log("[TreeManager] Ad impression (tree_cut_ad_test) analytics eventi gonderildi.", this);
+            }
+            // -------------------------------
+
             GameLogger.Log($"[TreeManager] Tree Felled! Type: {typeIndex}. Respawn in {effectiveRespawnTime}s.", this);
         }
     }
