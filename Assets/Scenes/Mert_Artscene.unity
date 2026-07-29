@@ -22836,6 +22836,25 @@ Transform:
   - {fileID: 1851478475}
   m_Father: {fileID: 982304660}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1003940976 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4325828939956472230, guid: faa000ccf75af7d4985f320f0082ab61, type: 3}
+  m_PrefabInstance: {fileID: 697312187044343378}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1003940980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1003940976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9802ebfd9af1cd44a9e7c8dcc27105b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EfeMarketSalesController
+  initialSessionBalance: 0
+  logEmptyMarketArrival: 0
 --- !u!1 &1026518173 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
@@ -30548,6 +30567,52 @@ MonoBehaviour:
   targetRenderer: {fileID: 1431226278}
   transparentMaterials:
   - {fileID: 2100000, guid: 5e6d45b8328842243ac3e8fb36c5d256, type: 2}
+--- !u!1 &1435852294
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1435852296}
+  - component: {fileID: 1435852295}
+  m_Layer: 0
+  m_Name: Efe_MarketEconomyBridge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1435852295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435852294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2ca405c076b8b94db031b59493674b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EfeMarketEconomyBridge
+  localFallbackDelay: 5
+  saveImmediatelyAfterSale: 1
+--- !u!4 &1435852296
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435852294}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1438426928 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
@@ -54058,7 +54123,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4325828939956472230, guid: faa000ccf75af7d4985f320f0082ab61, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1003940980}
   m_SourcePrefab: {fileID: 100100000, guid: faa000ccf75af7d4985f320f0082ab61, type: 3}
 --- !u!1001 &981486142553638172
 PrefabInstance:
@@ -54806,13 +54874,14 @@ SceneRoots:
   - {fileID: 1910191548}
   - {fileID: 944944471}
   - {fileID: 262204222}
+  - {fileID: 167987199}
+  - {fileID: 1089758499}
+  - {fileID: 1825644206}
+  - {fileID: 1458835909}
   - {fileID: 526629963947372605}
+  - {fileID: 1754915798}
   - {fileID: 1793064209}
   - {fileID: 2126705958}
-  - {fileID: 1825644206}
-  - {fileID: 697312187044343378}
-  - {fileID: 1458835909}
-  - {fileID: 1754915798}
   - {fileID: 6290786917985272571}
   - {fileID: 890467026}
   - {fileID: 1117944622}
@@ -54820,7 +54889,7 @@ SceneRoots:
   - {fileID: 1480905803}
   - {fileID: 3549499}
   - {fileID: 1324386945}
-  - {fileID: 167987199}
-  - {fileID: 1089758499}
   - {fileID: 131829809}
   - {fileID: 1454060018}
+  - {fileID: 1435852296}
+  - {fileID: 697312187044343378}

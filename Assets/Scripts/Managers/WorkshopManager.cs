@@ -182,12 +182,15 @@ public class WorkshopManager : MonoBehaviour
 
     /// <summary>
     /// Kamyon teslimati veya test amaciyla atolye ham odun stoguna ekler.
-    /// WorkshopRawWood artar, PlayerWoodStock ayni miktar azalir (transfer tamamlandi).
+    /// Sadece WorkshopRawWood artar. PlayerWoodStock (oyuncunun ayri "ambar" deposu,
+    /// EfeWoodStorageBridge ile beslenir) bununla ilgisizdir ve burada degistirilmez —
+    /// kamyona yuklenen odun zaten PlayerWoodStock'tan degil, karakterin tasidigi
+    /// odundan (EfeOdunTasima) geliyor.
     /// </summary>
     public void AddWood(int amount)
     {
         if (amount <= 0) return;
-        
+
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
             GameLogger.LogWarning("WorkshopManager: Bulut verisi hazir degil, odun eklenemiyor.");
@@ -196,15 +199,11 @@ public class WorkshopManager : MonoBehaviour
 
         var data = CloudSaveManager.Instance.CurrentData;
 
-        // Atolye stogu artar
         data.WorkshopRawWood += amount;
-
-        // Oyuncunun deposu azalir (kamyon odunlari buradan aldi ve atolyeye birakti)
-        data.PlayerWoodStock = Mathf.Max(0, data.PlayerWoodStock - amount);
 
         OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
         GameLogger.Log($"WorkshopManager: {amount} odun atolyeye transfer edildi. " +
-                       $"WorkshopRawWood: {data.WorkshopRawWood}, PlayerWoodStock: {data.PlayerWoodStock}");
+                       $"WorkshopRawWood: {data.WorkshopRawWood}");
     }
 
     /// <summary>
@@ -244,6 +243,49 @@ public class WorkshopManager : MonoBehaviour
     /// beklemesi gerekip gerekmedigini disaridan sormak icin kullanilir.
     /// </summary>
     public bool IsActivelyProducing { get; private set; }
+
+    /// <summary>
+    /// WorkshopQueue icinde en az bir siparis (adedi 0'dan buyuk) var mi.
+    /// Kamyonun atolyede beklemeye devam edip etmeyecegine karar vermek icin kullanilir.
+    /// </summary>
+    public bool HasPendingQueueOrders
+    {
+        get
+        {
+            PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+            if (data == null || data.WorkshopQueue == null) return false;
+
+            for (int i = 0; i < data.WorkshopQueue.keys.Count; i++)
+            {
+                if (data.WorkshopQueue.values[i] > 0) return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// PlayerData.ReadyForTruck icindeki tum pozitif stoklari okuyup kaynagi sifirlar.
+    /// Atolyeye dogmus kamyonun hazir urunleri "almasi" bu sekilde atomik olarak yapilir.
+    /// </summary>
+    public Dictionary<string, int> DrainReadyForTruck()
+    {
+        var drained = new Dictionary<string, int>();
+        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+        if (data == null || data.ReadyForTruck == null) return drained;
+
+        for (int i = 0; i < data.ReadyForTruck.keys.Count; i++)
+        {
+            int amount = data.ReadyForTruck.values[i];
+            if (amount > 0)
+            {
+                drained[data.ReadyForTruck.keys[i]] = amount;
+                data.ReadyForTruck.values[i] = 0;
+            }
+        }
+
+        return drained;
+    }
 
     /// <summary>
     /// WorkshopQueue icindeki siparisleri tek tek tarife gore uretir.

@@ -20,6 +20,39 @@ public class TruckRouteController : MonoBehaviour
     public bool isAtHomePosition = true;
     public bool isWorkshopProcessDone = false;
 
+    /// <summary>
+    /// Atolyede kamyona yuklenen paketli urunlerin (itemId -> adet) gercek manifestosu.
+    /// Kamyonun markete gidip gitmeyecegine bu manifesto uzerinden karar verilir.
+    /// </summary>
+    public Dictionary<string, int> LoadedProducts { get; } = new Dictionary<string, int>();
+
+    public int TotalLoadedProducts
+    {
+        get
+        {
+            int total = 0;
+            foreach (int amount in LoadedProducts.Values) total += amount;
+            return total;
+        }
+    }
+
+    public void AddLoadedProducts(Dictionary<string, int> items)
+    {
+        if (items == null) return;
+
+        foreach (KeyValuePair<string, int> entry in items)
+        {
+            if (entry.Value <= 0) continue;
+            LoadedProducts.TryGetValue(entry.Key, out int existing);
+            LoadedProducts[entry.Key] = existing + entry.Value;
+        }
+    }
+
+    public void ClearLoadedProducts()
+    {
+        LoadedProducts.Clear();
+    }
+
     public void OnWorkshopProcessComplete()
     {
         isWorkshopProcessDone = true;
@@ -37,7 +70,7 @@ public class TruckRouteController : MonoBehaviour
     public static event Action OnTruckDepartedHome;
     public static event Action OnTruckArrival;
     public static event Action OnTruckDeparture;
-    public static event Action OnMarketSale;
+    public static event Action<TruckRouteController> OnMarketSale;
     public static event Action OnTruckDepartedMarket;
     public static event Action OnTruckArrivedHome;
 
@@ -197,26 +230,35 @@ public class TruckRouteController : MonoBehaviour
                 yield return StartCoroutine(StopAndWait(stopWaitTime));
             }
 
-            yield return StartCoroutine(DriveToPoints(workshopIndex + 1, marketIndex, true));
-            
-            OnMarketSale?.Invoke();
-            GameLogger.Log("[TruckRoute] Arrived at market. Boxes sold, cargo emptied.", this);
-            
-            Transform cargoBoxes = transform.Find("Cargo_Boxes");
-            if (cargoBoxes != null) cargoBoxes.gameObject.SetActive(false);
+            if (TotalLoadedProducts > 0)
+            {
+                yield return StartCoroutine(DriveToPoints(workshopIndex + 1, marketIndex, true));
 
-            if (workshop != null && workshop.largeBoxes != null) workshop.largeBoxes.SetActive(false);
+                OnMarketSale?.Invoke(this);
+                GameLogger.Log("[TruckRoute] Arrived at market. Boxes sold, cargo emptied.", this);
 
-            yield return StartCoroutine(StopAndWait(stopWaitTime));
+                Transform cargoBoxes = transform.Find("Cargo_Boxes");
+                if (cargoBoxes != null) cargoBoxes.gameObject.SetActive(false);
 
-            OnTruckDepartedMarket?.Invoke();
-            yield return StartCoroutine(DriveToPointsReverse(marketIndex - 1, 0, true));
+                if (workshop != null && workshop.largeBoxes != null) workshop.largeBoxes.SetActive(false);
+
+                yield return StartCoroutine(StopAndWait(stopWaitTime));
+
+                OnTruckDepartedMarket?.Invoke();
+                yield return StartCoroutine(DriveToPointsReverse(marketIndex - 1, 0, true));
+            }
+            else
+            {
+                GameLogger.Log("[TruckRoute] Nothing produced this trip. Skipping market, heading straight home.", this);
+                yield return StartCoroutine(DriveToPointsReverse(workshopIndex - 1, 0, true));
+            }
 
             yield return StartCoroutine(TurnToFaceFirstPoint());
             OnTruckArrivedHome?.Invoke();
             yield return StartCoroutine(StopAndWait(homeWaitTime));
 
             currentLoadedWood = 0;
+            ClearLoadedProducts();
         }
     }
 
