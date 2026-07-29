@@ -101,12 +101,14 @@ public class EfeMarketSalesController : MonoBehaviour
         }
 
         EfeWorkshopSelectionController.OnSelectedProductionCompleted += RegisterProducedCargo;
+        WorkshopManager.OnProductionFinished += HandleWorkshopProductionFinished;
         TruckRouteController.OnMarketSale += HandleMarketSale;
     }
 
     private void OnDisable()
     {
         EfeWorkshopSelectionController.OnSelectedProductionCompleted -= RegisterProducedCargo;
+        WorkshopManager.OnProductionFinished -= HandleWorkshopProductionFinished;
         TruckRouteController.OnMarketSale -= HandleMarketSale;
 
         if (Instance == this)
@@ -163,6 +165,11 @@ public class EfeMarketSalesController : MonoBehaviour
     /// </summary>
     public bool CompleteMarketSale()
     {
+        // Guncel ortak atolye sistemi urunleri PlayerData.ReadyForTruck icinde
+        // kalici olarak tutar. Bu stok varsa onu tek yetkili market yuku kabul
+        // ederek eski secim eventinden gelebilecek ayni urunu iki kere saymayiz.
+        ReplacePendingCargoFromPersistentReadyStock();
+
         if (!HasPendingCargo)
         {
             if (logEmptyMarketArrival)
@@ -192,9 +199,20 @@ public class EfeMarketSalesController : MonoBehaviour
                 TotalPrice = earnedAmount
             };
 
+            bool persistentCargoReserved = TryReservePersistentCargo(
+                itemId,
+                quantity,
+                out int previousPersistentAmount);
             bool usedExternalBalance = TryCreditExternalBalance(request, out int newBalance);
             if (!usedExternalBalance)
             {
+                // Kalici ekonomi henuz hazir degilse urunu veritabanindan
+                // tuketmeyiz. Boylece para kaybolmadan sonraki market
+                // teslimatinda yeniden denenebilir.
+                if (persistentCargoReserved)
+                {
+                    RestorePersistentCargo(itemId, previousPersistentAmount);
+                }
                 newBalance = previousBalance + earnedAmount;
             }
             _currentBalance = Mathf.Max(0, newBalance);
@@ -226,6 +244,119 @@ public class EfeMarketSalesController : MonoBehaviour
             this);
         InvokeSafely(OnBalanceChanged, _currentBalance);
         return true;
+    }
+
+    private void HandleWorkshopProductionFinished(string itemId, int amount)
+    {
+        RecipeConfig recipe = FindRecipe(itemId);
+        if (recipe == null)
+        {
+            Debug.LogWarning(
+                $"[EfeMarketSales] Uretimi biten '{itemId}' icin tarif bulunamadi; " +
+                "urun kalici ReadyForTruck stokundan markette tekrar aranacak.",
+                this);
+            return;
+        }
+
+        RegisterProducedCargo(recipe, amount);
+    }
+
+    private void ReplacePendingCargoFromPersistentReadyStock()
+    {
+        PlayerData data = CloudSaveManager.Instance != null
+            ? CloudSaveManager.Instance.CurrentData
+            : null;
+        if (data == null || data.ReadyForTruck == null)
+        {
+            return;
+        }
+
+        List<PendingCargoEntry> persistentCargo = new List<PendingCargoEntry>();
+        for (int i = 0; i < data.ReadyForTruck.keys.Count; i++)
+        {
+            string itemId = data.ReadyForTruck.keys[i];
+            int amount = data.ReadyForTruck.values[i];
+            if (amount <= 0)
+            {
+                continue;
+            }
+
+            RecipeConfig recipe = FindRecipe(itemId);
+            if (recipe == null)
+            {
+                Debug.LogWarning(
+                    $"[EfeMarketSales] ReadyForTruck icindeki '{itemId}' icin tarif bulunamadi; " +
+                    "bu urun silinmedi ve satilmadi.",
+                    this);
+                continue;
+            }
+
+            persistentCargo.Add(new PendingCargoEntry { Recipe = recipe, Amount = amount });
+        }
+
+        if (persistentCargo.Count == 0)
+        {
+            return;
+        }
+
+        _pendingCargo.Clear();
+        _pendingCargo.AddRange(persistentCargo);
+    }
+
+    private static RecipeConfig FindRecipe(string itemId)
+    {
+        if (string.IsNullOrWhiteSpace(itemId) ||
+            WorkshopManager.Instance == null ||
+            WorkshopManager.Instance.tumTarifler == null)
+        {
+            return null;
+        }
+
+        foreach (RecipeConfig recipe in WorkshopManager.Instance.tumTarifler)
+        {
+            if (recipe != null &&
+                string.Equals(recipe.ItemID, itemId, StringComparison.OrdinalIgnoreCase))
+            {
+                return recipe;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryReservePersistentCargo(
+        string itemId,
+        int quantity,
+        out int previousAmount)
+    {
+        previousAmount = 0;
+        PlayerData data = CloudSaveManager.Instance != null
+            ? CloudSaveManager.Instance.CurrentData
+            : null;
+        if (data == null || data.ReadyForTruck == null || quantity <= 0)
+        {
+            return false;
+        }
+
+        previousAmount = data.ReadyForTruck.Get(itemId, 0);
+        if (previousAmount < quantity)
+        {
+            return false;
+        }
+
+        data.ReadyForTruck.Set(itemId, previousAmount - quantity);
+        return true;
+    }
+
+    private static void RestorePersistentCargo(string itemId, int previousAmount)
+    {
+        PlayerData data = CloudSaveManager.Instance != null
+            ? CloudSaveManager.Instance.CurrentData
+            : null;
+        if (data != null && data.ReadyForTruck != null)
+        {
+            data.ReadyForTruck.Set(itemId, Mathf.Max(0, previousAmount));
+        }
     }
 
     private static int ResolveUnitPrice(RecipeConfig recipe)
