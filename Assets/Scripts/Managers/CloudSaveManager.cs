@@ -67,12 +67,22 @@ public class CloudSaveManager : MonoBehaviour
         }
     }
 
+    private const float AUTH_MANAGER_WAIT_TIMEOUT = 3f;
+
     private IEnumerator WaitForAuthManager()
     {
         GameLogger.Log("CloudSaveManager: FirebaseAuthManager bekleniyor...");
 
+        float elapsed = 0f;
         while (FirebaseAuthManager.Instance == null)
         {
+            elapsed += Time.deltaTime;
+            if (elapsed >= AUTH_MANAGER_WAIT_TIMEOUT)
+            {
+                GameLogger.LogWarning("CloudSaveManager: FirebaseAuthManager bulunamadi (bu sahnede yok / zaman asimi). Yerel veriyle devam ediliyor.");
+                LoadFromLocalFallback();
+                yield break;
+            }
             yield return null;
         }
 

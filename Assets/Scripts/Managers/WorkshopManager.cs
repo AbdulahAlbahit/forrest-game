@@ -12,6 +12,10 @@ public class WorkshopManager : MonoBehaviour
     [Tooltip("Uretilebilecek tum tarifleri buraya surukleyin.")]
     public RecipeConfig[] tumTarifler;
 
+    [Header("Gorsel Uretim (Isci/Kutu Animasyonlari)")]
+    [Tooltip("Kuyruktan bagimsiz olarak arka planda calisan uretimin isci/halka/kutu gorsellerini oynatir.")]
+    [SerializeField] private WorkshopProductionManager workshopVisuals;
+
     private float uretimZamanlayicisi;
     private string aktifUretilenItem = "";
     private float cachedSpeed;
@@ -63,6 +67,11 @@ public class WorkshopManager : MonoBehaviour
         uretimZamanlayicisi = 0f;
         cachedSpeed = 0.5f;
         cachedCapacity = 10;
+
+        if (workshopVisuals == null)
+        {
+            workshopVisuals = FindFirstObjectByType<WorkshopProductionManager>();
+        }
     }
 
     private void Start()
@@ -230,18 +239,30 @@ public class WorkshopManager : MonoBehaviour
     private float debugLogTimer = 0f;
 
     /// <summary>
+    /// Su an atolyede fiilen sayaci ilerleyen bir uretim var mi (kuyrukta urun olup
+    /// odun yetersizligiyle beklemede olmak bu sayilmaz). Kamyonun atolyede
+    /// beklemesi gerekip gerekmedigini disaridan sormak icin kullanilir.
+    /// </summary>
+    public bool IsActivelyProducing { get; private set; }
+
+    /// <summary>
     /// WorkshopQueue icindeki siparisleri tek tek tarife gore uretir.
     /// </summary>
     private void ProcessQueue()
     {
-        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
+            IsActivelyProducing = false;
+            return;
+        }
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
-        
+
         if (data.WorkshopQueue == null || data.WorkshopQueue.keys.Count == 0)
         {
             uretimZamanlayicisi = 0f;
             aktifUretilenItem = "";
+            IsActivelyProducing = false;
             return;
         }
 
@@ -258,7 +279,11 @@ public class WorkshopManager : MonoBehaviour
                 }
             }
 
-            if (string.IsNullOrEmpty(aktifUretilenItem)) return;
+            if (string.IsNullOrEmpty(aktifUretilenItem))
+            {
+                IsActivelyProducing = false;
+                return;
+            }
         }
 
         RecipeConfig currentRecipe = null;
@@ -279,6 +304,7 @@ public class WorkshopManager : MonoBehaviour
             GameLogger.LogWarning($"WorkshopManager: {aktifUretilenItem} icin RecipeConfig bulunamadi. Kuyruk temizleniyor.");
             data.WorkshopQueue.Set(aktifUretilenItem, 0);
             aktifUretilenItem = "";
+            IsActivelyProducing = false;
             return;
         }
 
@@ -288,12 +314,17 @@ public class WorkshopManager : MonoBehaviour
             {
                 data.WorkshopRawWood -= currentRecipe.RequiredWood;
                 OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+                workshopVisuals?.PlayQueueCraftingStart();
             }
             else
             {
+                // Kuyrukta urun var ama odun yetersiz: aktif uretim sayilmaz, kamyon beklemesin.
+                IsActivelyProducing = false;
                 return;
             }
         }
+
+        IsActivelyProducing = true;
 
         float hizCarpani = GetProcessingSpeed();
         if (hizCarpani <= 0f) hizCarpani = 1f;
@@ -302,6 +333,7 @@ public class WorkshopManager : MonoBehaviour
         if (gercekUretimSuresi <= 0.1f) gercekUretimSuresi = 0.1f;
 
         uretimZamanlayicisi += Time.deltaTime;
+        workshopVisuals?.PlayQueueCraftingProgress(uretimZamanlayicisi / gercekUretimSuresi);
 
         debugLogTimer += Time.deltaTime;
         if (debugLogTimer >= 2f)
@@ -324,6 +356,7 @@ public class WorkshopManager : MonoBehaviour
 
             GameLogger.Log($"WorkshopManager: 1x {aktifUretilenItem} uretimi bitti! (Kamyon Bekliyor: {readyAmount + 1}, Kuyruk Kaldi: {newAmount})");
             NotificationManager.Instance?.SendNotification($"{aktifUretilenItem} üretimi tamamlandı!");
+            workshopVisuals?.PlayQueueCraftingComplete();
 
             OnWoodProcessed?.Invoke();
             OnProductionFinished?.Invoke(aktifUretilenItem, 1);

@@ -388,6 +388,11 @@ public class WorkshopPanelController : MonoBehaviour
     {
         externalQueueDisplayActive = true;
 
+        if (produceButton != null)
+        {
+            produceButton.gameObject.SetActive(false);
+        }
+
         foreach (QueueItemUI item in spawnedQueueItems)
         {
             if (item != null) Destroy(item.gameObject);
@@ -413,13 +418,18 @@ public class WorkshopPanelController : MonoBehaviour
 
         if (productionTimeText != null)
         {
-            productionTimeText.text = $"Kalan Odun: {Mathf.Max(0, remainingWood)} | Üret: Kuyruğu Başlat";
+            productionTimeText.text = $"Kalan Odun: {Mathf.Max(0, remainingWood)} | Otomatik Üretim";
         }
     }
 
     public void ClearExternalQueueDisplay()
     {
         externalQueueDisplayActive = false;
+
+        if (produceButton != null)
+        {
+            produceButton.gameObject.SetActive(true);
+        }
     }
 
     /// <summary>

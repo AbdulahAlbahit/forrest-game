@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &464206334339758002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2437756716698730506}
+  - component: {fileID: 7228801751095936251}
+  m_Layer: 0
+  m_Name: WorkshopManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2437756716698730506
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 464206334339758002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 71.37979, y: 2.57612, z: 128.8832}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7228801751095936251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 464206334339758002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34cf888a97ae5b64cb2c207c181a8054, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorkshopManager
+  tumTarifler:
+  - {fileID: 11400000, guid: 45412913ce52b8c4d84bb3ab47c65779, type: 2}
+  - {fileID: 11400000, guid: 8c6fe30e38514634d9bd6c292586f18a, type: 2}
+  - {fileID: 11400000, guid: c164c3ec7c86f2b4fb098cea595bc820, type: 2}
+  - {fileID: 11400000, guid: 4cc434b278364b147a13363dbd31b6ef, type: 2}
+  - {fileID: 11400000, guid: b34d1a02aba08ac4ebed931f24195682, type: 2}
+  - {fileID: 11400000, guid: 1cca3430e2faa5e43bc7e9b2ff450b28, type: 2}
+  - {fileID: 11400000, guid: f287b812593b38d47b071e2f0d66d6de, type: 2}
+  - {fileID: 11400000, guid: 261318fa319e4ec4d9fe7a084e16e8ad, type: 2}
+  - {fileID: 11400000, guid: e3429c7e3d62a6144846024d288204c4, type: 2}
+  - {fileID: 11400000, guid: 3885d2aa067913545a4a52847f9a2c33, type: 2}
+  - {fileID: 11400000, guid: 6d43fea04d8dbbe40a0abfe393ea1c38, type: 2}
+  workshopVisuals: {fileID: 0}
