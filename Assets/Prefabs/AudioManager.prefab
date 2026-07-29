@@ -63,8 +63,8 @@ MonoBehaviour:
     pitch: 1.08
   - name: KisMuzik
     clip: {fileID: 8300000, guid: ce63ffbd71e16c74a83e0a3075c94440, type: 3}
-    volume: 1
-    pitch: 1.08
+    volume: 0.628
+    pitch: 1
   - name: YazMuzik
     clip: {fileID: 8300000, guid: 9ffe73953329a2b419f25ebf33bd7f65, type: 3}
     volume: 1
