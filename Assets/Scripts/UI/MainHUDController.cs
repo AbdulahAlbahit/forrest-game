@@ -38,6 +38,12 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Oyuncu seviyesini gösteren metin (Sol Alt). Örn: Level 1")]
     [SerializeField] private TextMeshProUGUI levelText;
 
+    [Tooltip("Sol alttaki seviye göstergesi açma butonu (İstatistik panelini açar).")]
+    [SerializeField] private Button levelButton;
+
+    [Tooltip("CharacterStatsPanelController scripti içeren İstatistik paneli objesi.")]
+    [SerializeField] private GameObject statsPanel;
+
     [Header("--- Ayarlar Paneli (Sağ Alt) ---")]
     [Tooltip("Sağ alttaki ayarlar açma butonu.")]
     [SerializeField] private Button settingsButton;
@@ -99,6 +105,10 @@ public class MainHUDController : MonoBehaviour
         if (depositWoodButton != null)
             depositWoodButton.onClick.AddListener(OnDepositWoodButtonClicked);
 
+        // Level / İstatistik butonu listener
+        if (levelButton != null)
+            levelButton.onClick.AddListener(OnLevelButtonClicked);
+
         // Başlangıçta panelleri gizle
         if (settingsPanel != null)
             settingsPanel.SetActive(false);
@@ -106,6 +116,8 @@ public class MainHUDController : MonoBehaviour
             pausePanel.SetActive(false);
         if (workshopPanel != null)
             workshopPanel.SetActive(false);
+        if (statsPanel != null)
+            statsPanel.SetActive(false);
 
         // Tüm UI değerlerini başlangıçta güncelle
         RefreshAllHUD();
@@ -298,6 +310,28 @@ public class MainHUDController : MonoBehaviour
         {
             // Fallback: PauseMenuController yoksa sadece paneli göster/gizle
             pausePanel.SetActive(!pausePanel.activeSelf);
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  İstatistik Paneli Butonu İşlemi
+    // ═══════════════════════════════════════════
+
+    private void OnLevelButtonClicked()
+    {
+        PlayButtonClickSFX();
+
+        if (CharacterStatsPanelController.Instance != null)
+        {
+            CharacterStatsPanelController.Instance.TogglePanel();
+        }
+        else if (statsPanel != null)
+        {
+            CharacterStatsPanelController controller = statsPanel.GetComponent<CharacterStatsPanelController>();
+            if (controller != null)
+                controller.TogglePanel();
+            else
+                statsPanel.SetActive(!statsPanel.activeSelf);
         }
     }
 

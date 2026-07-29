@@ -81,6 +81,12 @@ public class AxeTablePanelController : MonoBehaviour
 
     // Dahili kuşanılan seviye takibi
     private int currentlyEquippedTier = 1;
+    public int CurrentlyEquippedTier => currentlyEquippedTier;
+
+    /// <summary>
+    /// Masadan yeni bir balta kuşanıldığında tetiklenen event.
+    /// </summary>
+    public static event System.Action OnAxeEquipped;
 
     private void Awake()
     {
@@ -134,7 +140,14 @@ public class AxeTablePanelController : MonoBehaviour
 
         AxeVisualManager.OnAxeChanged += HandleAxeChanged;
 
-        SyncEquippedTierFromManager();
+        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+        {
+            TrySyncEquippedAxeFromData(CloudSaveManager.Instance.CurrentData);
+        }
+        else
+        {
+            SyncEquippedTierFromManager();
+        }
 
         if (mainPanel != null && mainPanel.activeSelf)
             RefreshPanel();
@@ -175,9 +188,38 @@ public class AxeTablePanelController : MonoBehaviour
 
     private void HandleDataLoaded(PlayerData data)
     {
-        SyncEquippedTierFromManager();
+        if (data != null)
+        {
+            TrySyncEquippedAxeFromData(data);
+        }
+        else
+        {
+            SyncEquippedTierFromManager();
+        }
+
         if (mainPanel != null && mainPanel.activeSelf)
             RefreshPanel();
+    }
+
+    private void TrySyncEquippedAxeFromData(PlayerData data)
+    {
+        if (data == null) return;
+
+        int maxUnlockedLevel = data.GetItemLevel(AXE_ITEM_ID);
+
+        // Kullanıcının kendi hesabı içindeki seçili balta tercihini oku (varsayılan: en yüksek açılmış seviye)
+        int savedEquippedTier = (data.ItemLevels != null && data.ItemLevels.ContainsKey("EquippedAxe"))
+            ? data.GetItemLevel("EquippedAxe")
+            : maxUnlockedLevel;
+
+        currentlyEquippedTier = Mathf.Clamp(savedEquippedTier, 1, Mathf.Max(1, maxUnlockedLevel));
+
+        string visualId = GetVisualAxeId(currentlyEquippedTier);
+        if (AxeVisualManager.Instance != null)
+        {
+            AxeVisualManager.Instance.EquipAxe(visualId);
+        }
+        OnAxeEquipped?.Invoke();
     }
 
     // ═══════════════════════════════════════════
@@ -335,6 +377,12 @@ public class AxeTablePanelController : MonoBehaviour
             // Kazanılmış seviyedeki balta görselini giy
             currentlyEquippedTier = tier;
 
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+            {
+                CloudSaveManager.Instance.CurrentData.SetItemLevel("EquippedAxe", tier);
+                CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+            }
+
             if (AxeVisualManager.Instance != null)
             {
                 AxeVisualManager.Instance.EquipAxe(visualAxeId);
@@ -342,6 +390,7 @@ public class AxeTablePanelController : MonoBehaviour
 
             string nameStr = GetTierName(tier);
             NotificationUIController.Instance?.ShowNotification($"{nameStr} kuşanıldı!");
+            OnAxeEquipped?.Invoke();
         }
         else if (isNextUpgrade)
         {
@@ -353,6 +402,12 @@ public class AxeTablePanelController : MonoBehaviour
                 {
                     currentlyEquippedTier = tier;
 
+                    if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+                    {
+                        CloudSaveManager.Instance.CurrentData.SetItemLevel("EquippedAxe", tier);
+                        CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+                    }
+
                     if (AxeVisualManager.Instance != null)
                     {
                         AxeVisualManager.Instance.EquipAxe(visualAxeId);
@@ -360,6 +415,7 @@ public class AxeTablePanelController : MonoBehaviour
 
                     string nameStr = GetTierName(tier);
                     NotificationUIController.Instance?.ShowNotification($"{nameStr} seviyesine yükseltildi!");
+                    OnAxeEquipped?.Invoke();
                 }
                 else
                 {
