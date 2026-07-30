@@ -954,7 +954,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 7620949821829376211}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.99999857
+  m_Size: 0.99999833
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2226,6 +2226,7 @@ MonoBehaviour:
   recipeItemPrefab: {fileID: 8254668770486009491, guid: 5cef84088ae3d4f4da89b5a6c9a56dd0, type: 3}
   selectedNameText: {fileID: 76548419404189465}
   requiredWoodText: {fileID: 1446917389560524614}
+  workshopWoodStockText: {fileID: 5220486373888318047}
   productionTimeText: {fileID: 3740336442243754285}
   selectedItemIcon: {fileID: 5748235541417525923}
   produceButton: {fileID: 2233412040636106323}
@@ -2618,7 +2619,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0008588607, y: 0}
+  m_AnchoredPosition: {x: 0.000017533333, y: 0}
   m_SizeDelta: {x: -733, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &6435033071943882539

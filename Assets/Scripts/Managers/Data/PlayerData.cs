@@ -23,8 +23,9 @@ public class PlayerData
 
     // --- Odun Stoklari ---
     /// <summary>
-    /// Oyuncunun genel odun deposu. Agac kesilince artar, kamyona yuklenince azalir.
-    /// Atolye ile dogrudan iliskisi YOKTUR.
+    /// Oyuncunun ayri "ambar" deposu (EfeWoodStorageBridge ile beslenir).
+    /// Kamyona yuklenen/tasinan odundan (EfeOdunTasima, TruckRouteController) BAGIMSIZDIR;
+    /// atolye ile de dogrudan iliskisi YOKTUR.
     /// </summary>
     public int PlayerWoodStock;
 

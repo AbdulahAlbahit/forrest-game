@@ -45,28 +45,19 @@ namespace ForrestGame.Managers
             CheckAndFulfillPendingOrders(data, true);
         }
 
-        private void HandleTruckArrivalAtMarket()
+        private void HandleTruckArrivalAtMarket(TruckRouteController truck)
         {
-            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
-            PlayerData data = CloudSaveManager.Instance.CurrentData;
-            
-            if (data.ReadyForTruck == null) return;
-            
+            if (truck == null) return;
+
             bool anyLoaded = false;
-            
-            for (int i = 0; i < data.ReadyForTruck.keys.Count; i++)
+
+            foreach (var kvp in truck.LoadedProducts)
             {
-                string itemId = data.ReadyForTruck.keys[i];
-                int hazirMiktar = data.ReadyForTruck.values[i];
-                
-                if (hazirMiktar > 0)
-                {
-                    data.ReadyForTruck.Set(itemId, 0);
-                    AddStock(itemId, hazirMiktar);
-                    anyLoaded = true;
-                }
+                if (kvp.Value <= 0) continue;
+                AddStock(kvp.Key, kvp.Value);
+                anyLoaded = true;
             }
-            
+
             if (anyLoaded)
             {
                 GameLogger.Log("ShopManager: Kamyon markete ulasti, urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");

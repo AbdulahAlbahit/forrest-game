@@ -431,18 +431,14 @@ public class SystemTester : MonoBehaviour
 
         GameLogger.Log($"[Test 6A] Kamyon gelmeden once: Workshop={eskiWorkshop}, PlayerDepo={eskiPlayer}");
 
-        if (eskiPlayer < kamyonOdunu)
-        {
-            GameLogger.LogWarning($"[Test 6A] UYARI: Oyuncunun deposunda sadece {eskiPlayer} odun var, kamyon {kamyonOdunu} tasimaya calisiyor. (Eksiye dusmeyecek, 0'da kalacak)");
-        }
-
         // Kamyon 30 odun birakti
         WorkshopManager.Instance.AddWood(kamyonOdunu);
 
-        // Beklenen sonuclar:
+        // Beklenen sonuclar: PlayerWoodStock kamyon teslimatindan hic etkilenmez
+        // (kamyona yuklenen odun zaten PlayerWoodStock'tan gelmiyor, EfeOdunTasima'dan geliyor).
         expectedWorkshopRawWood = eskiWorkshop + kamyonOdunu;
-        expectedPlayerWoodStock = Mathf.Max(0, eskiPlayer - kamyonOdunu);
-        
+        expectedPlayerWoodStock = eskiPlayer;
+
         if (testRecipe != null)
             expectedPostProductionWood = expectedWorkshopRawWood - testRecipe.RequiredWood;
 
