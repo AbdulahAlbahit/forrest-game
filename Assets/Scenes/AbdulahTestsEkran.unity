@@ -49909,6 +49909,7 @@ GameObject:
   - component: {fileID: 1628460439}
   - component: {fileID: 1628460438}
   - component: {fileID: 1628460437}
+  - component: {fileID: 1628460440}
   m_Layer: 5
   m_Name: AxeAttackButton
   m_TagString: Untagged
@@ -50030,6 +50031,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1628460435}
   m_CullTransparentMesh: 1
+--- !u!114 &1628460440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628460435}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b1236566e2cece49b18cfa9968296c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EfeAxeHoldButton
+  baltaKontrol: {fileID: 991163433}
+  tekrarKontrolAraligi: 0.05
 --- !u!1 &1632944408
 GameObject:
   m_ObjectHideFlags: 0
