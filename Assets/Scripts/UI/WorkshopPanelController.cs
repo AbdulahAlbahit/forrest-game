@@ -356,12 +356,37 @@ public class WorkshopPanelController : MonoBehaviour
 
             if (queueUI != null)
             {
-                queueUI.Setup(itemId, count, isFirst);
+                queueUI.Setup(itemId, count, isFirst, (id) => OnQueueItemClicked(id));
                 spawnedQueueItems.Add(queueUI);
                 isFirst = false;
             }
         }
     }
+
+    private void OnQueueItemClicked(string itemId)
+    {
+        PlayButtonClickSFX();
+
+        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+        if (data == null || data.WorkshopQueue == null) return;
+
+        int currentCount = data.WorkshopQueue.Get(itemId, 0);
+        if (currentCount > 0)
+        {
+            int newCount = currentCount - 1;
+            data.WorkshopQueue.Set(itemId, newCount);
+
+            NotificationUIController.Instance?.ShowNotification($"1 adet {itemId} sıradan çıkarıldı!");
+
+            if (CloudSaveManager.Instance != null)
+            {
+                CloudSaveManager.Instance.SaveData(data);
+            }
+
+            RefreshQueueUI();
+        }
+    }
+
 
     private void UpdateActiveQueueProgress()
     {

@@ -7,26 +7,17 @@ using ForrestGame.Managers;
 
 /// <summary>
 /// Envanter (Inventory) Paneli Ana Kontrolcüsü.
-/// Üç sekmeden oluşur:
-/// 1. KAYNAKLAR (Altın, Sepet Odunu, Ambar Odunu, Atölye Ham Odunu)
-/// 2. ÜRÜNLER (Mağaza stoğundaki üretilmiş mobilyalar)
-/// 3. EKİPMAN & UPGRADE (Balta, Sepet, Kamyon, Atölye Hızı ve Atölye Kuyruğu Yükseltmeleri)
+/// SADECE SADE VE TEMİZ ÜRÜN ÇANTASI OLARAK ÇALIŞIR.
+/// Sekmelere veya ekstra karmaşık yapılara gerek kalmadan, oyuncunun deposunda SADECE STOKTA VAR OLAN (Stok > 0)
+/// üretilmiş mobilyaları ikonları, stok miktarları ve piyasa satış değerleri ile listeler.
 /// 
 /// EKİP KURALLARI UYUMU:
 /// - Sadece bu UI scripti üzerinden çalışır, backend Manager'larına dokunmaz.
-/// - Upgrade işlemi için doğrudan UpgradeManager.Instance.UpgradeItem() çağırır.
-/// - Veri kaydetme işlemi UpgradeManager / EconomyManager içinde otomatik gerçekleşir.
+/// - Veri okuma işlemleri CloudSaveManager.CurrentData.ShopInventory ve WorkshopManager.tumTarifler üzerinden yapılır.
 /// </summary>
 public class InventoryPanelController : MonoBehaviour
 {
     public static InventoryPanelController Instance { get; private set; }
-
-    public enum InventoryTab
-    {
-        Resources,
-        Products,
-        Upgrades
-    }
 
     [Header("--- Panel Referansları ---")]
     [Tooltip("Envanter paneli ana GameObject'i.")]
@@ -35,48 +26,25 @@ public class InventoryPanelController : MonoBehaviour
     [Tooltip("Kapat (X) butonu.")]
     [SerializeField] private Button closeButton;
 
-    [Header("--- Sekme Butonları ---")]
-    [Tooltip("Kaynaklar sekmesi açma butonu.")]
-    [SerializeField] private Button resourcesTabButton;
-
-    [Tooltip("Ürünler sekmesi açma butonu.")]
-    [SerializeField] private Button productsTabButton;
-
-    [Tooltip("Ekipman & Upgrade sekmesi açma butonu.")]
-    [SerializeField] private Button upgradesTabButton;
-
-    [Header("--- Sekme İçerik Alanları ---")]
-    [Tooltip("Kaynaklar sekmesi içerik paneli (StatRowUI prefab'ları eklenir).")]
-    [SerializeField] private Transform resourcesContent;
-
-    [Tooltip("Ürünler sekmesi içerik paneli (ShopItemUI prefab'ları eklenir).")]
-    [SerializeField] private Transform productsContent;
-
-    [Tooltip("Ekipman sekmesi içerik paneli (UpgradeItemUI prefab'ları eklenir).")]
-    [SerializeField] private Transform upgradesContent;
-
-    [Header("--- Prefab Referansları ---")]
-    [Tooltip("Stat / Kaynak satırı prefab'ı (StatRowUI bileşeni içermelidir).")]
-    [SerializeField] private GameObject statRowPrefab;
+    [Header("--- Liste & İçerik Alanı ---")]
+    [Tooltip("Stoktaki ürün kartlarının dizileceği ScrollRect Content transform'u.")]
+    [SerializeField] private Transform productListContent;
 
     [Tooltip("Ürün kartı prefab'ı (ShopItemUI bileşeni içermelidir).")]
     [SerializeField] private GameObject shopItemPrefab;
 
-    [Tooltip("Upgrade kartı prefab'ı (UpgradeItemUI bileşeni içermelidir).")]
-    [SerializeField] private GameObject upgradeItemPrefab;
+    [Tooltip("Stokta hiç ürün olmadığında gösterilecek bilgilendirme metni (Örn: 'Envanterinizde henüz ürün yok').")]
+    [SerializeField] private TextMeshProUGUI emptyInventoryText;
 
     [Header("--- Üst Bakiye Özet Metni ---")]
-    [Tooltip("Toplam para bakiyesi göstergesi metni.")]
+    [Tooltip("Toplam para bakiyesi göstergesi metni (Opsiyonel).")]
     [SerializeField] private TextMeshProUGUI goldText;
 
     [Header("--- Ses Ayarları ---")]
     [Tooltip("Butonlara basıldığında çalacak SFX ismi.")]
     [SerializeField] private string buttonSfxName = "";
 
-    private InventoryTab currentTab = InventoryTab.Resources;
-    private List<StatRowUI> spawnedResourceRows = new List<StatRowUI>();
     private List<ShopItemUI> spawnedProductItems = new List<ShopItemUI>();
-    private List<UpgradeItemUI> spawnedUpgradeItems = new List<UpgradeItemUI>();
 
     private void Awake()
     {
@@ -89,15 +57,6 @@ public class InventoryPanelController : MonoBehaviour
 
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
-
-        if (resourcesTabButton != null)
-            resourcesTabButton.onClick.AddListener(() => SwitchTab(InventoryTab.Resources));
-
-        if (productsTabButton != null)
-            productsTabButton.onClick.AddListener(() => SwitchTab(InventoryTab.Products));
-
-        if (upgradesTabButton != null)
-            upgradesTabButton.onClick.AddListener(() => SwitchTab(InventoryTab.Upgrades));
     }
 
     private void Start()
@@ -124,17 +83,11 @@ public class InventoryPanelController : MonoBehaviour
         if (EconomyManager.Instance != null)
             EconomyManager.Instance.OnMoneyChanged += HandleMoneyChanged;
 
-        if (UpgradeManager.Instance != null)
-            UpgradeManager.Instance.OnItemUpgraded += HandleItemUpgraded;
-
-        if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged += HandleBasketChanged;
-
-        if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged += HandleQueueChanged;
-
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+
+        ShopManager.OnStockChanged += HandleStockChanged;
+        ShopManager.OnItemSold += HandleItemSold;
     }
 
     private void UnsubscribeEvents()
@@ -142,41 +95,27 @@ public class InventoryPanelController : MonoBehaviour
         if (EconomyManager.Instance != null)
             EconomyManager.Instance.OnMoneyChanged -= HandleMoneyChanged;
 
-        if (UpgradeManager.Instance != null)
-            UpgradeManager.Instance.OnItemUpgraded -= HandleItemUpgraded;
-
-        if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged -= HandleBasketChanged;
-
-        if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged -= HandleQueueChanged;
-
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+
+        ShopManager.OnStockChanged -= HandleStockChanged;
+        ShopManager.OnItemSold -= HandleItemSold;
     }
 
     private void HandleMoneyChanged(int newMoney)
     {
         UpdateGoldText(newMoney);
-        if (mainPanel != null && mainPanel.activeSelf)
-            RefreshPanel();
     }
 
-    private void HandleItemUpgraded(string itemId, int newLevel)
+    private void HandleStockChanged(string itemId, int newStock)
     {
         if (mainPanel != null && mainPanel.activeSelf)
             RefreshPanel();
     }
 
-    private void HandleBasketChanged(int cur, int max)
+    private void HandleItemSold(string itemId, int amount)
     {
-        if (mainPanel != null && mainPanel.activeSelf && currentTab == InventoryTab.Resources)
-            RefreshPanel();
-    }
-
-    private void HandleQueueChanged(int cur, int max)
-    {
-        if (mainPanel != null && mainPanel.activeSelf && currentTab == InventoryTab.Resources)
+        if (mainPanel != null && mainPanel.activeSelf)
             RefreshPanel();
     }
 
@@ -187,7 +126,7 @@ public class InventoryPanelController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════
-    //  Panel Aç / Kapat & Sekme Değiştirme
+    //  Panel Aç / Kapat
     // ═══════════════════════════════════════════
 
     public void OpenPanel()
@@ -200,7 +139,7 @@ public class InventoryPanelController : MonoBehaviour
         if (mainPanel != null && !mainPanel.activeSelf)
             mainPanel.SetActive(true);
 
-        SwitchTab(InventoryTab.Resources);
+        RefreshPanel();
     }
 
     public void ClosePanel()
@@ -222,38 +161,14 @@ public class InventoryPanelController : MonoBehaviour
             OpenPanel();
     }
 
-    public void SwitchTab(InventoryTab tab)
-    {
-        PlayButtonClickSFX();
-        currentTab = tab;
-
-        if (resourcesContent != null) resourcesContent.gameObject.SetActive(tab == InventoryTab.Resources);
-        if (productsContent != null) productsContent.gameObject.SetActive(tab == InventoryTab.Products);
-        if (upgradesContent != null) upgradesContent.gameObject.SetActive(tab == InventoryTab.Upgrades);
-
-        RefreshPanel();
-    }
-
     // ═══════════════════════════════════════════
-    //  Panel Yenileme & Liste Doldurma
+    //  Panel Yenileme & Yalnızca Stoktaki Ürünleri Doldurma
     // ═══════════════════════════════════════════
 
     public void RefreshPanel()
     {
         UpdateGoldText(EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : 0);
-
-        switch (currentTab)
-        {
-            case InventoryTab.Resources:
-                PopulateResourcesTab();
-                break;
-            case InventoryTab.Products:
-                PopulateProductsTab();
-                break;
-            case InventoryTab.Upgrades:
-                PopulateUpgradesTab();
-                break;
-        }
+        PopulateStokedProducts();
     }
 
     private void UpdateGoldText(int goldAmount)
@@ -262,231 +177,127 @@ public class InventoryPanelController : MonoBehaviour
             goldText.text = $"{goldAmount:N0} Gold";
     }
 
-    // ── 1. KAYNAKLAR SEKMESİ ──
-    private void PopulateResourcesTab()
+    private void PopulateStokedProducts()
     {
-        ClearContainer(resourcesContent, spawnedResourceRows);
+        ClearContainer(productListContent, spawnedProductItems);
 
-        if (resourcesContent == null || statRowPrefab == null) return;
-
-        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
-
-        // Başlık
-        AddResourceHeader("HAM MADDE & BAKİYE DUMUMU", new Color(0.4f, 0.7f, 1f, 1f));
-
-        // 1. Altın
-        int gold = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : (data != null ? data.Para : 0);
-        AddResourceRow("💰 Altın Bakiyesi", $"{gold:N0} Gold", new Color(1f, 0.85f, 0.2f, 1f));
-
-        // 2. Sepet Odunu
-        int basketCur = BasketManager.Instance != null ? BasketManager.Instance.MevcutDoluluk : 0;
-        int basketMax = BasketManager.Instance != null ? BasketManager.Instance.MaksKapasite : 5;
-        AddResourceRow("🪵 Sepetteki Odun", $"{basketCur} / {basketMax}", new Color(0.95f, 0.95f, 0.95f, 1f));
-
-        // 3. Ambar Odunu
-        int playerWoodStock = data != null ? data.PlayerWoodStock : 0;
-        AddResourceRow("🏠 Ev Ambarı Odunu", $"{playerWoodStock} Odun", new Color(0.4f, 0.9f, 0.4f, 1f));
-
-        // 4. Atölye Odunu
-        int workshopRawWood = data != null ? data.WorkshopRawWood : 0;
-        int workshopCap = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetWorkshopCapacity() : 10;
-        AddResourceRow("🏭 Atölye Ham Odunu", $"{workshopRawWood} / {workshopCap}", new Color(0.9f, 0.5f, 0.9f, 1f));
-
-        if (resourcesContent is RectTransform contentRect)
-            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
-    }
-
-    private void AddResourceHeader(string title, Color color)
-    {
-        GameObject obj = Instantiate(statRowPrefab, resourcesContent, false);
-        obj.SetActive(true);
-
-        RectTransform rect = obj.GetComponent<RectTransform>();
-        if (rect != null)
+        if (productListContent == null)
         {
-            rect.localScale = Vector3.one;
-            rect.anchoredPosition3D = Vector3.zero;
+            var found = transform.Find("ProductListContent") ?? transform.Find("Panel/ProductListContent") ?? transform.Find("Scroll View/Viewport/Content");
+            if (found != null) productListContent = found;
         }
 
-        StatRowUI row = obj.GetComponent<StatRowUI>();
-        if (row != null)
+        if (emptyInventoryText == null)
         {
-            row.SetupAsHeader(title, color);
-            spawnedResourceRows.Add(row);
-        }
-    }
-
-    private void AddResourceRow(string label, string value, Color valColor)
-    {
-        GameObject obj = Instantiate(statRowPrefab, resourcesContent, false);
-        obj.SetActive(true);
-
-        RectTransform rect = obj.GetComponent<RectTransform>();
-        if (rect != null)
-        {
-            rect.localScale = Vector3.one;
-            rect.anchoredPosition3D = Vector3.zero;
+            var textObj = transform.Find("EmptyInventoryText") ?? transform.Find("Panel/EmptyInventoryText") ?? transform.Find("Scroll View/EmptyInventoryText");
+            if (textObj != null) emptyInventoryText = textObj.GetComponent<TextMeshProUGUI>();
         }
 
-        StatRowUI row = obj.GetComponent<StatRowUI>();
-        if (row != null)
+        if (productListContent == null || shopItemPrefab == null)
         {
-            row.Setup(label, value, valColor);
-            spawnedResourceRows.Add(row);
+            Debug.LogWarning("[InventoryPanelController] 'productListContent' veya 'shopItemPrefab' Inspector'dan atanmamış!");
+            return;
         }
-    }
 
-    // ── 2. ÜRÜNLER SEKMESİ ──
-    private void PopulateProductsTab()
-    {
-        ClearContainer(productsContent, spawnedProductItems);
-
-        if (productsContent == null || shopItemPrefab == null) return;
+        EnsureLayoutComponents(productListContent);
 
         PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
         RecipeConfig[] allRecipes = WorkshopManager.Instance != null ? WorkshopManager.Instance.tumTarifler : null;
 
-        if (allRecipes == null || allRecipes.Length == 0) return;
+        int totalStockedProductsCount = 0;
 
-        foreach (RecipeConfig recipe in allRecipes)
+        if (allRecipes != null && allRecipes.Length > 0)
         {
-            if (recipe == null || string.IsNullOrEmpty(recipe.ItemID)) continue;
-
-            string itemId = recipe.ItemID;
-            int stock = data != null && data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
-            int price = recipe.BaseSalePrice > 0 ? recipe.BaseSalePrice : 100;
-            Sprite icon = recipe.ItemIcon;
-
-            GameObject obj = Instantiate(shopItemPrefab, productsContent, false);
-            obj.SetActive(true);
-
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            if (rect != null)
+            foreach (RecipeConfig recipe in allRecipes)
             {
-                rect.localScale = Vector3.one;
-                rect.anchoredPosition3D = Vector3.zero;
-            }
+                if (recipe == null || string.IsNullOrEmpty(recipe.ItemID)) continue;
 
-            ShopItemUI itemUI = obj.GetComponent<ShopItemUI>();
-            if (itemUI != null)
-            {
-                itemUI.Setup(
-                    itemId,
-                    icon,
-                    stock,
-                    price,
-                    false,
-                    (id) => OnSellFromProductsTab(id),
-                    null
-                );
+                string itemId = recipe.ItemID;
+                int stock = data != null && data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
 
-                spawnedProductItems.Add(itemUI);
+                // SADECE STOKTA VAR OLAN (Stok > 0) ÜRÜNLERİ LİSTELE
+                if (stock <= 0) continue;
+
+                totalStockedProductsCount++;
+
+                int price = recipe.BaseSalePrice > 0 ? recipe.BaseSalePrice : 100;
+                Sprite icon = recipe.ItemIcon;
+
+                GameObject obj = Instantiate(shopItemPrefab, productListContent, false);
+                obj.SetActive(true);
+
+                RectTransform rect = obj.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.localScale = Vector3.one;
+                    rect.anchoredPosition3D = Vector3.zero;
+                }
+
+                ShopItemUI itemUI = obj.GetComponent<ShopItemUI>();
+                if (itemUI != null)
+                {
+                    itemUI.Setup(
+                        itemId,
+                        icon,
+                        stock,
+                        price,
+                        false,
+                        (id) => OnProductCardClicked(id),
+                        null
+                    );
+
+                    spawnedProductItems.Add(itemUI);
+                }
             }
         }
 
-        if (productsContent is RectTransform contentRect)
+        // Stokta hiç ürün var mı kontrol et
+        bool hasAnyStockedProduct = totalStockedProductsCount > 0;
+
+        if (emptyInventoryText != null)
+        {
+            emptyInventoryText.gameObject.SetActive(!hasAnyStockedProduct);
+            emptyInventoryText.transform.SetAsLastSibling();
+            if (!hasAnyStockedProduct)
+            {
+                emptyInventoryText.text = "Envanterinizde henüz üretilmiş ürün bulunmuyor.\nAtölyeden ürün üreterek çantanızı doldurabilirsiniz.";
+            }
+        }
+
+        if (productListContent is RectTransform contentRect)
+        {
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        }
+        Canvas.ForceUpdateCanvases();
     }
 
-    private void OnSellFromProductsTab(string itemId)
+    private void OnProductCardClicked(string itemId)
     {
         PlayButtonClickSFX();
-
-        if (ShopManager.Instance != null)
-            ShopManager.Instance.TryRemoveStock(itemId, 1);
-
-        RefreshPanel();
     }
 
-    // ── 3. EKİPMAN & UPGRADE SEKMESİ ──
-    private void PopulateUpgradesTab()
+    private void EnsureLayoutComponents(Transform contentTransform)
     {
-        ClearContainer(upgradesContent, spawnedUpgradeItems);
+        if (contentTransform == null) return;
 
-        if (upgradesContent == null || upgradeItemPrefab == null) return;
-
-        int currentGold = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : 0;
-
-        // Upgrade edilebilir 5 ana eşya kategorisi
-        var upgradeItems = new (string id, string name)[]
+        VerticalLayoutGroup layout = contentTransform.GetComponent<VerticalLayoutGroup>();
+        if (layout == null)
         {
-            ("Axe", "🪓 Balta Hasarı / Gücü"),
-            ("Basket", "🧺 Sepet Taşıma Kapasitesi"),
-            ("Truck", "🚛 Kamyon Yük Kapasitesi"),
-            ("Workshop", "⚙️ Atölye Üretim Hızı"),
-            ("WorkshopQueue", "📦 Atölye Depo Kapasitesi")
-        };
-
-        foreach (var (itemId, displayName) in upgradeItems)
-        {
-            int level = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel(itemId) : 1;
-            float statValue = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemValue(itemId) : 10f;
-            int cost = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetUpgradeCost(itemId) : 50;
-            bool isMax = UpgradeManager.Instance != null && UpgradeManager.Instance.IsMaxLevel(itemId);
-            Sprite icon = GetUpgradeIcon(itemId);
-
-            GameObject obj = Instantiate(upgradeItemPrefab, upgradesContent, false);
-            obj.SetActive(true);
-
-            RectTransform rect = obj.GetComponent<RectTransform>();
-            if (rect != null)
-            {
-                rect.localScale = Vector3.one;
-                rect.anchoredPosition3D = Vector3.zero;
-            }
-
-            UpgradeItemUI itemUI = obj.GetComponent<UpgradeItemUI>();
-            if (itemUI != null)
-            {
-                itemUI.Setup(
-                    itemId,
-                    displayName,
-                    icon,
-                    level,
-                    statValue,
-                    cost,
-                    isMax,
-                    currentGold,
-                    (id) => OnUpgradeButtonClicked(id)
-                );
-
-                spawnedUpgradeItems.Add(itemUI);
-            }
+            layout = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
         }
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+        layout.spacing = 6f;
 
-        if (upgradesContent is RectTransform contentRect)
-            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
-    }
-
-    private void OnUpgradeButtonClicked(string itemId)
-    {
-        PlayButtonClickSFX();
-
-        if (UpgradeManager.Instance != null)
+        ContentSizeFitter fitter = contentTransform.GetComponent<ContentSizeFitter>();
+        if (fitter == null)
         {
-            bool success = UpgradeManager.Instance.UpgradeItem(itemId);
-            if (success)
-            {
-                NotificationUIController.Instance?.ShowNotification($"{itemId} yükseltildi!");
-            }
-            else
-            {
-                NotificationUIController.Instance?.ShowNotification("Yükseltme başarısız (Yetersiz Gold)!");
-            }
+            fitter = contentTransform.gameObject.AddComponent<ContentSizeFitter>();
         }
-
-        RefreshPanel();
-    }
-
-    private Sprite GetUpgradeIcon(string itemId)
-    {
-        // Varsa ilgili tarif iconunu fallback göster
-        if (itemId == "Axe")
-        {
-            if (AxeTablePanelController.Instance != null)
-                return null;
-        }
-        return null;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
     }
 
     // ═══════════════════════════════════════════
@@ -495,18 +306,20 @@ public class InventoryPanelController : MonoBehaviour
 
     private void ClearContainer<T>(Transform container, List<T> list) where T : Component
     {
-        if (container != null)
+        if (list != null)
         {
-            for (int i = container.childCount - 1; i >= 0; i--)
+            for (int i = list.Count - 1; i >= 0; i--)
             {
-                Transform child = container.GetChild(i);
-                child.gameObject.SetActive(false);
-                child.SetParent(null);
-                Destroy(child.gameObject);
+                if (list[i] != null && list[i].gameObject != null)
+                {
+                    list[i].gameObject.SetActive(false);
+                    Destroy(list[i].gameObject);
+                }
             }
+            list.Clear();
         }
-        list.Clear();
     }
+
 
     private void PlayButtonClickSFX()
     {
