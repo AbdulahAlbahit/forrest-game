@@ -395,7 +395,7 @@ public class ShopPanelController : MonoBehaviour
                 totalPendingCount += pending;
                 int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
                 
-                pendingSummary += $"• {itemId}: {pending} adet bekleniyor (Stok: {currentStock})\n";
+                pendingSummary += $"- {itemId}: {pending} adet bekleniyor (Stok: {currentStock})\n";
 
                 if (currentStock > 0)
                     canFulfillAny = true;
