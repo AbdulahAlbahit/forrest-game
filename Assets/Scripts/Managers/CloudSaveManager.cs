@@ -227,9 +227,18 @@ public class CloudSaveManager : MonoBehaviour
 
         if (data.PendingCustomerOrders != null)
         {
-            Dictionary<string, object> dict = new Dictionary<string, object>();
-            foreach(string key in data.PendingCustomerOrders.keys) dict[key] = data.PendingCustomerOrders.Get(key);
-            playerDict["PendingCustomerOrders"] = dict;
+            List<object> orderList = new List<object>();
+            foreach (CustomerOrderData order in data.PendingCustomerOrders)
+            {
+                if (order == null) continue;
+                orderList.Add(new Dictionary<string, object>
+                {
+                    { "OrderId", order.OrderId },
+                    { "ItemId", order.ItemId }
+                });
+            }
+            playerDict["PendingCustomerOrders"] = orderList;
+            playerDict["NextCustomerOrderId"] = data.NextCustomerOrderId;
         }
 
         if (data.ActiveQuests != null)
@@ -358,11 +367,23 @@ public class CloudSaveManager : MonoBehaviour
                     data.ReadyForTruck.FromDictionary(readyForTruckRaw);
                 }
 
-                data.PendingCustomerOrders = new SerializableDict();
-                if (dict.ContainsKey("PendingCustomerOrders") && dict["PendingCustomerOrders"] is Dictionary<string, object> pendingRaw)
+                data.PendingCustomerOrders = new List<CustomerOrderData>();
+                if (dict.ContainsKey("PendingCustomerOrders") && dict["PendingCustomerOrders"] is List<object> pendingRaw)
                 {
-                    data.PendingCustomerOrders.FromDictionary(pendingRaw);
+                    foreach (object entry in pendingRaw)
+                    {
+                        if (entry is Dictionary<string, object> orderRaw &&
+                            orderRaw.ContainsKey("OrderId") && orderRaw.ContainsKey("ItemId"))
+                        {
+                            data.PendingCustomerOrders.Add(new CustomerOrderData
+                            {
+                                OrderId = Convert.ToInt32(orderRaw["OrderId"]),
+                                ItemId = orderRaw["ItemId"].ToString()
+                            });
+                        }
+                    }
                 }
+                if (dict.ContainsKey("NextCustomerOrderId")) data.NextCustomerOrderId = Convert.ToInt32(dict["NextCustomerOrderId"]);
 
                 data.ActiveQuests = new SerializableDict();
                 if (dict.ContainsKey("ActiveQuests") && dict["ActiveQuests"] is Dictionary<string, object> activeQuestsRaw)
@@ -512,7 +533,7 @@ public class CloudSaveManager : MonoBehaviour
                     if (localData.ShopInventory == null) localData.ShopInventory = new SerializableDict();
                     if (localData.WorkshopQueue == null) localData.WorkshopQueue = new SerializableDict();
                     if (localData.ReadyForTruck == null) localData.ReadyForTruck = new SerializableDict();
-                    if (localData.PendingCustomerOrders == null) localData.PendingCustomerOrders = new SerializableDict();
+                    if (localData.PendingCustomerOrders == null) localData.PendingCustomerOrders = new List<CustomerOrderData>();
                     if (localData.ActiveQuests == null) localData.ActiveQuests = new SerializableDict();
                     if (localData.CompletedQuests == null) localData.CompletedQuests = new System.Collections.Generic.List<string>();
 

@@ -40,11 +40,19 @@ public class TruckRouteController : MonoBehaviour
     {
         if (items == null) return;
 
+        List<string> loadedSummary = new List<string>();
+
         foreach (KeyValuePair<string, int> entry in items)
         {
             if (entry.Value <= 0) continue;
             LoadedProducts.TryGetValue(entry.Key, out int existing);
             LoadedProducts[entry.Key] = existing + entry.Value;
+            loadedSummary.Add($"{entry.Key}:{entry.Value}");
+        }
+
+        if (loadedSummary.Count > 0)
+        {
+            GameLogger.Log($"[TruckRoute] Kamyona yuklenen urunler: {string.Join(", ", loadedSummary)}", this);
         }
     }
 
