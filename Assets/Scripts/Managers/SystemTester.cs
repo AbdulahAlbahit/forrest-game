@@ -521,24 +521,30 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 5: Yeni NPC Siparis Sistemi (Stok Yoksa BekleyenSiparise Atar)")]
     public void TestNPC_NewOrderSystem()
     {
-        if (ShopManager.Instance == null)
+        if (CustomerOrderManager.Instance == null)
         {
-            GameLogger.LogError("[Test 5] ShopManager bulunamadi!");
+            GameLogger.LogError("[Test 5] CustomerOrderManager bulunamadi!");
             return;
         }
 
-        string itemId = testRecipe != null ? testRecipe.ItemID : "Chair";
-        int siparisMiktari = 3;
-        int fiyat = 100;
+        if (testRecipe == null)
+        {
+            GameLogger.LogWarning("[Test 5] testRecipe atanmamis, test icin atayin.");
+            return;
+        }
 
-        GameLogger.Log($"[Test 5] NPC Geldi! {siparisMiktari} adet {itemId} istiyor.");
-        ShopManager.Instance.ProcessCustomerOrder(itemId, siparisMiktari, fiyat);
+        string itemId = testRecipe.ItemID;
+
+        GameLogger.Log($"[Test 5] NPC Geldi! 1 adet {itemId} istiyor.");
+        CustomerOrderManager.Instance.CreateOrder(testRecipe);
 
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             PlayerData d = CloudSaveManager.Instance.CurrentData;
-            int bekleyenSiparis = d.PendingCustomerOrders != null ? d.PendingCustomerOrders.Get(itemId, 0) : 0;
-            GameLogger.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis miktari: {bekleyenSiparis}");
+            int bekleyenSiparis = d.PendingCustomerOrders != null
+                ? d.PendingCustomerOrders.FindAll(o => o.ItemId == itemId).Count
+                : 0;
+            GameLogger.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis sayisi: {bekleyenSiparis}");
         }
     }
 }
