@@ -121,7 +121,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 546645164698252694, guid: 702ff770c80f7034aa11028516231cff, type: 3}
         m_TargetAssemblyTypeName: AxeTablePanelController, Assembly-CSharp
         m_MethodName: OpenPanel
         m_Mode: 1
