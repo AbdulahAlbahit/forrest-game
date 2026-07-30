@@ -121,11 +121,19 @@ public class AxeTablePanelController : MonoBehaviour
             }
         }
 
-        SyncEquippedTierFromManager();
+        if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+        {
+            TrySyncEquippedAxeFromData(CloudSaveManager.Instance.CurrentData);
+        }
+        else
+        {
+            SyncEquippedTierFromManager();
+        }
 
         if (mainPanel != null && !mainPanel.activeSelf)
             mainPanel.SetActive(false);
     }
+
 
     private void OnEnable()
     {

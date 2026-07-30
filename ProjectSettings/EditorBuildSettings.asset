@@ -14,5 +14,11 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/AbdulahTestsEkran.unity
     guid: aaf5ff69497982b4c84f1242fd7ebaa9
+  - enabled: 1
+    path: Assets/Scenes/Bulut_UI.unity
+    guid: 4198cac6624b30947b6c61d5ae760602
+  - enabled: 1
+    path: Assets/Scenes/Bulut_UI_Login.unity
+    guid: 163aaa5f95217e944a0d4d1fc825040d
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

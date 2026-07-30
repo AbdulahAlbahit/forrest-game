@@ -2,29 +2,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ForrestGame.Core;
 using ForrestGame.Managers;
 
 /// <summary>
-/// Sağ üstte görev (quest) bilgilerini gösteren HUD kontrolcüsü.
-/// Toggle butonuna her basıldığında 3 görev → 1 görev → gizle döngüsünde geçiş yapar.
-///
-/// KULLANIM:
-/// 1. CanvasUI altına bir QuestPanel (dikey liste) ve QuestToggleButton ekleyin.
-/// 2. Bu scripti CanvasUI veya ayrı bir objeye ekleyin.
-/// 3. Inspector'dan referansları sürükleyin.
+/// Sağ üstte Görevler ve Müşteri Siparişlerini gösteren HUD widget kontrolcüsü.
+/// Toggle butonuna her basıldığında:
+/// 1. Basış: 3 Aktif Görev (ShowQuests)
+/// 2. Basış: 3 Bekleyen Müşteri Siparişi (ShowOrders)
+/// 3. Basış: Paneli Kapat (Hidden)
+/// döngüsünde geçiş yapar.
 /// </summary>
 public class QuestHUDController : MonoBehaviour
 {
     public static QuestHUDController Instance { get; private set; }
 
     /// <summary>
-    /// Görev görüntüleme modları: 3 görev, 1 görev veya gizli.
+    /// Görüntüleme modları: 3 Görev → 3 Müşteri Siparişi → Gizli.
     /// </summary>
     public enum QuestDisplayMode
     {
-        ShowThree,
-        ShowOne,
-        Hidden
+        ShowQuests,     // 3 Aktif Görev
+        ShowOrders,     // 3 Bekleyen Müşteri Siparişi
+        Hidden          // Paneli Kapat
     }
 
     [Header("--- UI Referansları ---")]
@@ -44,39 +44,32 @@ public class QuestHUDController : MonoBehaviour
     [Tooltip("Tüm Görevler büyük detay paneli objesi (FullQuestPanelController bileşeni içerir).")]
     [SerializeField] private GameObject fullQuestPanel;
 
-    [Header("--- Görev Satırları (Prefab Sistemi) ---")]
-    [Tooltip("Görev satırlarının dizileceği Content objesi (VerticalLayoutGroup).")]
-    [SerializeField] private Transform questListContent;
-
-    [Tooltip("Her bir görev satırı için prefab. İçinde QuestItemTexts olmalı (aşağıya bakınız).")]
-    [SerializeField] private GameObject questItemPrefab;
-
-    [Header("--- Manuel Görev Satırları (Prefab Yoksa) ---")]
-    [Tooltip("1. görev satırı paneli.")]
+    [Header("--- Manuel Görev / Sipariş Satırları ---")]
+    [Tooltip("1. satır paneli (QuestRow1).")]
     [SerializeField] private GameObject questRow1;
-    [Tooltip("1. görev adı metni.")]
+    [Tooltip("1. ad metni (QuestName1).")]
     [SerializeField] private TextMeshProUGUI questName1;
-    [Tooltip("1. görev ilerleme metni (ör: 2/5).")]
+    [Tooltip("1. ilerleme metni (QuestProgress1).")]
     [SerializeField] private TextMeshProUGUI questProgress1;
-    [Tooltip("1. görev ilerleme barı (Image Type = Filled).")]
+    [Tooltip("1. ilerleme barı (Image1).")]
     [SerializeField] private Image questFill1;
 
-    [Tooltip("2. görev satırı paneli.")]
+    [Tooltip("2. satır paneli (QuestRow2).")]
     [SerializeField] private GameObject questRow2;
-    [Tooltip("2. görev adı metni.")]
+    [Tooltip("2. ad metni (QuestName2).")]
     [SerializeField] private TextMeshProUGUI questName2;
-    [Tooltip("2. görev ilerleme metni.")]
+    [Tooltip("2. ilerleme metni (QuestProgress2).")]
     [SerializeField] private TextMeshProUGUI questProgress2;
-    [Tooltip("2. görev ilerleme barı.")]
+    [Tooltip("2. ilerleme barı (Image2).")]
     [SerializeField] private Image questFill2;
 
-    [Tooltip("3. görev satırı paneli.")]
+    [Tooltip("3. satır paneli (QuestRow3).")]
     [SerializeField] private GameObject questRow3;
-    [Tooltip("3. görev adı metni.")]
+    [Tooltip("3. ad metni (QuestName3).")]
     [SerializeField] private TextMeshProUGUI questName3;
-    [Tooltip("3. görev ilerleme metni.")]
+    [Tooltip("3. ilerleme metni (QuestProgress3).")]
     [SerializeField] private TextMeshProUGUI questProgress3;
-    [Tooltip("3. görev ilerleme barı.")]
+    [Tooltip("3. ilerleme barı (Image3).")]
     [SerializeField] private Image questFill3;
 
     [Header("--- Ses Ayarları ---")]
@@ -85,10 +78,6 @@ public class QuestHUDController : MonoBehaviour
 
     // Dahili durum
     private QuestDisplayMode currentMode = QuestDisplayMode.Hidden;
-
-    // ═══════════════════════════════════════════
-    //  Unity Lifecycle
-    // ═══════════════════════════════════════════
 
     private void Awake()
     {
@@ -136,11 +125,11 @@ public class QuestHUDController : MonoBehaviour
 
     private void OnEnable()
     {
-        // Görev verileri değiştiğinde güncelle
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
 
         ShopManager.OnItemSold += HandleItemSold;
+        ShopManager.OnStockChanged += HandleStockChanged;
     }
 
     private void OnDisable()
@@ -149,6 +138,7 @@ public class QuestHUDController : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
 
         ShopManager.OnItemSold -= HandleItemSold;
+        ShopManager.OnStockChanged -= HandleStockChanged;
     }
 
     private void HandleDataLoaded(PlayerData data)
@@ -161,24 +151,29 @@ public class QuestHUDController : MonoBehaviour
         RefreshQuestDisplay();
     }
 
+    private void HandleStockChanged(string itemId, int newStock)
+    {
+        RefreshQuestDisplay();
+    }
+
     // ═══════════════════════════════════════════
-    //  Toggle Butonu İşlemi
+    //  Toggle Butonu İşlemi (Döngü: 3 Görev -> 3 Sipariş -> Gizli)
     // ═══════════════════════════════════════════
 
     private void OnToggleButtonClicked()
     {
         PlayButtonClickSFX();
 
-        // Döngü: ShowThree → ShowOne → Hidden → ShowThree ...
+        // 3 Aşamalı Döngü: ShowQuests → ShowOrders → Hidden → ShowQuests ...
         switch (currentMode)
         {
             case QuestDisplayMode.Hidden:
-                currentMode = QuestDisplayMode.ShowThree;
+                currentMode = QuestDisplayMode.ShowQuests;
                 break;
-            case QuestDisplayMode.ShowThree:
-                currentMode = QuestDisplayMode.ShowOne;
+            case QuestDisplayMode.ShowQuests:
+                currentMode = QuestDisplayMode.ShowOrders;
                 break;
-            case QuestDisplayMode.ShowOne:
+            case QuestDisplayMode.ShowOrders:
                 currentMode = QuestDisplayMode.Hidden;
                 break;
         }
@@ -187,32 +182,32 @@ public class QuestHUDController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════
-    //  Görev Gösterim Modu Uygulama
+    //  Görev / Sipariş Gösterim Modu Uygulama
     // ═══════════════════════════════════════════
 
     private void ApplyDisplayMode()
     {
         switch (currentMode)
         {
-            case QuestDisplayMode.ShowThree:
+            case QuestDisplayMode.ShowQuests:
                 if (questPanel != null) questPanel.SetActive(true);
+                if (openFullQuestPanelButton != null) openFullQuestPanelButton.gameObject.SetActive(true);
                 UpdateToggleButtonText("Görevler (3)");
                 RefreshQuestDisplay();
                 break;
 
-            case QuestDisplayMode.ShowOne:
+            case QuestDisplayMode.ShowOrders:
                 if (questPanel != null) questPanel.SetActive(true);
-                UpdateToggleButtonText("Görevler (1)");
+                if (openFullQuestPanelButton != null) openFullQuestPanelButton.gameObject.SetActive(false);
+                UpdateToggleButtonText("Siparişler (3)");
                 RefreshQuestDisplay();
                 break;
 
             case QuestDisplayMode.Hidden:
                 if (questPanel != null) questPanel.SetActive(false);
-                UpdateToggleButtonText("Görevler");
+                UpdateToggleButtonText("Görev/Sipariş");
                 break;
         }
-
-        Debug.Log($"[QuestHUD] Görev modu değişti: {currentMode}");
     }
 
     private void UpdateToggleButtonText(string text)
@@ -222,59 +217,53 @@ public class QuestHUDController : MonoBehaviour
     }
 
     // ═══════════════════════════════════════════
-    //  Görev Verilerini Güncelleme
+    //  Görev & Sipariş Verilerini Güncelleme
     // ═══════════════════════════════════════════
 
-    /// <summary>
-    /// Mevcut moda göre görev satırlarını günceller.
-    /// </summary>
     public void RefreshQuestDisplay()
     {
         if (currentMode == QuestDisplayMode.Hidden) return;
 
-        int maxVisible = currentMode == QuestDisplayMode.ShowThree ? 3 : 1;
+        List<QuestDisplayData> displayData = currentMode == QuestDisplayMode.ShowQuests 
+            ? CollectQuestData() 
+            : CollectOrdersData();
 
-        // Görev verilerini topla
-        List<QuestDisplayData> displayData = CollectQuestData();
-
-        // Satırları güncelle
-        UpdateQuestRow(questRow1, questName1, questProgress1, questFill1, displayData, 0, maxVisible);
-        UpdateQuestRow(questRow2, questName2, questProgress2, questFill2, displayData, 1, maxVisible);
-        UpdateQuestRow(questRow3, questName3, questProgress3, questFill3, displayData, 2, maxVisible);
+        // 3 satırı güncelle
+        UpdateRow(questRow1, questName1, questProgress1, questFill1, displayData, 0);
+        UpdateRow(questRow2, questName2, questProgress2, questFill2, displayData, 1);
+        UpdateRow(questRow3, questName3, questProgress3, questFill3, displayData, 2);
     }
 
-    private void UpdateQuestRow(GameObject row, TextMeshProUGUI nameText, TextMeshProUGUI progressText,
-                                 Image fillImage, List<QuestDisplayData> data, int index, int maxVisible)
+    private void UpdateRow(GameObject row, TextMeshProUGUI nameText, TextMeshProUGUI progressText,
+                           Image fillImage, List<QuestDisplayData> data, int index)
     {
         if (row == null) return;
 
-        // Bu satır görünür mü?
-        bool shouldShow = index < maxVisible && index < data.Count;
+        bool shouldShow = index < data.Count;
         row.SetActive(shouldShow);
 
         if (!shouldShow) return;
 
-        QuestDisplayData quest = data[index];
+        QuestDisplayData item = data[index];
 
         if (nameText != null)
-            nameText.text = quest.IsCompleted ? $"{quest.Name} (Bitti)" : quest.Name;
+            nameText.text = item.Name;
 
         if (progressText != null)
-            progressText.text = quest.IsCompleted ? "Tamamlandı!" : $"{quest.CurrentProgress} / {quest.TargetAmount}";
+            progressText.text = item.ProgressString;
 
         if (fillImage != null)
-            fillImage.fillAmount = quest.ProgressRatio;
+            fillImage.fillAmount = item.ProgressRatio;
     }
 
     // ═══════════════════════════════════════════
-    //  Görev Verisi Toplama
+    //  Veri Toplama (Görevler vs Müşteri Siparişleri)
     // ═══════════════════════════════════════════
 
     private List<QuestDisplayData> CollectQuestData()
     {
         List<QuestDisplayData> result = new List<QuestDisplayData>();
 
-        // 1. Gerçek sistem aktifse QuestManager'dan oku
         if (QuestManager.Instance != null && QuestManager.Instance.tumGorevler != null)
         {
             PlayerData data = CloudSaveManager.Instance?.CurrentData;
@@ -291,44 +280,74 @@ public class QuestHUDController : MonoBehaviour
 
                 result.Add(new QuestDisplayData
                 {
-                    Name = quest.QuestName,
-                    Description = quest.QuestDescription,
-                    CurrentProgress = progress,
-                    TargetAmount = quest.TargetAmount,
+                    Name = isCompleted ? $"{quest.QuestName} (Bitti)" : quest.QuestName,
+                    ProgressString = isCompleted ? "Tamamlandı!" : $"{progress} / {quest.TargetAmount}",
                     ProgressRatio = quest.TargetAmount > 0 ? Mathf.Clamp01((float)progress / quest.TargetAmount) : 0f,
                     IsCompleted = isCompleted
                 });
             }
         }
 
-        // Tamamlanmamış görevleri öne al
         result.Sort((a, b) => a.IsCompleted.CompareTo(b.IsCompleted));
+        return result;
+    }
+
+    private List<QuestDisplayData> CollectOrdersData()
+    {
+        List<QuestDisplayData> result = new List<QuestDisplayData>();
+        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+
+        if (data != null && data.PendingCustomerOrders != null && data.PendingCustomerOrders.keys.Count > 0)
+        {
+            for (int i = 0; i < data.PendingCustomerOrders.keys.Count; i++)
+            {
+                string itemId = data.PendingCustomerOrders.keys[i];
+                int pending = data.PendingCustomerOrders.values[i];
+
+                if (pending > 0)
+                {
+                    int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
+                    bool canFulfill = currentStock >= pending;
+                    float ratio = pending > 0 ? Mathf.Clamp01((float)currentStock / pending) : 1f;
+
+                    result.Add(new QuestDisplayData
+                    {
+                        Name = itemId,
+                        ProgressString = canFulfill ? $"Hazır! ({currentStock}/{pending})" : $"Bekleniyor: {pending} (Stok: {currentStock})",
+                        ProgressRatio = ratio,
+                        IsCompleted = canFulfill
+                    });
+                }
+            }
+        }
+
+        if (result.Count == 0)
+        {
+            result.Add(new QuestDisplayData
+            {
+                Name = "Bekleyen Sipariş Yok",
+                ProgressString = "Tüm siparişler karşılandı!",
+                ProgressRatio = 1f,
+                IsCompleted = true
+            });
+        }
+
 
         return result;
     }
 
-    // ═══════════════════════════════════════════
-    //  Ses
-    // ═══════════════════════════════════════════
-
     private void PlayButtonClickSFX()
     {
-        if (!string.IsNullOrEmpty(buttonSfxName) && ForrestGame.Core.AudioManager.Instance != null)
+        if (!string.IsNullOrEmpty(buttonSfxName) && AudioManager.Instance != null)
         {
-            ForrestGame.Core.AudioManager.Instance.PlaySFX(buttonSfxName);
+            AudioManager.Instance.PlaySFX(buttonSfxName);
         }
     }
-
-    // ═══════════════════════════════════════════
-    //  Yardımcı Veri Sınıfı
-    // ═══════════════════════════════════════════
 
     private class QuestDisplayData
     {
         public string Name;
-        public string Description;
-        public int CurrentProgress;
-        public int TargetAmount;
+        public string ProgressString;
         public float ProgressRatio;
         public bool IsCompleted;
     }

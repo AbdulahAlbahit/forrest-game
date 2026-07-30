@@ -511,16 +511,36 @@ public class CharacterStatsPanelController : MonoBehaviour
 
     private int GetEquippedAxeTier(string axeId)
     {
-        // Önce AxeTablePanelController'ın aktif kuşanılan seviye bilgisine bak
-        if (AxeTablePanelController.Instance != null)
+        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+
+        // 1. Kaydedilmiş kuşanılan balta tercihi (EquippedAxe) varsa onu al
+        if (data != null && data.ItemLevels != null && data.ItemLevels.ContainsKey("EquippedAxe"))
+        {
+            return data.GetItemLevel("EquippedAxe");
+        }
+
+        // 2. Kuşanılan kaydedilmemişse, en yüksek açılmış balta seviyesini al
+        if (data != null)
+        {
+            int maxAxeLevel = data.GetItemLevel("Axe");
+            if (maxAxeLevel > 1) return maxAxeLevel;
+        }
+
+        // 3. AxeTablePanelController aktif kuşanılan seviyesi varsa onu al
+        if (AxeTablePanelController.Instance != null && AxeTablePanelController.Instance.CurrentlyEquippedTier > 1)
         {
             return AxeTablePanelController.Instance.CurrentlyEquippedTier;
         }
 
-        if (string.IsNullOrEmpty(axeId) || axeId == "lowpoly_axe" || axeId == "axe_tier_1")
-            return 1;
+        // 4. UpgradeManager seviyesi
+        if (UpgradeManager.Instance != null)
+        {
+            int upgradeLvl = UpgradeManager.Instance.GetItemLevel("Axe");
+            if (upgradeLvl > 1) return upgradeLvl;
+        }
 
-        if (axeId.StartsWith("axe_tier_"))
+        // 5. Görsel ID'den çözümle (axe_tier_X)
+        if (!string.IsNullOrEmpty(axeId) && axeId.StartsWith("axe_tier_"))
         {
             if (int.TryParse(axeId.Replace("axe_replace_", "").Replace("axe_tier_", ""), out int t))
                 return t;
@@ -528,6 +548,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         return 1;
     }
+
 
     private float GetAxePowerForTier(int tier)
     {
