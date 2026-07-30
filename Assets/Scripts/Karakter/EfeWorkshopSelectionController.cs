@@ -229,30 +229,70 @@ public class EfeWorkshopSelectionController : MonoBehaviour
         }
 
         // Secim mini-oyunu kaldirildi: kamyon eve gelince sadece odunu atolye
-        // stoguna bosaltir ve hemen markete gider. Uretim, kalici WorkshopQueue'yu
-        // arka planda isleyen WorkshopManager.ProcessQueue() tarafindan, kamyon
-        // zamanlamasindan tamamen bagimsiz olarak yurutulur.
+        // stoguna bosaltir. Uretim, kalici WorkshopQueue'yu arka planda isleyen
+        // WorkshopManager.ProcessQueue() tarafindan, kamyon zamanlamasindan
+        // tamamen bagimsiz olarak yurutulur. Kamyon, atolyede gercekten paketlenmis
+        // urun varsa onlari yukler; hicbir urun yoksa kisa bir sure bekleyip
+        // markete hic ugramadan eve doner (DockAtWorkshopRoutine).
         _pendingTruck = truck;
         _productionStarted = true;
-        _completionRoutine = StartCoroutine(UnloadWoodOnlyRoutine(truck));
+        _completionRoutine = StartCoroutine(DockAtWorkshopRoutine(truck));
         return true;
     }
 
-    private IEnumerator UnloadWoodOnlyRoutine(TruckRouteController truck)
+    private const float EmptyQueueGraceSeconds = 10f;
+
+    /// <summary>
+    /// Kamyon atolyedeyken calisan birlesik bekleme dongusu. Hem "kuyruk bos ama
+    /// hazir urun var/yok" hem de "kuyruk dolu, uretim bitene kadar bekle" senaryolarini
+    /// tek akista karsilar: her turda hazir stogu (ReadyForTruck) kamyona yukler; kuyrukta
+    /// siparis kalmadigi ve aktif uretim olmadigi anda, hic urun yuklenmediyse 10 sn'lik
+    /// bir bekleme sonunda bos donulur, en az bir urun yuklendiyse hemen ayrilinir.
+    /// </summary>
+    private IEnumerator DockAtWorkshopRoutine(TruckRouteController truck)
     {
         yield return StartCoroutine(UnloadTruckWood(truck));
 
-        // Su an fiilen uretilen bir urun varsa bitmesini bekle; odun yetersizliginden
-        // beklemede olan (henuz baslamamis) siparisler icin sonsuza kadar beklenmez.
-        while (WorkshopManager.Instance != null && WorkshopManager.Instance.IsActivelyProducing)
+        float emptyGraceTimer = 0f;
+
+        while (true)
         {
+            if (WorkshopManager.Instance != null)
+            {
+                Dictionary<string, int> readyStock = WorkshopManager.Instance.DrainReadyForTruck();
+                if (readyStock.Count > 0)
+                {
+                    truck.AddLoadedProducts(readyStock);
+                    emptyGraceTimer = 0f;
+                }
+            }
+
+            bool hasPendingOrders = WorkshopManager.Instance != null && WorkshopManager.Instance.HasPendingQueueOrders;
+            bool isActivelyProducing = WorkshopManager.Instance != null && WorkshopManager.Instance.IsActivelyProducing;
+
+            if (hasPendingOrders || isActivelyProducing)
+            {
+                emptyGraceTimer = 0f;
+            }
+            else if (truck.TotalLoadedProducts > 0)
+            {
+                break;
+            }
+            else
+            {
+                emptyGraceTimer += Time.deltaTime;
+                if (emptyGraceTimer >= EmptyQueueGraceSeconds) break;
+            }
+
             yield return null;
         }
 
-        yield return StartCoroutine(workshopProduction.LoadFinishedBoxesOntoTruck(truck.transform));
+        yield return StartCoroutine(workshopProduction.LoadFinishedBoxesOntoTruck(truck.transform, truck.TotalLoadedProducts > 0));
 
         Debug.Log(
-            "[EfeWorkshopSelection] Bekleyen uretim tamamlandi. Kamyon markete gidiyor.",
+            truck.TotalLoadedProducts > 0
+                ? "[EfeWorkshopSelection] Paketli urun(ler) yuklendi. Kamyon markete gidiyor."
+                : "[EfeWorkshopSelection] Atolyede yuklenecek urun bulunamadi. Kamyon bos donuyor.",
             this);
 
         truck.OnWorkshopProcessComplete();

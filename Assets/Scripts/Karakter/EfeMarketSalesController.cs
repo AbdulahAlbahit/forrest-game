@@ -101,13 +101,11 @@ public class EfeMarketSalesController : MonoBehaviour
         }
 
         EfeWorkshopSelectionController.OnSelectedProductionCompleted += RegisterProducedCargo;
-        TruckRouteController.OnMarketSale += HandleMarketSale;
     }
 
     private void OnDisable()
     {
         EfeWorkshopSelectionController.OnSelectedProductionCompleted -= RegisterProducedCargo;
-        TruckRouteController.OnMarketSale -= HandleMarketSale;
 
         if (Instance == this)
         {
@@ -158,8 +156,8 @@ public class EfeMarketSalesController : MonoBehaviour
     }
 
     /// <summary>
-    /// TruckRouteController.OnMarketSale tarafindan otomatik cagrilir.
-    /// Test veya gelecekteki farkli rota sistemi de dogrudan cagirabilir.
+    /// Kamyon teslimatlari artik ShopManager uzerinden isleniyor; bu metod otomatik
+    /// tetiklenmez, sadece manuel/test amacli dogrudan cagrilar icin acik birakildi.
     /// </summary>
     public bool CompleteMarketSale()
     {
@@ -249,11 +247,6 @@ public class EfeMarketSalesController : MonoBehaviour
                 Debug.LogWarning($"[EfeMarketSales] '{recipe.ItemID}' icin satis fiyati tanimli degil.");
                 return 0;
         }
-    }
-
-    private void HandleMarketSale()
-    {
-        CompleteMarketSale();
     }
 
     private bool TryCreditExternalBalance(SaleRequest request, out int authoritativeBalance)

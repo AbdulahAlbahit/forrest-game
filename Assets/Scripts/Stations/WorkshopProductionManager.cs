@@ -107,8 +107,9 @@ public class WorkshopProductionManager : MonoBehaviour
     /// <summary>
     /// Kamyon atolyeden ayrilmadan hemen once, masada bekleyen kutuyu (varsa)
     /// kamyonun kasasina ucurur ve yerine kalici bir kargo gorseli birakir.
+    /// Kargo gorseli sadece gercekten yuklenmis urun varsa (hasCargo) gosterilir.
     /// </summary>
-    public IEnumerator LoadFinishedBoxesOntoTruck(Transform truckTransform)
+    public IEnumerator LoadFinishedBoxesOntoTruck(Transform truckTransform, bool hasCargo)
     {
         Transform target = truckCargoPoint != null ? truckCargoPoint : truckTransform;
         if (target == null) yield break;
@@ -125,8 +126,15 @@ public class WorkshopProductionManager : MonoBehaviour
 
         if (largeBoxes != null)
         {
-            SnapToPoint(largeBoxes, target);
-            largeBoxes.SetActive(true);
+            if (hasCargo)
+            {
+                SnapToPoint(largeBoxes, target);
+                largeBoxes.SetActive(true);
+            }
+            else
+            {
+                largeBoxes.SetActive(false);
+            }
         }
     }
 

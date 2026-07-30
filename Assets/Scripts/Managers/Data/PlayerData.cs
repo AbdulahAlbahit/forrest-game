@@ -23,8 +23,9 @@ public class PlayerData
 
     // --- Odun Stoklari ---
     /// <summary>
-    /// Oyuncunun genel odun deposu. Agac kesilince artar, kamyona yuklenince azalir.
-    /// Atolye ile dogrudan iliskisi YOKTUR.
+    /// Oyuncunun ayri "ambar" deposu (EfeWoodStorageBridge ile beslenir).
+    /// Kamyona yuklenen/tasinan odundan (EfeOdunTasima, TruckRouteController) BAGIMSIZDIR;
+    /// atolye ile de dogrudan iliskisi YOKTUR.
     /// </summary>
     public int PlayerWoodStock;
 
@@ -38,7 +39,12 @@ public class PlayerData
     public SerializableDict ShopInventory;
     public SerializableDict WorkshopQueue;
     public SerializableDict ReadyForTruck;
-    public SerializableDict PendingCustomerOrders;
+
+    /// <summary>
+    /// Musteri siparislerinin FIFO kuyrugu (once acilan once karsilanir).
+    /// </summary>
+    public List<CustomerOrderData> PendingCustomerOrders;
+    public int NextCustomerOrderId;
 
     // --- Gorev (Quest) Verileri ---
     /// <summary>Gorev ilerleme sayaclari. Ornek: ActiveQuests["satilan_masa"] = 4</summary>
@@ -64,7 +70,8 @@ public class PlayerData
         ShopInventory = new SerializableDict();
         WorkshopQueue = new SerializableDict();
         ReadyForTruck = new SerializableDict();
-        PendingCustomerOrders = new SerializableDict();
+        PendingCustomerOrders = new List<CustomerOrderData>();
+        NextCustomerOrderId = 1;
         ActiveQuests = new SerializableDict();
         CompletedQuests = new List<string>();
     }

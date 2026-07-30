@@ -23,6 +23,12 @@ public enum EffectType
     QueueSize    // Kuyruk boyutu
 }
 
+public enum UpgradePriceFormula
+{
+    Exponential,
+    Linear
+}
+
 /// <summary>
 /// Jenerik Upgrade Config. Tek bir ScriptableObject sablonu ile
 /// Balta, Sepet, Kamyon, Atolye veya gelecekte eklenecek herhangi bir
@@ -47,8 +53,14 @@ public class ItemUpgradeConfig : ScriptableObject
     [Tooltip("Seviye 1'den 2'ye gecisteki temel fiyat.")]
     public float BasePrice = 50f;
 
+    [Tooltip("Fiyatin katlanarak mi yoksa her seviyede sabit miktarda artarak mi hesaplanacagi.")]
+    public UpgradePriceFormula PriceFormula = UpgradePriceFormula.Exponential;
+
     [Tooltip("Her seviyede fiyatin katlanma carpani. 1.5 = her seviye %50 daha pahali.")]
     public float PriceMultiplier = 1.5f;
+
+    [Tooltip("Linear formulde her seviyede fiyata eklenecek sabit miktar.")]
+    public float LinearPriceIncrease = 50f;
 
     [Header("--- Deger Formulu ---")]
     [Tooltip("Seviye 1'deki baslangic stat degeri (guc, kapasite, hiz vb.).")]
@@ -67,13 +79,16 @@ public class ItemUpgradeConfig : ScriptableObject
 
     /// <summary>
     /// Verilen seviyeden bir sonraki seviyeye gecis maliyetini hesaplar.
-    /// Formul: BasePrice * Pow(PriceMultiplier, currentLevel - 1)
+    /// Exponential: BasePrice * Pow(PriceMultiplier, currentLevel - 1)
+    /// Linear: BasePrice + LinearPriceIncrease * (currentLevel - 1)
     /// </summary>
     public int GetUpgradeCost(int currentLevel)
     {
         if (currentLevel <= 0) currentLevel = 1;
 
-        float cost = BasePrice * Mathf.Pow(PriceMultiplier, currentLevel - 1);
+        float cost = PriceFormula == UpgradePriceFormula.Linear
+            ? BasePrice + LinearPriceIncrease * (currentLevel - 1)
+            : BasePrice * Mathf.Pow(PriceMultiplier, currentLevel - 1);
         return Mathf.RoundToInt(cost);
     }
 
