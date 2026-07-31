@@ -84,7 +84,7 @@ MonoBehaviour:
     pitch: 0
   - name: BaltaSallama
     clip: {fileID: 8300000, guid: a88d0b0d33ad7254db297c47e7d7eb90, type: 3}
-    volume: 1
+    volume: 0.4
     pitch: 0
   - name: BaltaVurma
     clip: {fileID: 8300000, guid: 2e126ce435f987d4c809a32627807121, type: 3}
