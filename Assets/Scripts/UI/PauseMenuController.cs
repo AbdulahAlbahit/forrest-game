@@ -181,9 +181,10 @@ public class PauseMenuController : MonoBehaviour
         yield return null;
 
         // Belirtilen sahneye asenkron olarak geçiş yap
-        if (!string.IsNullOrEmpty(exitSceneName))
+        string sceneToLoad = exitSceneName != null ? exitSceneName.Trim() : "";
+        if (!string.IsNullOrEmpty(sceneToLoad))
         {
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(exitSceneName);
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneToLoad);
             if (asyncLoad != null)
             {
                 asyncLoad.allowSceneActivation = false;
@@ -193,6 +194,10 @@ public class PauseMenuController : MonoBehaviour
                 }
                 asyncLoad.allowSceneActivation = true;
                 yield break;
+            }
+            else
+            {
+                Debug.LogError($"[PauseMenu] HATA: '{sceneToLoad}' adinda bir sahne bulunamadi! Lutfen File -> Build Settings menusunden sahnenin eklendigine emin olun.");
             }
         }
 
