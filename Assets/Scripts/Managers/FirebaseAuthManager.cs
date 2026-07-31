@@ -34,7 +34,9 @@ public class FirebaseAuthManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            // DİKKAT: gameObject'i silersek ayni objede bulunan EconomyManager vb. de silinir!
+            // Bu yuzden sadece bu script'in kopyasini siliyoruz.
+            Destroy(this);
             return;
         }
 

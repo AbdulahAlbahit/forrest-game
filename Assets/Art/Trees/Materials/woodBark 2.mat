@@ -113,7 +113,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0
     - _GlossyReflections: 1
-    - _KarMiktari: 0.000106422
+    - _KarMiktari: 0
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
