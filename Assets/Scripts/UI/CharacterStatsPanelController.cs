@@ -56,6 +56,8 @@ public class CharacterStatsPanelController : MonoBehaviour
     [SerializeField] private Color debuffValueColor     = new Color(0.95f, 0.3f, 0.3f, 1f);  // Negatif Debuff (Kırmızı)
 
     private List<StatRowUI> spawnedRows = new List<StatRowUI>();
+    private Dictionary<string, bool> categoryFoldStates = new Dictionary<string, bool>();
+    private string currentBuildingCategory = "";
     private bool isPanelOpen = false;
     private float lastToggleTime = 0f;
 
@@ -465,8 +467,27 @@ public class CharacterStatsPanelController : MonoBehaviour
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
     }
 
+    private bool IsCategoryExpanded(string category)
+    {
+        if (categoryFoldStates.TryGetValue(category, out bool expanded))
+            return expanded;
+        return true; // Varsayılan olarak açık
+    }
+
+    private void ToggleCategory(string category)
+    {
+        bool currentState = IsCategoryExpanded(category);
+        categoryFoldStates[category] = !currentState;
+        Debug.Log($"[CharacterStatsPanelController] '{category}' kategorisi katlama durumu değiştirildi: {currentState} -> {!currentState}");
+        PlayButtonClickSFX();
+        RefreshPanel();
+    }
+
     private void AddHeader(string title, Color color)
     {
+        currentBuildingCategory = title;
+        bool isExpanded = IsCategoryExpanded(title);
+
         GameObject obj = Instantiate(statRowPrefab, statListContent, false);
         obj.SetActive(true);
 
@@ -488,15 +509,17 @@ public class CharacterStatsPanelController : MonoBehaviour
         StatRowUI row = obj.GetComponent<StatRowUI>();
         if (row != null)
         {
-            row.SetupAsHeader(title, color);
+            row.SetupAsHeader(title, color, () => ToggleCategory(title), isExpanded);
             spawnedRows.Add(row);
         }
     }
 
     private void AddRow(string label, string value, Color valColor)
     {
+        bool isExpanded = IsCategoryExpanded(currentBuildingCategory);
+
         GameObject obj = Instantiate(statRowPrefab, statListContent, false);
-        obj.SetActive(true);
+        obj.SetActive(isExpanded);
 
         RectTransform rect = obj.GetComponent<RectTransform>();
         if (rect != null)
