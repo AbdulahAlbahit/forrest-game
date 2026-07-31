@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 5952647039915913865}
   - component: {fileID: 1857083727259436522}
   - component: {fileID: 4304433754956310005}
+  - component: {fileID: 8538569532951844044}
   m_Layer: 5
   m_Name: ShopPanelButtonGecici
   m_TagString: Untagged
@@ -270,3 +271,19 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &8538569532951844044
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2104245975149455945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cc59b5a4806e64cb859527c7ff647f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIButtonScaler
+  pressedScale: 0.92
+  pressDuration: 0.08
+  releaseDuration: 0.12
+  checkButtonInteractable: 1

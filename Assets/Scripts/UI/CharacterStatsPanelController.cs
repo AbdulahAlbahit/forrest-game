@@ -56,6 +56,8 @@ public class CharacterStatsPanelController : MonoBehaviour
     [SerializeField] private Color debuffValueColor     = new Color(0.95f, 0.3f, 0.3f, 1f);  // Negatif Debuff (Kırmızı)
 
     private List<StatRowUI> spawnedRows = new List<StatRowUI>();
+    private bool isPanelOpen = false;
+    private float lastToggleTime = 0f;
 
     private void Awake()
     {
@@ -68,9 +70,6 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         if (closeButton != null)
             closeButton.onClick.AddListener(ClosePanel);
-
-        if (levelButton != null)
-            levelButton.onClick.AddListener(TogglePanel);
     }
 
     private void Start()
@@ -170,6 +169,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
     public void OpenPanel()
     {
+        isPanelOpen = true;
         PlayButtonClickSFX();
 
         // 1. Script objesini ve mainPanel'i aktif et
@@ -205,11 +205,17 @@ public class CharacterStatsPanelController : MonoBehaviour
             anim.Update(0f);
         }
 
-        // 5. Scale kontrolü
-        RectTransform rt = mainPanel != null ? mainPanel.GetComponent<RectTransform>() : GetComponent<RectTransform>();
-        if (rt != null)
+        // 5. Scale ve Pop-up animasyonu kontrolü
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var uiPanelAnim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (uiPanelAnim != null)
         {
-            rt.localScale = Vector3.one;
+            uiPanelAnim.Show();
+        }
+        else
+        {
+            RectTransform rt = targetObj.GetComponent<RectTransform>();
+            if (rt != null) rt.localScale = Vector3.one;
         }
 
         RefreshPanel();
@@ -223,18 +229,37 @@ public class CharacterStatsPanelController : MonoBehaviour
 
     public void ClosePanel()
     {
+        isPanelOpen = false;
         PlayButtonClickSFX();
 
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var uiPanelAnim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
 
-        gameObject.SetActive(false);
+        if (uiPanelAnim != null)
+        {
+            uiPanelAnim.Hide(() =>
+            {
+                if (mainPanel != null)
+                    mainPanel.SetActive(false);
+
+                gameObject.SetActive(false);
+            });
+        }
+        else
+        {
+            if (mainPanel != null)
+                mainPanel.SetActive(false);
+
+            gameObject.SetActive(false);
+        }
     }
 
     public void TogglePanel()
     {
-        bool isOpen = (mainPanel != null && mainPanel.activeInHierarchy) || gameObject.activeInHierarchy;
-        if (isOpen)
+        if (Time.unscaledTime - lastToggleTime < 0.2f) return;
+        lastToggleTime = Time.unscaledTime;
+
+        if (isPanelOpen || (mainPanel != null && mainPanel.activeInHierarchy) || gameObject.activeInHierarchy)
             ClosePanel();
         else
             OpenPanel();

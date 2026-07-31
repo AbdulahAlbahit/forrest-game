@@ -407,6 +407,8 @@ public class WorkshopPanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
         gameObject.SetActive(true);
+        var anim = GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
     }
 
     public void ClosePanel()
@@ -429,7 +431,15 @@ public class WorkshopPanelController : MonoBehaviour
             return;
         }
 
-        gameObject.SetActive(false);
+        var anim = GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null)
+        {
+            anim.Hide(() => gameObject.SetActive(false));
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     public void CloseImmediately()
