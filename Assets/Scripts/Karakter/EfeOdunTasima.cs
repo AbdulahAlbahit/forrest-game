@@ -13,6 +13,10 @@ public class EfeOdunTasima : MonoBehaviour
     [Min(0.02f)] [SerializeField] private float toplamaTaramaAraligi = 0.08f;
     [Min(1f)] [SerializeField] private float odunYerdeKalmaSuresi = 60f;
 
+    [Header("Upgrade Baglantisi")]
+    [SerializeField] private bool useBasketUpgradeLevel = true;
+    [SerializeField] private string basketUpgradeItemId = "Basket";
+
     [Header("Sepet Gorseli")]
     [SerializeField] private string odunYuvasiAdi = "LogStackAnchor";
     [Min(0.05f)] [SerializeField] private float sepetOdunuOlcegi = 0.74f;
@@ -50,10 +54,20 @@ public class EfeOdunTasima : MonoBehaviour
     private float sonrakiYuklemeZamani;
     private bool kamyonYuklemeAnimasyonuCalisiyor;
     private int sonGosterilenKamyonOdunu = -1;
+    private bool upgradeEventineAbone;
+    private bool dataEventineAbone;
+
+    private void OnEnable()
+    {
+        UpgradeEventlerineAboneOl();
+        UpgradeKapasitesiniUygula();
+    }
 
     private void Start()
     {
         tasimaKapasitesi = Mathf.Max(tasimaKapasitesi, 6);
+        UpgradeEventlerineAboneOl();
+        UpgradeKapasitesiniUygula();
 
         if (TreeManager.Instance != null)
         {
@@ -610,7 +624,7 @@ public class EfeOdunTasima : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < tasimaKapasitesi; i++)
+        for (int i = sepetOdunuGorselleri.Count; i < tasimaKapasitesi; i++)
         {
             GameObject gorsel = Instantiate(odunPrefab, odunYuvasi);
             gorsel.name = $"Efe_SepetOdunu_{i + 1}";
@@ -749,6 +763,78 @@ public class EfeOdunTasima : MonoBehaviour
         }
 
         return null;
+    }
+
+    private void UpgradeEventlerineAboneOl()
+    {
+        if (!useBasketUpgradeLevel) return;
+
+        if (!upgradeEventineAbone && UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded += UpgradeYapildiginda;
+            upgradeEventineAbone = true;
+        }
+
+        if (!dataEventineAbone && CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded += DataYuklendiginde;
+            dataEventineAbone = true;
+        }
+    }
+
+    private void UpgradeEventlerindenCik()
+    {
+        if (upgradeEventineAbone && UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded -= UpgradeYapildiginda;
+        }
+
+        if (dataEventineAbone && CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded -= DataYuklendiginde;
+        }
+
+        upgradeEventineAbone = false;
+        dataEventineAbone = false;
+    }
+
+    private void UpgradeYapildiginda(string itemId, int newLevel)
+    {
+        if (itemId == basketUpgradeItemId)
+        {
+            UpgradeKapasitesiniUygula();
+        }
+    }
+
+    private void DataYuklendiginde(PlayerData data)
+    {
+        UpgradeKapasitesiniUygula();
+    }
+
+    public void UpgradeKapasitesiniUygula()
+    {
+        if (!useBasketUpgradeLevel || UpgradeManager.Instance == null)
+        {
+            return;
+        }
+
+        int oldCapacity = tasimaKapasitesi;
+        // Kapasiteyi ayri bir tabloyla tekrar tanimlamak yerine mevcut
+        // ItemUpgradeConfig -> UpgradeManager hattindan oku.
+        tasimaKapasitesi = Mathf.Max(
+            1,
+            Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue(basketUpgradeItemId)));
+        if (tasimaKapasitesi > oldCapacity && odunYuvasi != null)
+        {
+            SepetGorselleriniHazirla();
+        }
+
+        SepetGorselleriniGuncelle();
+    }
+
+    private void OnDisable()
+    {
+        UpgradeEventlerindenCik();
     }
 
     private void OnValidate()

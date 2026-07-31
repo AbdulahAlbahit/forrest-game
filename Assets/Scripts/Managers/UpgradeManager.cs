@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Utils;
 
-
-
-
-
-
-
-
 public class UpgradeManager : MonoBehaviour
 {
     public static UpgradeManager Instance { get; private set; }
@@ -18,12 +11,13 @@ public class UpgradeManager : MonoBehaviour
     [Tooltip("Oyundaki tum upgrade edilebilir esyalarin config dosyalarini buraya surukleyin.")]
     [SerializeField] private List<ItemUpgradeConfig> configs = new List<ItemUpgradeConfig>();
 
-
-
-
-
     public event Action<string, int> OnItemUpgraded;
 
+    /// <summary>
+    /// Ana upgrade islemi tamamlandiginda UI, ses ve analitik sistemlerine
+    /// (itemId, yeniLevel, harcananPara, kalanPara) bilgisini verir.
+    /// </summary>
+    public event Action<string, int, int, int> OnUpgradeTransactionCompleted;
 
     private Dictionary<string, ItemUpgradeConfig> configLookup;
 
@@ -37,19 +31,14 @@ public class UpgradeManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
         BuildConfigLookup();
     }
 
-
-
-
-
     private void BuildConfigLookup()
     {
-        configLookup = new Dictionary<string, ItemUpgradeConfig>();
+        configLookup = new Dictionary<string, ItemUpgradeConfig>(StringComparer.Ordinal);
 
-        foreach (var config in configs)
+        foreach (ItemUpgradeConfig config in configs)
         {
             if (config == null)
             {
@@ -57,7 +46,7 @@ public class UpgradeManager : MonoBehaviour
                 continue;
             }
 
-            if (string.IsNullOrEmpty(config.ItemID))
+            if (string.IsNullOrWhiteSpace(config.ItemID))
             {
                 GameLogger.LogWarning($"[UpgradeManager] Config '{config.name}' icin ItemID bos, atlaniyor.");
                 continue;
@@ -69,25 +58,40 @@ public class UpgradeManager : MonoBehaviour
                 continue;
             }
 
-            configLookup[config.ItemID] = config;
+            configLookup.Add(config.ItemID, config);
         }
 
         GameLogger.Log($"[UpgradeManager] {configLookup.Count} adet upgrade config yuklendi.");
     }
 
-
-
-
-
-
-
-
-
-
+    /// <summary>
+    /// Mevcut tek-item upgrade API'si. Eski UI ve test kodlari icin aynen korunur.
+    /// </summary>
     public bool UpgradeItem(string itemId)
     {
+        ItemUpgradeConfig config = FindConfig(itemId);
+        if (config == null)
+        {
+            GameLogger.LogError($"[UpgradeManager] '{itemId}' icin config bulunamadi! Inspector'dan eklenmis mi?");
+            return false;
+        }
 
-        if (string.IsNullOrEmpty(itemId))
+        int currentLevel = GetItemLevel(itemId);
+        return UpgradeItemInternal(itemId, config.GetUpgradeCost(currentLevel), null);
+    }
+
+    /// <summary>
+    /// Zone tabanli upgrade'lerde Inspector'dan gelen fiyati kullanir ve bagli
+    /// item level'larini tek odeme/tek kayit ile ana level'a esler.
+    /// </summary>
+    public bool UpgradeItem(string itemId, int explicitCost, IReadOnlyList<string> linkedItemIds)
+    {
+        return UpgradeItemInternal(itemId, explicitCost, linkedItemIds);
+    }
+
+    private bool UpgradeItemInternal(string itemId, int cost, IReadOnlyList<string> linkedItemIds)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
         {
             GameLogger.LogError("[UpgradeManager] UpgradeItem: itemId bos olamaz!");
             return false;
@@ -112,18 +116,26 @@ public class UpgradeManager : MonoBehaviour
             return false;
         }
 
+        if (cost <= 0)
+        {
+            GameLogger.LogError($"[UpgradeManager] '{itemId}' icin gecersiz maliyet: {cost}");
+            return false;
+        }
+
         PlayerData data = CloudSaveManager.Instance.CurrentData;
         int currentLevel = data.GetItemLevel(itemId);
-
-
         if (config.IsMaxLevel(currentLevel))
         {
             GameLogger.LogWarning($"[UpgradeManager] '{itemId}' zaten maksimum seviyede ({currentLevel})!");
             return false;
         }
 
-
-        int cost = config.GetUpgradeCost(currentLevel);
+        int newLevel = currentLevel + 1;
+        List<string> validLinkedIds = ValidateLinkedItems(itemId, newLevel, linkedItemIds, data);
+        if (validLinkedIds == null)
+        {
+            return false;
+        }
 
         if (!EconomyManager.Instance.SpendMoney(cost))
         {
@@ -131,36 +143,77 @@ public class UpgradeManager : MonoBehaviour
             return false;
         }
 
-
-        int newLevel = currentLevel + 1;
         data.SetItemLevel(itemId, newLevel);
-
+        foreach (string linkedId in validLinkedIds)
+        {
+            int linkedLevel = data.GetItemLevel(linkedId);
+            data.SetItemLevel(linkedId, Mathf.Max(linkedLevel, newLevel));
+        }
 
         CloudSaveManager.Instance.SaveData(data);
 
         float newValue = config.GetStatValue(newLevel);
         GameLogger.Log($"[UpgradeManager] '{itemId}' yukseltildi! Seviye: {currentLevel} -> {newLevel}, Yeni Deger: {newValue:F1}, Harcanan: {cost}");
 
-
         OnItemUpgraded?.Invoke(itemId, newLevel);
+        foreach (string linkedId in validLinkedIds)
+        {
+            OnItemUpgraded?.Invoke(linkedId, data.GetItemLevel(linkedId));
+        }
 
+        OnUpgradeTransactionCompleted?.Invoke(itemId, newLevel, cost, EconomyManager.Instance.MevcutPara);
         return true;
     }
 
+    private List<string> ValidateLinkedItems(
+        string primaryItemId,
+        int targetLevel,
+        IReadOnlyList<string> linkedItemIds,
+        PlayerData data)
+    {
+        List<string> validIds = new List<string>();
+        if (linkedItemIds == null)
+        {
+            return validIds;
+        }
 
+        HashSet<string> uniqueIds = new HashSet<string>(StringComparer.Ordinal) { primaryItemId };
+        foreach (string linkedId in linkedItemIds)
+        {
+            if (string.IsNullOrWhiteSpace(linkedId) || !uniqueIds.Add(linkedId))
+            {
+                continue;
+            }
 
+            ItemUpgradeConfig linkedConfig = FindConfig(linkedId);
+            if (linkedConfig == null)
+            {
+                GameLogger.LogError($"[UpgradeManager] Bagli config bulunamadi: '{linkedId}'. Islem iptal edildi.");
+                return null;
+            }
+
+            int linkedLevel = data.GetItemLevel(linkedId);
+            if (linkedConfig.IsMaxLevel(linkedLevel) && linkedLevel < targetLevel)
+            {
+                GameLogger.LogWarning($"[UpgradeManager] Bagli item '{linkedId}' maksimum seviyede. Islem iptal edildi.");
+                return null;
+            }
+
+            validIds.Add(linkedId);
+        }
+
+        return validIds;
+    }
 
     public int GetItemLevel(string itemId)
     {
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
+        {
             return 1;
+        }
 
         return CloudSaveManager.Instance.CurrentData.GetItemLevel(itemId);
     }
-
-
-
-
 
     public float GetItemValue(string itemId)
     {
@@ -171,13 +224,14 @@ public class UpgradeManager : MonoBehaviour
             return 1f;
         }
 
-        int level = GetItemLevel(itemId);
-        return config.GetStatValue(level);
+        return config.GetStatValue(GetItemLevel(itemId));
     }
 
-
-
-
+    public float GetItemValueAtLevel(string itemId, int level)
+    {
+        ItemUpgradeConfig config = FindConfig(itemId);
+        return config != null ? config.GetStatValue(level) : 1f;
+    }
 
     public int GetUpgradeCost(string itemId)
     {
@@ -188,42 +242,35 @@ public class UpgradeManager : MonoBehaviour
             return 0;
         }
 
-        int level = GetItemLevel(itemId);
-        return config.GetUpgradeCost(level);
+        return config.GetUpgradeCost(GetItemLevel(itemId));
     }
-
-
-
 
     public bool IsMaxLevel(string itemId)
     {
         ItemUpgradeConfig config = FindConfig(itemId);
-        if (config == null) return true;
-
-        int level = GetItemLevel(itemId);
-        return config.IsMaxLevel(level);
+        return config == null || config.IsMaxLevel(GetItemLevel(itemId));
     }
 
-
-
-
-
-
-
+    public bool TryGetConfig(string itemId, out ItemUpgradeConfig config)
+    {
+        config = FindConfig(itemId);
+        return config != null;
+    }
 
     private ItemUpgradeConfig FindConfig(string itemId)
     {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return null;
+        }
+
         if (configLookup == null)
         {
             BuildConfigLookup();
         }
 
-        if (configLookup.TryGetValue(itemId, out ItemUpgradeConfig config))
-        {
-            return config;
-        }
-
-        return null;
+        configLookup.TryGetValue(itemId, out ItemUpgradeConfig config);
+        return config;
     }
 
     private void OnDestroy()
