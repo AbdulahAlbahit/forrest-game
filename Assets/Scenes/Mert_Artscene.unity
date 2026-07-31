@@ -1855,7 +1855,7 @@ MonoBehaviour:
   odunTasima: {fileID: 2059336853}
   depositWoodButton: {fileID: 2020477757}
   playerWoodStockText: {fileID: 603915407}
-  storageVisual: {fileID: 0}
+  storageVisual: {fileID: 1628049453}
   saveImmediately: 1
 --- !u!4 &131829809
 Transform:
@@ -43622,7 +43622,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e093b3e50018b7941b6b6ba6f54163e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EfeWoodStoragePickupZone
-  storageBridge: {fileID: 0}
+  storageBridge: {fileID: 131829808}
   storageVisual: {fileID: 1628049453}
 --- !u!65 &1792429500
 BoxCollider:
