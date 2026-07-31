@@ -30,7 +30,7 @@ public class LoginUIController : MonoBehaviour
     [Tooltip("Misafir girisi butonu.")]
     [SerializeField] private Button guestLoginButton;
 
-    [Tooltip("Google girisi butonu (suanlik deaktif).")]
+    [Tooltip("Google girisi butonu.")]
     [SerializeField] private Button googleLoginButton;
 
     [Tooltip("Ayarlar butonunu acma butonu.")]
@@ -80,13 +80,12 @@ public class LoginUIController : MonoBehaviour
         SetPanelActive(settingsPanel, false);
         SetPanelActive(loginPanel, true);
 
-        // Google login suanlik deaktif
-        if (googleLoginButton != null)
-            googleLoginButton.interactable = false;
-
         // Buton listener'lari
         if (guestLoginButton != null)
             guestLoginButton.onClick.AddListener(OnGuestLoginClicked);
+
+        if (googleLoginButton != null)
+            googleLoginButton.onClick.AddListener(OnGoogleLoginClicked);
 
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsToggle);
@@ -132,6 +131,8 @@ public class LoginUIController : MonoBehaviour
         {
             FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
             FirebaseAuthManager.Instance.OnLoginFailed += HandleLoginFailed;
+            FirebaseAuthManager.Instance.OnGoogleSignInSuccess += HandleGoogleSignInSuccess;
+            FirebaseAuthManager.Instance.OnGoogleSignInFailed += HandleGoogleSignInFailed;
         }
         else
         {
@@ -147,6 +148,8 @@ public class LoginUIController : MonoBehaviour
 
         FirebaseAuthManager.Instance.OnLoginSuccess += HandleLoginSuccess;
         FirebaseAuthManager.Instance.OnLoginFailed += HandleLoginFailed;
+        FirebaseAuthManager.Instance.OnGoogleSignInSuccess += HandleGoogleSignInSuccess;
+        FirebaseAuthManager.Instance.OnGoogleSignInFailed += HandleGoogleSignInFailed;
         Debug.Log("LoginUIController: FirebaseAuthManager'a abone olundu.");
     }
 
@@ -156,6 +159,8 @@ public class LoginUIController : MonoBehaviour
         {
             FirebaseAuthManager.Instance.OnLoginSuccess -= HandleLoginSuccess;
             FirebaseAuthManager.Instance.OnLoginFailed -= HandleLoginFailed;
+            FirebaseAuthManager.Instance.OnGoogleSignInSuccess -= HandleGoogleSignInSuccess;
+            FirebaseAuthManager.Instance.OnGoogleSignInFailed -= HandleGoogleSignInFailed;
         }
     }
 
@@ -175,24 +180,47 @@ public class LoginUIController : MonoBehaviour
         isTransitioning = true;
 
         PlayButtonClickSFX();
-
         Debug.Log("LoginUIController: Misafir girisi istendi.");
-
-        // Loading overlay'i goster
         ShowLoadingOverlay(true);
 
-        // Firebase zaten otomatik giris yapiyor.
-        // Giris tamamlanmissa direkt sahneye gec.
         if (FirebaseAuthManager.Instance != null && FirebaseAuthManager.Instance.IsLoggedIn)
         {
-            Debug.Log("LoginUIController: Firebase zaten giris yapmis, sahne yukleniyor...");
+            // Zaten giris yapilmis (Google veya onceki oturum)
+            Debug.Log("LoginUIController: Zaten giris yapilmis, sahne yukleniyor...");
             StartCoroutine(LoadTargetSceneAsync());
+        }
+        else if (FirebaseAuthManager.Instance != null && FirebaseAuthManager.Instance.IsFirebaseReady)
+        {
+            // Firebase hazir ama giris yok, misafir olarak gir
+            FirebaseAuthManager.Instance.SignInAsGuest();
+            StartCoroutine(WaitForLoginThenLoadScene());
         }
         else
         {
-            // Firebase henuz giris yapmamis, timeout ile bekle
-            Debug.Log($"LoginUIController: Firebase girisi bekleniyor (max {firebaseTimeout}sn)...");
+            // Firebase henuz yukleniyor, bekle
+            Debug.Log($"LoginUIController: Firebase bekleniyor (max {firebaseTimeout}sn)...");
             StartCoroutine(WaitForLoginThenLoadScene());
+        }
+    }
+
+    private void OnGoogleLoginClicked()
+    {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        PlayButtonClickSFX();
+        Debug.Log("LoginUIController: Google girisi istendi.");
+        ShowLoadingOverlay(true);
+
+        if (FirebaseAuthManager.Instance != null)
+        {
+            FirebaseAuthManager.Instance.SignInWithGoogle();
+        }
+        else
+        {
+            Debug.LogError("LoginUIController: FirebaseAuthManager bulunamadi!");
+            isTransitioning = false;
+            ShowLoadingOverlay(false);
         }
     }
 
@@ -247,22 +275,33 @@ public class LoginUIController : MonoBehaviour
 
     private void HandleLoginSuccess()
     {
-        Debug.Log("LoginUIController: Firebase giris basarili!");
-
-        // WaitForLoginThenLoadScene zaten kontrol ediyor,
-        // ama buton basilmadan once giris olduysa burasi calismaz (isTransitioning = false).
+        Debug.Log("LoginUIController: Misafir giris basarili!");
+        // WaitForLoginThenLoadScene zaten beklediginden burada ekstra islem gerekmez.
     }
 
     private void HandleLoginFailed(string errorMessage)
     {
         Debug.LogError($"LoginUIController: Giris basarisiz - {errorMessage}");
 
-        // Firebase basarisiz olsa bile sahneye gecmeyi dene
         if (isTransitioning)
         {
             Debug.LogWarning("LoginUIController: Firebase basarisiz ama sahne yine de yukleniyor...");
             StartCoroutine(LoadTargetSceneAsync());
         }
+    }
+
+    private void HandleGoogleSignInSuccess()
+    {
+        Debug.Log("LoginUIController: Google giris basarili! Sahne yukleniyor...");
+        if (isTransitioning)
+            StartCoroutine(LoadTargetSceneAsync());
+    }
+
+    private void HandleGoogleSignInFailed(string errorMessage)
+    {
+        Debug.LogError($"LoginUIController: Google giris basarisiz - {errorMessage}");
+        isTransitioning = false;
+        ShowLoadingOverlay(false);
     }
 
     // ═══════════════════════════════════════════

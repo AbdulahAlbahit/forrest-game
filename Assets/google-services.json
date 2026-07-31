@@ -12,7 +12,20 @@
           "package_name": "com.eyagamestudio.forrestgame"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "260516912993-nhu2h54i4tqh1lkgl2nnlj7lsll1ji6h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eyagamestudio.forrestgame",
+            "certificate_hash": "c62ec515b9008af980fbde5eeda90798cf0f53bd"
+          }
+        },
+        {
+          "client_id": "260516912993-7e4abgnb4ovvffg6d99a7fkfdfea8t3v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyALzZXJOcXR-lPoLOyNW5PL_XXVDdt6Hww"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "260516912993-7e4abgnb4ovvffg6d99a7fkfdfea8t3v.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "260516912993-lb6ns6oc7oi976enmtrtf50v9qgdvt5c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eyagamestudio.forrestgame"
+              }
+            }
+          ]
         }
       }
     }
