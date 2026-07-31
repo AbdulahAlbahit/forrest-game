@@ -52,6 +52,8 @@ public class TruckUpgradeEffects : MonoBehaviour
     [SerializeField] private Transform modelContainer;
     [Tooltip("Sahnede baslangicta gorunen mevcut gorsel. Ilk degisimde guvenle kaldirilir.")]
     [SerializeField] private GameObject currentVisual;
+    [Tooltip("Prefab baglantisini bozmadan ilk model degisiminde kapatilacak mevcut kamyon gorsel parcalari.")]
+    [SerializeField] private List<GameObject> initialVisualObjects = new List<GameObject>();
     [SerializeField] private List<TruckVisualUpgradeTier> visualTiers = new List<TruckVisualUpgradeTier>
     {
         new TruckVisualUpgradeTier { minimumLevel = 1, localScale = Vector3.one },
@@ -67,6 +69,7 @@ public class TruckUpgradeEffects : MonoBehaviour
 
     private int _activeVisualTierIndex = -1;
     private int _pendingVisualLevel = -1;
+    private bool _initialVisualsHidden;
     private bool _upgradeEventSubscribed;
     private bool _dataEventSubscribed;
 
@@ -239,6 +242,8 @@ public class TruckUpgradeEffects : MonoBehaviour
         currentVisual = newVisual;
         _activeVisualTierIndex = tierIndex;
 
+        HideInitialVisualObjects();
+
         if (oldVisual != null && oldVisual != newVisual)
         {
             Destroy(oldVisual);
@@ -286,6 +291,21 @@ public class TruckUpgradeEffects : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void HideInitialVisualObjects()
+    {
+        if (_initialVisualsHidden) return;
+
+        foreach (GameObject visualObject in initialVisualObjects)
+        {
+            if (visualObject != null && visualObject != currentVisual)
+            {
+                visualObject.SetActive(false);
+            }
+        }
+
+        _initialVisualsHidden = true;
     }
 
     private TruckCapacityUpgradeLevel FindCapacitySetting(int level)

@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: Truck
   m_EditorClassIdentifier: Assembly-CSharp::ItemUpgradeConfig
   ItemID: Truck
-  Category: 0
+  Category: 2
   Effect: 1
-  BasePrice: 50
+  BasePrice: 100
+  PriceFormula: 1
   PriceMultiplier: 1.5
-  BaseValue: 10
+  LinearPriceIncrease: 50
+  BaseValue: 30
   ValueGrowth: 5
-  MaxLevel: 100
+  MaxLevel: 10
