@@ -148,7 +148,9 @@ public class AxeTableInteraction : MonoBehaviour
         float damage = 1f;
         if (UpgradeManager.Instance != null)
         {
-            damage = UpgradeManager.Instance.GetItemValueAtLevel("Axe", Mathf.Max(1, level));
+            damage = UpgradeManager.Instance.GetItemValueAtLevel(
+                axeUpgradeZone != null ? axeUpgradeZone.ItemId : "Axe",
+                Mathf.Max(1, level));
         }
 
         return Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(1, baseTreeHitPoints) / Mathf.Max(1f, damage)));
@@ -194,7 +196,11 @@ public class AxeTableInteraction : MonoBehaviour
 
     private void HandleItemUpgraded(string itemId, int newLevel)
     {
-        if (itemId == "Axe") RefreshPanelInformation();
+        if (axeUpgradeZone != null &&
+            string.Equals(itemId, axeUpgradeZone.ItemId, System.StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshPanelInformation();
+        }
     }
 
     private void HandleMoneyChanged(int newMoney)

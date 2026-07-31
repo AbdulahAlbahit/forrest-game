@@ -24,6 +24,8 @@ public class UpgradeZoneController : MonoBehaviour
     [Tooltip("Aciksa zone mevcut UpgradeManager, EconomyManager ve CloudSaveManager hattini kullanir.")]
     [SerializeField] private bool useUpgradeManager;
     [SerializeField] private string itemId = "Axe";
+    [Tooltip("Yalnizca balta zone'unda acilir; sabit itemId yerine kusanilan baltayi yukseltir.")]
+    [SerializeField] private bool useEquippedAxeItem;
     [Tooltip("Tek odemeyle ana item ile ayni seviyeye getirilecek ek item kimlikleri. Workshop icin WorkshopQueue eklenebilir.")]
     [SerializeField] private List<string> linkedItemIds = new List<string>();
     [Tooltip("Aciksa fiyat ItemUpgradeConfig'ten, kapaliysa asagidaki zone formulunden okunur.")]
@@ -60,9 +62,9 @@ public class UpgradeZoneController : MonoBehaviour
     private float _nextDisplayRefresh;
     private int _lastProcessedFrame = -1;
 
-    public string ItemId => itemId;
+    public string ItemId => ResolveItemId();
     public int CurrentLevel => UpgradeManager.Instance != null
-        ? UpgradeManager.Instance.GetItemLevel(itemId)
+        ? UpgradeManager.Instance.GetItemLevel(ItemId)
         : 1;
     public int CurrentPrice => GetCurrentPrice(CurrentLevel);
 
@@ -81,6 +83,12 @@ public class UpgradeZoneController : MonoBehaviour
 
     private void Update()
     {
+        if (useUpgradeManager && useEquippedAxeItem)
+        {
+            // Maksimum seviyedeki baltadan baska bir baltaya gecilince zone tekrar calissin.
+            isCompleted = IsManagedMaxLevel(CurrentLevel);
+        }
+
         if (!useUpgradeManager || Time.unscaledTime < _nextDisplayRefresh)
         {
             return;
@@ -193,7 +201,8 @@ public class UpgradeZoneController : MonoBehaviour
         }
 
         int price = GetCurrentPrice(oldLevel);
-        bool success = UpgradeManager.Instance.UpgradeItem(itemId, price, linkedItemIds);
+        string resolvedItemId = ItemId;
+        bool success = UpgradeManager.Instance.UpgradeItem(resolvedItemId, price, linkedItemIds);
         if (!success)
         {
             ResetProgressVisual();
@@ -201,11 +210,11 @@ public class UpgradeZoneController : MonoBehaviour
             return false;
         }
 
-        int newLevel = UpgradeManager.Instance.GetItemLevel(itemId);
+        int newLevel = UpgradeManager.Instance.GetItemLevel(resolvedItemId);
         GameLogger.Log($"[UpgradeZone] {upgradeTitle}: {oldLevel} -> {newLevel}, fiyat: {price}", this);
         OnUpgradeComplete?.Invoke();
         OnUpgradeCompletedAction?.Invoke();
-        OnManagedUpgradeCompleted?.Invoke(itemId, newLevel);
+        OnManagedUpgradeCompleted?.Invoke(resolvedItemId, newLevel);
 
         isCompleted = IsManagedMaxLevel(newLevel);
         SetProgressVisual(isCompleted ? 1f : 0f);
@@ -225,7 +234,7 @@ public class UpgradeZoneController : MonoBehaviour
     {
         if (useConfigPrice && UpgradeManager.Instance != null)
         {
-            int configPrice = UpgradeManager.Instance.GetUpgradeCost(itemId);
+            int configPrice = UpgradeManager.Instance.GetUpgradeCost(ItemId);
             if (configPrice > 0) return configPrice;
         }
 
@@ -239,7 +248,19 @@ public class UpgradeZoneController : MonoBehaviour
             return currentLevel >= maxLevelOverride;
         }
 
-        return UpgradeManager.Instance != null && UpgradeManager.Instance.IsMaxLevel(itemId);
+        return UpgradeManager.Instance != null && UpgradeManager.Instance.IsMaxLevel(ItemId);
+    }
+
+    private string ResolveItemId()
+    {
+        if (useEquippedAxeItem &&
+            AxeTablePanelController.Instance != null &&
+            !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
+        {
+            return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+        }
+
+        return itemId;
     }
 
     public void RefreshManagedDisplay()
