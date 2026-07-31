@@ -25,7 +25,10 @@ public class UpgradeManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            // UpgradeManager farkli ekip prefablarinda yanlislikla tekrar bulunursa
+            // o prefab kokundeki diger manager/UI componentlerini yok etme.
+            // Yalnizca tekrar eden UpgradeManager componenti kaldirilir.
+            Destroy(this);
             return;
         }
 
