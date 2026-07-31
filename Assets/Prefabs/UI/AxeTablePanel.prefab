@@ -1205,6 +1205,7 @@ GameObject:
   - component: {fileID: 2529120538521691177}
   - component: {fileID: 4059795843854108167}
   - component: {fileID: 546645164698252694}
+  - component: {fileID: -4766598482456203988}
   m_Layer: 5
   m_Name: AxeTablePanel
   m_TagString: Untagged
@@ -1597,3 +1598,19 @@ MonoBehaviour:
   basketCapacityText: {fileID: 3884192190809017644}
   displayTierCount: 100
   buttonSfxName: 
+--- !u!114 &-4766598482456203988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9152412881895491953}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbeda9867b99774789600ac884477a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIPanelAnimator
+  openDuration: 0.25
+  closeDuration: 0.18
+  startScale: {x: 0.85, y: 0.85, z: 0.85}
+  overshoot: 1.05

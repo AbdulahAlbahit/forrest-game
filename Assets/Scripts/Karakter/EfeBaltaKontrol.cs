@@ -369,8 +369,6 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void OnEnable()
     {
-        AxeTablePanelController.OnAxeEquipped -= BaltaKusanildiginda;
-        AxeTablePanelController.OnAxeEquipped += BaltaKusanildiginda;
         UpgradeEventlerineAboneOl();
         UpgradeAyarlariniUygula();
     }
@@ -421,7 +419,6 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void OnDisable()
     {
-        AxeTablePanelController.OnAxeEquipped -= BaltaKusanildiginda;
         UpgradeEventlerindenCik();
 
         if (balta == null || !baltaBaslangicPozuHazir)
@@ -476,15 +473,10 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void UpgradeYapildiginda(string itemId, int newLevel)
     {
-        if (itemId == AktifBaltaItemId() || itemId == housePowerUpgradeItemId)
+        if (itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
         {
             UpgradeAyarlariniUygula();
         }
-    }
-
-    private void BaltaKusanildiginda()
-    {
-        UpgradeAyarlariniUygula();
     }
 
     private void DataYuklendiginde(PlayerData data)
@@ -501,21 +493,11 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         if (useUpgradeLevels && UpgradeManager.Instance != null)
         {
-            string aktifBaltaItemId = AktifBaltaItemId();
-            if (UpgradeManager.Instance.TryGetConfig(aktifBaltaItemId, out _))
+            int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
+            AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
+            if (damageSetting != null)
             {
-                aktifAgacHasari = Mathf.Max(
-                    1,
-                    Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue(aktifBaltaItemId)));
-            }
-            else
-            {
-                int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
-                AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
-                if (damageSetting != null)
-                {
-                    aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
-                }
+                aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
             }
 
             int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
@@ -532,17 +514,6 @@ public class EfeBaltaKontrol : MonoBehaviour
         {
             animator.SetFloat(saldiriHiziParametresi, aktifSaldiriAnimasyonHizi);
         }
-    }
-
-    private string AktifBaltaItemId()
-    {
-        if (AxeTablePanelController.Instance != null &&
-            !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
-        {
-            return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
-        }
-
-        return axeUpgradeItemId;
     }
 
     private AxeDamageUpgradeLevel UygunHasarAyariniBul(int level)
