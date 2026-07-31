@@ -373,7 +373,7 @@ public class ShopPanelController : MonoBehaviour
     {
         PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
 
-        if (data == null || data.PendingCustomerOrders == null || data.PendingCustomerOrders.keys.Count == 0)
+        if (data == null || data.PendingCustomerOrders == null || data.PendingCustomerOrders.Count == 0)
         {
             if (pendingOrdersText != null) pendingOrdersText.text = "Bekleyen müşteri siparişi yok.";
             if (fulfillOrderButton != null) fulfillOrderButton.interactable = false;
@@ -384,22 +384,26 @@ public class ShopPanelController : MonoBehaviour
         int totalPendingCount = 0;
         string pendingSummary = "";
         bool canFulfillAny = false;
+        Dictionary<string, int> pendingByItem = new Dictionary<string, int>();
 
-        for (int i = 0; i < data.PendingCustomerOrders.keys.Count; i++)
+        foreach (CustomerOrderData order in data.PendingCustomerOrders)
         {
-            string itemId = data.PendingCustomerOrders.keys[i];
-            int pending = data.PendingCustomerOrders.values[i];
+            if (order == null || string.IsNullOrWhiteSpace(order.ItemId)) continue;
+            pendingByItem.TryGetValue(order.ItemId, out int currentPending);
+            pendingByItem[order.ItemId] = currentPending + 1;
+        }
 
-            if (pending > 0)
-            {
-                totalPendingCount += pending;
-                int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
-                
-                pendingSummary += $"- {itemId}: {pending} adet bekleniyor (Stok: {currentStock})\n";
+        foreach (KeyValuePair<string, int> pendingEntry in pendingByItem)
+        {
+            string itemId = pendingEntry.Key;
+            int pending = pendingEntry.Value;
+            totalPendingCount += pending;
+            int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
 
-                if (currentStock > 0)
-                    canFulfillAny = true;
-            }
+            pendingSummary += $"- {itemId}: {pending} adet bekleniyor (Stok: {currentStock})\n";
+
+            if (currentStock > 0)
+                canFulfillAny = true;
         }
 
         if (totalPendingCount == 0)

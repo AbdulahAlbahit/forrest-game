@@ -297,27 +297,31 @@ public class QuestHUDController : MonoBehaviour
         List<QuestDisplayData> result = new List<QuestDisplayData>();
         PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
 
-        if (data != null && data.PendingCustomerOrders != null && data.PendingCustomerOrders.keys.Count > 0)
+        if (data != null && data.PendingCustomerOrders != null && data.PendingCustomerOrders.Count > 0)
         {
-            for (int i = 0; i < data.PendingCustomerOrders.keys.Count; i++)
+            Dictionary<string, int> pendingByItem = new Dictionary<string, int>();
+            foreach (CustomerOrderData order in data.PendingCustomerOrders)
             {
-                string itemId = data.PendingCustomerOrders.keys[i];
-                int pending = data.PendingCustomerOrders.values[i];
+                if (order == null || string.IsNullOrWhiteSpace(order.ItemId)) continue;
+                pendingByItem.TryGetValue(order.ItemId, out int currentPending);
+                pendingByItem[order.ItemId] = currentPending + 1;
+            }
 
-                if (pending > 0)
+            foreach (KeyValuePair<string, int> pendingEntry in pendingByItem)
+            {
+                string itemId = pendingEntry.Key;
+                int pending = pendingEntry.Value;
+                int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
+                bool canFulfill = currentStock >= pending;
+                float ratio = Mathf.Clamp01((float)currentStock / pending);
+
+                result.Add(new QuestDisplayData
                 {
-                    int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
-                    bool canFulfill = currentStock >= pending;
-                    float ratio = pending > 0 ? Mathf.Clamp01((float)currentStock / pending) : 1f;
-
-                    result.Add(new QuestDisplayData
-                    {
-                        Name = itemId,
-                        ProgressString = canFulfill ? $"Hazır! ({currentStock}/{pending})" : $"Bekleniyor: {pending} (Stok: {currentStock})",
-                        ProgressRatio = ratio,
-                        IsCompleted = canFulfill
-                    });
-                }
+                    Name = itemId,
+                    ProgressString = canFulfill ? $"Hazır! ({currentStock}/{pending})" : $"Bekleniyor: {pending} (Stok: {currentStock})",
+                    ProgressRatio = ratio,
+                    IsCompleted = canFulfill
+                });
             }
         }
 
