@@ -41,6 +41,8 @@ public class CloudSaveManager : MonoBehaviour
 
     public PlayerData CurrentData { get; private set; }
 
+    private bool isDataLoaded = false;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -163,6 +165,15 @@ public class CloudSaveManager : MonoBehaviour
             return;
         }
 
+        // Veri henuz yuklenmeden kayit yapilmasini engelle (Race Condition korumasi)
+        // Bu, sahne gecislerinde veya baska scriptlerin Start() cagrisiyla olusan
+        // yanlis 0-degerli kayitlari onler.
+        if (!isDataLoaded)
+        {
+            GameLogger.LogWarning("CloudSaveManager: SaveData cagrisi engellendi — veri henuz yuklenmedi (isDataLoaded = false). Kayit atlanıyor.");
+            return;
+        }
+
 
         data.LastSaveTime = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -194,6 +205,15 @@ public class CloudSaveManager : MonoBehaviour
             { "SonGuncelleme", FieldValue.ServerTimestamp },
             { "LastSaveTime", data.LastSaveTime }
         };
+
+        if (FirebaseAuthManager.Instance != null && FirebaseAuthManager.Instance.CurrentUser != null)
+        {
+            string email = FirebaseAuthManager.Instance.CurrentUser.Email;
+            if (!string.IsNullOrEmpty(email))
+            {
+                playerDict["Email"] = email;
+            }
+        }
 
 
         if (data.ItemLevels != null)
@@ -435,7 +455,7 @@ public class CloudSaveManager : MonoBehaviour
                 {
                     GameLogger.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttaki veriden (Time: {data.LastSaveTime}) daha guncel! Lokal veri korunuyor ve buluta yaziliyor...");
                     CurrentData = localData;
-                    
+                    isDataLoaded = true; // Veri hazir, artik kayit yapilabilir
 
                     SaveData(localData);
                     
@@ -444,10 +464,9 @@ public class CloudSaveManager : MonoBehaviour
                 }
 
                 CurrentData = data;
-
+                isDataLoaded = true; // Veri hazir, artik kayit yapilabilir
 
                 SaveToLocal(data);
-
 
                 if (needsMigration)
                 {
@@ -460,16 +479,30 @@ public class CloudSaveManager : MonoBehaviour
             }
             else
             {
-                GameLogger.Log("CloudSaveManager: Bulutta veri bulunamadi. Yeni oyuncu verisi olusturuluyor...");
+                GameLogger.Log("CloudSaveManager: Bulutta bu ID icin veri bulunamadi.");
 
-                PlayerData newData = new PlayerData();
-                CurrentData = newData;
-
-
-                SaveData(newData);
-
-                GameLogger.Log("CloudSaveManager: Yeni oyuncu verisi olusturuldu ve buluta kaydedildi.");
-                OnDataLoaded?.Invoke(newData);
+                // Oncelikle lokalde (PlayerPrefs) kayitli bir veri var mi kontrol et.
+                // Bu, Unity Editor testlerinde her Play'de yeni misafir ID uretildiginde
+                // oyuncu verisinin sifirlanmasini onler.
+                PlayerData localData = GetLocalData();
+                if (localData != null)
+                {
+                    GameLogger.LogWarning($"CloudSaveManager: Lokalde veri bulundu (LastSaveTime: {localData.LastSaveTime}). Yeni ID'ye aktariliyor ve buluta yaziliyor...");
+                    CurrentData = localData;
+                    isDataLoaded = true; // Veri hazir
+                    SaveData(localData);
+                    OnDataLoaded?.Invoke(localData);
+                }
+                else
+                {
+                    GameLogger.Log("CloudSaveManager: Lokalde de veri yok. Gercekten yeni oyuncu, sifirdan baslatiliyor...");
+                    PlayerData newData = new PlayerData();
+                    CurrentData = newData;
+                    isDataLoaded = true; // Yeni oyuncu da hazir sayilir
+                    SaveData(newData);
+                    GameLogger.Log("CloudSaveManager: Yeni oyuncu verisi olusturuldu ve buluta kaydedildi.");
+                    OnDataLoaded?.Invoke(newData);
+                }
             }
         });
     }
@@ -503,15 +536,16 @@ public class CloudSaveManager : MonoBehaviour
         if (localData != null)
         {
             CurrentData = localData;
+            isDataLoaded = true;
             GameLogger.LogWarning("CloudSaveManager: Lokal yedekten veri yuklendi (Offline mod).");
             OnDataLoaded?.Invoke(localData);
             return;
         }
 
-
         GameLogger.LogWarning("CloudSaveManager: Lokal yedek bulunamadi. Yeni oyuncu verisi olusturuluyor...");
         PlayerData newData = new PlayerData();
         CurrentData = newData;
+        isDataLoaded = true;
         OnDataLoaded?.Invoke(newData);
     }
 
