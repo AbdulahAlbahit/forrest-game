@@ -298,26 +298,30 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         // 3. BALTA
         AddHeader("BALTA İSTATİSTİKLERİ", headerColorAxe);
-        string currentAxeId = AxeVisualManager.Instance != null ? AxeVisualManager.Instance.currentAxeId : "lowpoly_axe";
-        int equippedTier = GetEquippedAxeTier(currentAxeId);
-        float equippedPower = GetAxePowerForTier(equippedTier);
-
-        int maxUnlockedLevel = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Axe") : 1;
-        float maxUnlockedPower = GetAxePowerForTier(maxUnlockedLevel);
+        string equippedItemId = AxeTablePanelController.Instance != null
+            ? AxeTablePanelController.Instance.CurrentlyEquippedItemId
+            : "Axe";
+        string equippedAxeName = AxeTablePanelController.Instance != null
+            ? AxeTablePanelController.Instance.CurrentlyEquippedDisplayName
+            : equippedItemId;
+        int equippedLevel = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetItemLevel(equippedItemId)
+            : 1;
+        float equippedPower = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetItemValue(equippedItemId)
+            : 1f;
 
         MevsimTuru currentSeason = SeasonManager.Instance != null ? SeasonManager.Instance.aktifMevsim : MevsimTuru.Ilkbahar;
         SeasonSettings currentSettings = SeasonManager.Instance != null ? SeasonManager.Instance.ayarlar : null;
         float seasonAxeMult = GetAxeMultiplierForSeason(currentSeason, currentSettings);
         float effectiveEquippedDamage = equippedPower * seasonAxeMult;
 
-        AddRow("Kuşanılan Balta", $"Seviye {equippedTier}", headerColorAxe);
+        AddRow("Kuşanılan Balta", equippedAxeName, headerColorAxe);
+        AddRow("Balta Seviyesi", $"Seviye {equippedLevel}", headerColorAxe);
         AddRow("Kuşanılan Balta Gücü", $"{equippedPower:F1} Hasar", headerColorAxe);
 
         Color netDamageColor = seasonAxeMult > 1.0f ? buffValueColor : (seasonAxeMult < 1.0f ? debuffValueColor : normalValueColor);
         AddRow("Net Hasar (Mevsim Etkisiyle)", $"{effectiveEquippedDamage:F1} Hasar", netDamageColor);
-
-        AddRow("Maksimum Açılan Seviye", $"Seviye {maxUnlockedLevel}", normalValueColor);
-        AddRow("Maksimum Balta Gücü", $"{maxUnlockedPower:F1} Hasar", normalValueColor);
 
         // 4. ENVANTER & DEPO
         AddHeader("ENVANTER & DEPO", headerColorInventory);
