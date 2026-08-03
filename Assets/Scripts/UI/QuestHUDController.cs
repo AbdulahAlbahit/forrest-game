@@ -130,6 +130,9 @@ public class QuestHUDController : MonoBehaviour
 
         ShopManager.OnItemSold += HandleItemSold;
         ShopManager.OnStockChanged += HandleStockChanged;
+
+        CustomerOrderManager.OnOrderCreated += HandleCustomerOrderCreated;
+        CustomerOrderManager.OnOrderInstantlyFulfilled += HandleCustomerOrderFulfilled;
     }
 
     private void OnDisable()
@@ -139,20 +142,38 @@ public class QuestHUDController : MonoBehaviour
 
         ShopManager.OnItemSold -= HandleItemSold;
         ShopManager.OnStockChanged -= HandleStockChanged;
+
+        CustomerOrderManager.OnOrderCreated -= HandleCustomerOrderCreated;
+        CustomerOrderManager.OnOrderInstantlyFulfilled -= HandleCustomerOrderFulfilled;
+    }
+
+    private void HandleCustomerOrderCreated(CustomerOrderData orderData)
+    {
+        if (currentMode == QuestDisplayMode.Hidden) return;
+        RefreshQuestDisplay();
+    }
+
+    private void HandleCustomerOrderFulfilled(string itemId)
+    {
+        if (currentMode == QuestDisplayMode.Hidden) return;
+        RefreshQuestDisplay();
     }
 
     private void HandleDataLoaded(PlayerData data)
     {
+        if (currentMode == QuestDisplayMode.Hidden) return;
         RefreshQuestDisplay();
     }
 
     private void HandleItemSold(string itemId, int amount)
     {
+        if (currentMode == QuestDisplayMode.Hidden) return;
         RefreshQuestDisplay();
     }
 
     private void HandleStockChanged(string itemId, int newStock)
     {
+        if (currentMode == QuestDisplayMode.Hidden) return;
         RefreshQuestDisplay();
     }
 

@@ -299,24 +299,39 @@ public class InventoryPanelController : MonoBehaviour
     {
         if (contentTransform == null) return;
 
-        VerticalLayoutGroup layout = contentTransform.GetComponent<VerticalLayoutGroup>();
-        if (layout == null)
+        LayoutGroup existingLayout = contentTransform.GetComponent<LayoutGroup>();
+        if (existingLayout is VerticalLayoutGroup vLayout)
         {
-            layout = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
+            vLayout.childControlWidth = true;
+            vLayout.childControlHeight = true;
+            vLayout.childForceExpandWidth = true;
+            vLayout.childForceExpandHeight = false;
+            vLayout.spacing = 6f;
         }
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-        layout.spacing = 6f;
+        else if (existingLayout == null)
+        {
+            VerticalLayoutGroup newLayout = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
+            if (newLayout != null)
+            {
+                newLayout.childControlWidth = true;
+                newLayout.childControlHeight = true;
+                newLayout.childForceExpandWidth = true;
+                newLayout.childForceExpandHeight = false;
+                newLayout.spacing = 6f;
+            }
+        }
 
         ContentSizeFitter fitter = contentTransform.GetComponent<ContentSizeFitter>();
         if (fitter == null)
         {
             fitter = contentTransform.gameObject.AddComponent<ContentSizeFitter>();
         }
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        if (fitter != null)
+        {
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        }
     }
 
     // ═══════════════════════════════════════════
