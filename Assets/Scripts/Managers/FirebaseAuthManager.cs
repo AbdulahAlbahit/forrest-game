@@ -173,6 +173,7 @@ public class FirebaseAuthManager : MonoBehaviour
 
             ForrestGame.Managers.AnalyticsManager.Instance?.LogUserLogin("google", currentUser.UserId);
             OnGoogleSignInSuccess?.Invoke();
+            OnLoginSuccess?.Invoke();
         }
         catch (Exception ex)
         {
