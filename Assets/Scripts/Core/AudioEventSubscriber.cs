@@ -297,7 +297,7 @@ namespace ForrestGame.Audio
             }
         }
 
-        private void SatisYapiliyor()
+        private void SatisYapiliyor(TruckRouteController truck)
         {
             // Satis aninda tekrar fren sesi calinmasin diye sadece rolanti tutuyoruz
             if (AudioManager.Instance != null) 

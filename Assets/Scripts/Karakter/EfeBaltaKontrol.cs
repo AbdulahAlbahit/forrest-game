@@ -1,6 +1,24 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Core;
+
+[Serializable]
+public class AxeDamageUpgradeLevel
+{
+    [Min(1)] public int level = 1;
+    [Min(1)] public int damage = 1;
+}
+
+[Serializable]
+public class HousePowerAttackUpgradeLevel
+{
+    [Min(1)] public int level = 1;
+    [Min(0.1f)] public float attackCooldown = 0.95f;
+    [Range(0f, 1f)] public float hitDelay = 0.42f;
+    [Min(0.1f)] public float animationSpeed = 1f;
+}
 
 public class EfeBaltaKontrol : MonoBehaviour
 {
@@ -13,6 +31,27 @@ public class EfeBaltaKontrol : MonoBehaviour
     [Min(0.5f)] [SerializeField] private float agacEtkilesimMesafesi = 3f;
     [Min(1)] [SerializeField] private int agacHasari = 1;
     [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.42f;
+
+    [Header("Upgrade Baglantilari")]
+    [SerializeField] private bool useUpgradeLevels = true;
+    [SerializeField] private string axeUpgradeItemId = "Axe";
+    [Tooltip("Zone_house_Power icin kullanilan ana level. Bu level sepet kapasitesini ve vurma hizini birlikte yonetir.")]
+    [SerializeField] private string housePowerUpgradeItemId = "Basket";
+    [SerializeField] private string attackSpeedAnimatorParameter = "SaldiriHizi";
+    [SerializeField] private List<AxeDamageUpgradeLevel> axeDamageLevels = new List<AxeDamageUpgradeLevel>
+    {
+        new AxeDamageUpgradeLevel { level = 1, damage = 1 },
+        new AxeDamageUpgradeLevel { level = 2, damage = 2 },
+        new AxeDamageUpgradeLevel { level = 3, damage = 3 }
+    };
+    [SerializeField] private List<HousePowerAttackUpgradeLevel> housePowerAttackLevels = new List<HousePowerAttackUpgradeLevel>
+    {
+        new HousePowerAttackUpgradeLevel { level = 1, attackCooldown = 0.95f, hitDelay = 0.42f, animationSpeed = 1f },
+        new HousePowerAttackUpgradeLevel { level = 2, attackCooldown = 0.82f, hitDelay = 0.36f, animationSpeed = 1.12f },
+        new HousePowerAttackUpgradeLevel { level = 3, attackCooldown = 0.70f, hitDelay = 0.31f, animationSpeed = 1.25f },
+        new HousePowerAttackUpgradeLevel { level = 4, attackCooldown = 0.60f, hitDelay = 0.27f, animationSpeed = 1.38f },
+        new HousePowerAttackUpgradeLevel { level = 5, attackCooldown = 0.52f, hitDelay = 0.23f, animationSpeed = 1.50f }
+    };
 
     [Header("Saldırı Dengeli Ayak Duruşu")]
     [Min(0f)] [SerializeField] private float sagAyakIleriMesafesi = 0.17f;
@@ -40,6 +79,18 @@ public class EfeBaltaKontrol : MonoBehaviour
     private bool baltaBaslangicPozuHazir;
     private int saldiriKatmaniIndexi = -1;
     private float saldiriKatmaniAgirligi;
+    private int aktifAgacHasari;
+    private float aktifSaldiriBeklemeSuresi;
+    private float aktifVurusGecikmesi;
+    private float aktifSaldiriAnimasyonHizi = 1f;
+    private int saldiriHiziParametresi;
+    private bool animatorSaldiriHiziParametresiVar;
+    private bool upgradeEventlerineAbone;
+    private bool dataEventineAbone;
+
+    public int AktifAgacHasari => aktifAgacHasari;
+    public float AktifSaldiriBeklemeSuresi => aktifSaldiriBeklemeSuresi;
+    public float AktifSaldiriAnimasyonHizi => aktifSaldiriAnimasyonHizi;
 
     public void BaltaSalla()
     {
@@ -48,7 +99,7 @@ public class EfeBaltaKontrol : MonoBehaviour
             return;
         }
 
-        sonrakiSaldiriZamani = Time.time + saldiriBeklemeSuresi;
+        sonrakiSaldiriZamani = Time.time + aktifSaldiriBeklemeSuresi;
 
         bool yakindaAgacVar = EnYakinTerrainAgaciniBul(out Vector3 agacKonumu);
         if (yakindaAgacVar)
@@ -76,7 +127,7 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private IEnumerator VurusuGecikmeliUygula(Vector3 agacKonumu)
     {
-        yield return new WaitForSeconds(vurusAnGecikmesi);
+        yield return new WaitForSeconds(aktifVurusGecikmesi);
 
         Vector3 karakterdenAgaca = agacKonumu - transform.position;
         karakterdenAgaca.y = 0f;
@@ -95,7 +146,7 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private int GetEffectiveAxeDamage()
     {
-        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return agacHasari;
+        if (SeasonManager.Instance == null || SeasonManager.Instance.ayarlar == null) return aktifAgacHasari;
 
         float multiplier;
         switch (SeasonManager.Instance.aktifMevsim)
@@ -117,7 +168,7 @@ public class EfeBaltaKontrol : MonoBehaviour
                 break;
         }
 
-        return Mathf.Max(1, Mathf.RoundToInt(agacHasari * multiplier));
+        return Mathf.Max(1, Mathf.RoundToInt(aktifAgacHasari * multiplier));
     }
 
     private bool EnYakinTerrainAgaciniBul(out Vector3 enYakinAgacKonumu)
@@ -277,6 +328,11 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void Awake()
     {
+        aktifAgacHasari = agacHasari;
+        aktifSaldiriBeklemeSuresi = saldiriBeklemeSuresi;
+        aktifVurusGecikmesi = vurusAnGecikmesi;
+        saldiriHiziParametresi = Animator.StringToHash(attackSpeedAnimatorParameter);
+
         if (animator == null)
         {
             animator = GetComponent<Animator>();
@@ -289,6 +345,11 @@ public class EfeBaltaKontrol : MonoBehaviour
             {
                 animator.SetLayerWeight(saldiriKatmaniIndexi, 0f);
             }
+
+            animatorSaldiriHiziParametresiVar = AnimatorParametresiVar(
+                animator,
+                saldiriHiziParametresi,
+                AnimatorControllerParameterType.Float);
         }
 
         if (balta != null)
@@ -298,6 +359,18 @@ public class EfeBaltaKontrol : MonoBehaviour
             baltaBaslangicLocalDonusu = balta.transform.localRotation;
             baltaBaslangicPozuHazir = true;
         }
+    }
+
+    private void Start()
+    {
+        UpgradeEventlerineAboneOl();
+        UpgradeAyarlariniUygula();
+    }
+
+    private void OnEnable()
+    {
+        UpgradeEventlerineAboneOl();
+        UpgradeAyarlariniUygula();
     }
 
     private void LateUpdate()
@@ -346,6 +419,8 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void OnDisable()
     {
+        UpgradeEventlerindenCik();
+
         if (balta == null || !baltaBaslangicPozuHazir)
         {
             return;
@@ -363,6 +438,129 @@ public class EfeBaltaKontrol : MonoBehaviour
         }
     }
 
+    private void UpgradeEventlerineAboneOl()
+    {
+        if (!useUpgradeLevels) return;
+
+        if (!upgradeEventlerineAbone && UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded += UpgradeYapildiginda;
+            upgradeEventlerineAbone = true;
+        }
+
+        if (!dataEventineAbone && CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded += DataYuklendiginde;
+            dataEventineAbone = true;
+        }
+    }
+
+    private void UpgradeEventlerindenCik()
+    {
+        if (upgradeEventlerineAbone && UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnItemUpgraded -= UpgradeYapildiginda;
+        }
+
+        if (dataEventineAbone && CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.OnDataLoaded -= DataYuklendiginde;
+        }
+
+        upgradeEventlerineAbone = false;
+        dataEventineAbone = false;
+    }
+
+    private void UpgradeYapildiginda(string itemId, int newLevel)
+    {
+        if (itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
+        {
+            UpgradeAyarlariniUygula();
+        }
+    }
+
+    private void DataYuklendiginde(PlayerData data)
+    {
+        UpgradeAyarlariniUygula();
+    }
+
+    public void UpgradeAyarlariniUygula()
+    {
+        aktifAgacHasari = agacHasari;
+        aktifSaldiriBeklemeSuresi = saldiriBeklemeSuresi;
+        aktifVurusGecikmesi = vurusAnGecikmesi;
+        aktifSaldiriAnimasyonHizi = 1f;
+
+        if (useUpgradeLevels && UpgradeManager.Instance != null)
+        {
+            int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
+            AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
+            if (damageSetting != null)
+            {
+                aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
+            }
+
+            int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
+            HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
+            if (speedSetting != null)
+            {
+                aktifSaldiriBeklemeSuresi = Mathf.Max(0.1f, speedSetting.attackCooldown);
+                aktifVurusGecikmesi = Mathf.Clamp(speedSetting.hitDelay, 0f, aktifSaldiriBeklemeSuresi);
+                aktifSaldiriAnimasyonHizi = Mathf.Max(0.1f, speedSetting.animationSpeed);
+            }
+        }
+
+        if (animator != null && animatorSaldiriHiziParametresiVar)
+        {
+            animator.SetFloat(saldiriHiziParametresi, aktifSaldiriAnimasyonHizi);
+        }
+    }
+
+    private AxeDamageUpgradeLevel UygunHasarAyariniBul(int level)
+    {
+        AxeDamageUpgradeLevel result = null;
+        foreach (AxeDamageUpgradeLevel setting in axeDamageLevels)
+        {
+            if (setting != null && setting.level <= level && (result == null || setting.level > result.level))
+            {
+                result = setting;
+            }
+        }
+
+        return result;
+    }
+
+    private HousePowerAttackUpgradeLevel UygunHizAyariniBul(int level)
+    {
+        HousePowerAttackUpgradeLevel result = null;
+        foreach (HousePowerAttackUpgradeLevel setting in housePowerAttackLevels)
+        {
+            if (setting != null && setting.level <= level && (result == null || setting.level > result.level))
+            {
+                result = setting;
+            }
+        }
+
+        return result;
+    }
+
+    private static bool AnimatorParametresiVar(
+        Animator targetAnimator,
+        int parameterHash,
+        AnimatorControllerParameterType parameterType)
+    {
+        if (targetAnimator == null) return false;
+        foreach (AnimatorControllerParameter parameter in targetAnimator.parameters)
+        {
+            if (parameter.nameHash == parameterHash && parameter.type == parameterType)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void OnValidate()
     {
         agacEtkilesimMesafesi = Mathf.Max(0.5f, agacEtkilesimMesafesi);
@@ -373,5 +571,21 @@ public class EfeBaltaKontrol : MonoBehaviour
         ayakYanalMesafesi = Mathf.Max(0f, ayakYanalMesafesi);
         durusaGecisSuresi = Mathf.Clamp(durusaGecisSuresi, 0.01f, saldiriBeklemeSuresi);
         durustanCikisSuresi = Mathf.Clamp(durustanCikisSuresi, 0.01f, saldiriBeklemeSuresi);
+
+        foreach (AxeDamageUpgradeLevel setting in axeDamageLevels)
+        {
+            if (setting == null) continue;
+            setting.level = Mathf.Max(1, setting.level);
+            setting.damage = Mathf.Max(1, setting.damage);
+        }
+
+        foreach (HousePowerAttackUpgradeLevel setting in housePowerAttackLevels)
+        {
+            if (setting == null) continue;
+            setting.level = Mathf.Max(1, setting.level);
+            setting.attackCooldown = Mathf.Max(0.1f, setting.attackCooldown);
+            setting.hitDelay = Mathf.Clamp(setting.hitDelay, 0f, setting.attackCooldown);
+            setting.animationSpeed = Mathf.Max(0.1f, setting.animationSpeed);
+        }
     }
 }

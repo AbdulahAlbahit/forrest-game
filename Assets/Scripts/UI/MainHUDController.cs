@@ -6,7 +6,7 @@ using ForrestGame.Core;
 /// <summary>
 /// Ana oyun içi arayüzü (HUD) yöneten kontrolcü.
 /// Bulut_UI sahnesindeki Para, XP, Oyuncu Seviyesi, Odun Miktarı ve Ayarlar Butonunu kontrol eder.
-///
+/// 
 /// KULLANIM:
 /// 1. Bulut_UI sahnesindeki CanvasUI üzerine bu scripti ekleyin.
 /// 2. Inspector'dan ilgili TextMeshProUGUI ve Button referanslarını sürükleyin.
@@ -24,6 +24,9 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Sepetteki odun miktarını gösteren metin. Örn: 3/5")]
     [SerializeField] private TextMeshProUGUI woodValueText;
 
+    [Tooltip("Sepet dolum görseli (Image Type = Filled). Boşsa sadece metin güncellenir.")]
+    [SerializeField] private Image basketFillImage;
+
     [Header("--- Atölye Ham Odun Göstergesi ---")]
     [Tooltip("Atölyedeki ham odun miktarını gösteren metin. Örn: 10/25")]
     [SerializeField] private TextMeshProUGUI workshopWoodText;
@@ -37,6 +40,12 @@ public class MainHUDController : MonoBehaviour
 
     [Tooltip("Oyuncu seviyesini gösteren metin (Sol Alt). Örn: Level 1")]
     [SerializeField] private TextMeshProUGUI levelText;
+
+    [Tooltip("Sol alttaki seviye göstergesi açma butonu (İstatistik panelini açar).")]
+    [SerializeField] private Button levelButton;
+
+    [Tooltip("CharacterStatsPanelController scripti içeren İstatistik paneli objesi.")]
+    [SerializeField] private GameObject statsPanel;
 
     [Header("--- Ayarlar Paneli (Sağ Alt) ---")]
     [Tooltip("Sağ alttaki ayarlar açma butonu.")]
@@ -72,6 +81,30 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Butonlara basıldığında çalacak SFX sesinin ismi.")]
     [SerializeField] private string buttonSfxName = "";
 
+    // Dahili animasyon durumları
+    private int currentDisplayedCoins = -1;
+    private int lastObservedLevel = -1;
+    private float currentAnimTargetFill = -1f;
+    private Coroutine coinRollCoroutine;
+    private Coroutine coinPulseCoroutine;
+    private Coroutine levelPulseCoroutine;
+    private Coroutine basketPulseCoroutine;
+    private Coroutine xpFillCoroutine;
+    private float targetXpFill = 0f;
+    private float targetBasketFill = 0f;
+    private System.Collections.Generic.Dictionary<Transform, Vector3> initialScaleMap = new System.Collections.Generic.Dictionary<Transform, Vector3>();
+
+    private Vector3 GetOriginalScale(Transform t)
+    {
+        if (t == null) return Vector3.one;
+        if (!initialScaleMap.TryGetValue(t, out Vector3 scale))
+        {
+            scale = t.localScale;
+            initialScaleMap[t] = scale;
+        }
+        return scale;
+    }
+
     // ═══════════════════════════════════════════
     //  Unity Lifecycle
     // ═══════════════════════════════════════════
@@ -83,21 +116,21 @@ public class MainHUDController : MonoBehaviour
 
     private void Start()
     {
-        // Buton listener
+        // Buton listener'ları
         if (settingsButton != null)
             settingsButton.onClick.AddListener(OnSettingsButtonClicked);
 
-        // Pause butonu listener
         if (pauseButton != null)
             pauseButton.onClick.AddListener(OnPauseButtonClicked);
 
-        // Atölye butonu listener
         if (workshopButton != null)
             workshopButton.onClick.AddListener(OnWorkshopButtonClicked);
 
-        // Depoya odun aktarma butonu listener
         if (depositWoodButton != null)
             depositWoodButton.onClick.AddListener(OnDepositWoodButtonClicked);
+
+        if (levelButton != null)
+            levelButton.onClick.AddListener(OnLevelButtonClicked);
 
         // Başlangıçta panelleri gizle
         if (settingsPanel != null)
@@ -106,6 +139,8 @@ public class MainHUDController : MonoBehaviour
             pausePanel.SetActive(false);
         if (workshopPanel != null)
             workshopPanel.SetActive(false);
+        if (statsPanel != null)
+            statsPanel.SetActive(false);
 
         // Tüm UI değerlerini başlangıçta güncelle
         RefreshAllHUD();
@@ -113,20 +148,22 @@ public class MainHUDController : MonoBehaviour
 
     private void OnEnable()
     {
-        // Event dinleyicileri bağla
         SubscribeEvents();
-        // Sahne aktif olduğunda verileri güncelle
         RefreshAllHUD();
     }
 
     private void OnDisable()
     {
-        // Event dinleyicileri kaldır
         UnsubscribeEvents();
     }
 
     private void Update()
     {
+        // Sepet Bar Yumuşak Lerp Dolumu
+        if (basketFillImage != null && Mathf.Abs(basketFillImage.fillAmount - targetBasketFill) > 0.001f)
+        {
+            basketFillImage.fillAmount = Mathf.MoveTowards(basketFillImage.fillAmount, targetBasketFill, Time.unscaledDeltaTime * 2.5f);
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -135,26 +172,21 @@ public class MainHUDController : MonoBehaviour
 
     private void SubscribeEvents()
     {
-        // Ekonomi event'i (Para değiştiğinde)
         if (EconomyManager.Instance != null)
             EconomyManager.Instance.OnMoneyChanged += UpdateCoinText;
 
-        // XP event'leri
         if (XPManager.Instance != null)
         {
             XPManager.Instance.OnXPChanged += UpdateXPText;
             XPManager.Instance.OnLevelUp += UpdateLevelText;
         }
 
-        // Sepet odun event'i
         if (BasketManager.Instance != null)
             BasketManager.Instance.OnBasketChanged += UpdateBasketWoodText;
 
-        // Atölye ham odun event'i
         if (WorkshopManager.Instance != null)
             WorkshopManager.Instance.OnQueueChanged += UpdateWorkshopWoodText;
 
-        // Bulut verisi yüklendiğinde
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
     }
@@ -201,25 +233,62 @@ public class MainHUDController : MonoBehaviour
         {
             UpdateXPText(XPManager.Instance.MevcutXP);
             UpdateLevelText(XPManager.Instance.MevcutSeviye);
+            lastObservedLevel = XPManager.Instance.MevcutSeviye;
         }
 
-        // Sepet göstergesi
         if (BasketManager.Instance != null)
         {
             UpdateBasketWoodText(BasketManager.Instance.MevcutDoluluk, BasketManager.Instance.MaksKapasite);
         }
 
-        // Atölye ham odun göstergesi
         if (WorkshopManager.Instance != null)
         {
             UpdateWorkshopWoodText(WorkshopManager.Instance.MevcutKuyruk, WorkshopManager.Instance.GetWorkshopCapacity());
         }
     }
 
-    private void UpdateCoinText(int amount)
+    private void UpdateCoinText(int targetAmount)
     {
-        if (coinValueText != null)
-            coinValueText.text = amount.ToString("N0"); // 1,000 şeklinde formatlı gösterim
+        if (coinValueText == null) return;
+
+        if (currentDisplayedCoins < 0)
+        {
+            currentDisplayedCoins = targetAmount;
+            coinValueText.text = targetAmount.ToString("N0");
+            return;
+        }
+
+        if (coinRollCoroutine != null)
+            StopCoroutine(coinRollCoroutine);
+
+        coinRollCoroutine = StartCoroutine(CoinRollRoutine(targetAmount));
+
+        if (targetAmount > currentDisplayedCoins)
+        {
+            TriggerPulse(coinValueText.transform, ref coinPulseCoroutine, 1.18f);
+        }
+    }
+
+    private System.Collections.IEnumerator CoinRollRoutine(int targetAmount)
+    {
+        int startAmount = currentDisplayedCoins;
+        float duration = 0.45f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t);
+
+            currentDisplayedCoins = Mathf.RoundToInt(Mathf.Lerp(startAmount, targetAmount, t));
+            coinValueText.text = currentDisplayedCoins.ToString("N0");
+            yield return null;
+        }
+
+        currentDisplayedCoins = targetAmount;
+        coinValueText.text = targetAmount.ToString("N0");
+        coinRollCoroutine = null;
     }
 
     private void UpdateXPText(int currentXP)
@@ -240,21 +309,152 @@ public class MainHUDController : MonoBehaviour
                 xpValueText.text = $"XP: {currentXP}";
         }
 
-        // XP Bar dolum görselini güncelle (Image Type = Filled)
+        float targetFill = Mathf.Clamp01(progress);
         if (xpFillImage != null)
-            xpFillImage.fillAmount = progress;
+        {
+            if (!gameObject.activeInHierarchy)
+            {
+                xpFillImage.fillAmount = targetFill;
+                currentAnimTargetFill = targetFill;
+            }
+            else
+            {
+                // Eğer zaten aynı hedefe doğru animasyon yapıyorsak (Örn: SaveData event'i tetiklendiğinde), coroutine'i kesme!
+                if (xpFillCoroutine != null && Mathf.Approximately(currentAnimTargetFill, targetFill))
+                {
+                    return;
+                }
+
+                if (xpFillCoroutine != null)
+                    StopCoroutine(xpFillCoroutine);
+
+                currentAnimTargetFill = targetFill;
+                xpFillCoroutine = StartCoroutine(XPFillRoutine(targetFill));
+            }
+        }
+    }
+
+    private System.Collections.IEnumerator XPFillRoutine(float newTargetFill)
+    {
+        if (xpFillImage == null) yield break;
+
+        float startFill = xpFillImage.fillAmount;
+        float animDuration = 0.65f;
+        float elapsed = 0f;
+
+        // Level Up durumu (yeni hedef başlangıçtan belirgin şekilde küçükse)
+        if (newTargetFill < startFill - 0.05f)
+        {
+            float fillUpDuration = animDuration * 0.5f;
+            while (elapsed < fillUpDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / fillUpDuration);
+                t = t * (2f - t); // EaseOutQuad
+                xpFillImage.fillAmount = Mathf.Lerp(startFill, 1.0f, t);
+                yield return null;
+            }
+
+            xpFillImage.fillAmount = 0f;
+            startFill = 0f;
+            elapsed = 0f;
+
+            while (elapsed < fillUpDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / fillUpDuration);
+                t = t * (2f - t);
+                xpFillImage.fillAmount = Mathf.Lerp(0f, newTargetFill, t);
+                yield return null;
+            }
+        }
+        else
+        {
+            // Normal XP kazanımı: 0.65 saniyede akıcı EaseOut dolum
+            while (elapsed < animDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / animDuration);
+                t = t * (2f - t);
+                xpFillImage.fillAmount = Mathf.Lerp(startFill, newTargetFill, t);
+                yield return null;
+            }
+        }
+
+        xpFillImage.fillAmount = newTargetFill;
+        xpFillCoroutine = null;
     }
 
     private void UpdateLevelText(int level)
     {
         if (levelText != null)
+        {
             levelText.text = $"Level {level}";
+            if (lastObservedLevel > 0 && level > lastObservedLevel)
+            {
+                TriggerPulse(levelText.transform, ref levelPulseCoroutine, 1.25f);
+            }
+            lastObservedLevel = level;
+        }
     }
 
     private void UpdateBasketWoodText(int current, int max)
     {
         if (woodValueText != null)
             woodValueText.text = $"{current} / {max}";
+
+        targetBasketFill = max > 0 ? Mathf.Clamp01((float)current / max) : 0f;
+        if (basketFillImage != null && !gameObject.activeInHierarchy)
+        {
+            basketFillImage.fillAmount = targetBasketFill;
+        }
+
+        bool isFull = max > 0 && current >= max;
+        if (woodValueText != null)
+        {
+            woodValueText.color = isFull ? new Color(1f, 0.4f, 0.2f, 1f) : Color.white;
+            if (isFull)
+            {
+                TriggerPulse(woodValueText.transform, ref basketPulseCoroutine, 1.15f);
+            }
+        }
+    }
+
+    private void TriggerPulse(Transform targetTransform, ref Coroutine coroutineTracker, float targetScaleFactor)
+    {
+        if (targetTransform == null || !gameObject.activeInHierarchy) return;
+
+        if (coroutineTracker != null)
+            StopCoroutine(coroutineTracker);
+
+        coroutineTracker = StartCoroutine(PulseRoutine(targetTransform, targetScaleFactor));
+    }
+
+    private System.Collections.IEnumerator PulseRoutine(Transform targetTransform, float targetScaleFactor)
+    {
+        Vector3 origScale = GetOriginalScale(targetTransform);
+        Vector3 maxScale = origScale * targetScaleFactor;
+        float halfDuration = 0.12f;
+
+        float elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / halfDuration;
+            targetTransform.localScale = Vector3.Lerp(origScale, maxScale, t);
+            yield return null;
+        }
+
+        elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / halfDuration;
+            targetTransform.localScale = Vector3.Lerp(maxScale, origScale, t);
+            yield return null;
+        }
+
+        targetTransform.localScale = origScale;
     }
 
     private void UpdateWorkshopWoodText(int current, int max)
@@ -285,7 +485,6 @@ public class MainHUDController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        // PauseMenuController varsa toggle yap
         PauseMenuController pauseController = pausePanel != null 
             ? pausePanel.GetComponent<PauseMenuController>() 
             : PauseMenuController.Instance;
@@ -296,8 +495,29 @@ public class MainHUDController : MonoBehaviour
         }
         else if (pausePanel != null)
         {
-            // Fallback: PauseMenuController yoksa sadece paneli göster/gizle
             pausePanel.SetActive(!pausePanel.activeSelf);
+        }
+    }
+
+    // ═══════════════════════════════════════════
+    //  İstatistik Paneli Butonu İşlemi
+    // ═══════════════════════════════════════════
+
+    private void OnLevelButtonClicked()
+    {
+        PlayButtonClickSFX();
+
+        if (CharacterStatsPanelController.Instance != null)
+        {
+            CharacterStatsPanelController.Instance.TogglePanel();
+        }
+        else if (statsPanel != null)
+        {
+            CharacterStatsPanelController controller = statsPanel.GetComponent<CharacterStatsPanelController>();
+            if (controller != null)
+                controller.TogglePanel();
+            else
+                statsPanel.SetActive(!statsPanel.activeSelf);
         }
     }
 
@@ -309,7 +529,6 @@ public class MainHUDController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        // WorkshopPanelController varsa onun OpenPanel metodunu kullan
         if (workshopPanel != null)
         {
             WorkshopPanelController controller = workshopPanel.GetComponent<WorkshopPanelController>();
@@ -322,10 +541,8 @@ public class MainHUDController : MonoBehaviour
                 return;
             }
 
-            // Fallback: WorkshopPanelController yoksa toggle yap
             workshopPanel.SetActive(!workshopPanel.activeSelf);
         }
-        // Instance üzerinden de dene
         else if (WorkshopPanelController.Instance != null)
         {
             if (WorkshopPanelController.Instance.gameObject.activeSelf)
@@ -345,7 +562,6 @@ public class MainHUDController : MonoBehaviour
 
         OnDepositWoodRequested?.Invoke();
 
-        // Varsayılan Akış: Sepetteki odunları boşaltıp atölyeye ekle
         if (BasketManager.Instance != null && WorkshopManager.Instance != null)
         {
             if (BasketManager.Instance.IsEmpty)

@@ -29,6 +29,9 @@ public class WorkshopPanelController : MonoBehaviour
     [Tooltip("Seçili mobilya için gereken odun miktarı. Örn: 'Gerekli Odun: 5'")]
     [SerializeField] private TextMeshProUGUI requiredWoodText;
 
+    [Tooltip("Atölyenin mevcut ham odun stoğunu gösteren metin (panel içindeki mevcut 'WorkshopWoodText' objesine bağlanmalı). Örn: '10 / 25'")]
+    [SerializeField] private TextMeshProUGUI workshopWoodStockText;
+
     [Tooltip("Seçili mobilyanın üretim süresi. Örn: 'Süre: 5 sn'")]
     [SerializeField] private TextMeshProUGUI productionTimeText;
 
@@ -55,6 +58,11 @@ public class WorkshopPanelController : MonoBehaviour
 
     // Dahili Durum Değişkenleri
     private RecipeConfig selectedRecipe;
+    /// <summary>
+    /// Kuyruğa eklemeyi onaylamak için ikinci tıklama beklenen tarif. İlk tıklama
+    /// sadece seçer (sağ paneli doldurur), aynı tarife ikinci art arda tıklama kuyruğa gönderir.
+    /// </summary>
+    private RecipeConfig recipeArmedForQueue;
     private List<RecipeItemUI> spawnedRecipeItems = new List<RecipeItemUI>();
     private List<QueueItemUI> spawnedQueueItems = new List<QueueItemUI>();
     private bool externalQueueDisplayActive;
@@ -94,6 +102,11 @@ public class WorkshopPanelController : MonoBehaviour
         SubscribeEvents();
         PopulateRecipeList();
         RefreshQueueUI();
+
+        if (WorkshopManager.Instance != null)
+        {
+            UpdateWorkshopWoodStockText(WorkshopManager.Instance.MevcutKuyruk, WorkshopManager.Instance.GetWorkshopCapacity());
+        }
     }
 
     private void OnDisable()
@@ -151,6 +164,13 @@ public class WorkshopPanelController : MonoBehaviour
     private void HandleQueueChanged(int currentWood, int capacity)
     {
         RefreshQueueUI();
+        UpdateWorkshopWoodStockText(currentWood, capacity);
+    }
+
+    private void UpdateWorkshopWoodStockText(int current, int capacity)
+    {
+        if (workshopWoodStockText != null)
+            workshopWoodStockText.text = $"{current} / {capacity}";
     }
 
     private void HandleDataLoaded(PlayerData data)
@@ -164,6 +184,8 @@ public class WorkshopPanelController : MonoBehaviour
 
     private void PopulateRecipeList()
     {
+        recipeArmedForQueue = null;
+
         foreach (var item in spawnedRecipeItems)
         {
             if (item != null) Destroy(item.gameObject);
@@ -228,7 +250,17 @@ public class WorkshopPanelController : MonoBehaviour
 
     private void OnRecipeClicked(RecipeConfig recipe)
     {
+        bool isConfirmingClick = recipe != null && recipeArmedForQueue == recipe;
+
         OnRecipeSelected(recipe);
+
+        if (!isConfirmingClick)
+        {
+            recipeArmedForQueue = recipe;
+            return;
+        }
+
+        recipeArmedForQueue = null;
 
         if (RecipeChosen == null) return;
         foreach (Action<RecipeConfig> handler in RecipeChosen.GetInvocationList())
@@ -324,12 +356,37 @@ public class WorkshopPanelController : MonoBehaviour
 
             if (queueUI != null)
             {
-                queueUI.Setup(itemId, count, isFirst);
+                queueUI.Setup(itemId, count, isFirst, (id) => OnQueueItemClicked(id));
                 spawnedQueueItems.Add(queueUI);
                 isFirst = false;
             }
         }
     }
+
+    private void OnQueueItemClicked(string itemId)
+    {
+        PlayButtonClickSFX();
+
+        PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+        if (data == null || data.WorkshopQueue == null) return;
+
+        int currentCount = data.WorkshopQueue.Get(itemId, 0);
+        if (currentCount > 0)
+        {
+            int newCount = currentCount - 1;
+            data.WorkshopQueue.Set(itemId, newCount);
+
+            NotificationUIController.Instance?.ShowNotification($"1 adet {itemId} sıradan çıkarıldı!");
+
+            if (CloudSaveManager.Instance != null)
+            {
+                CloudSaveManager.Instance.SaveData(data);
+            }
+
+            RefreshQueueUI();
+        }
+    }
+
 
     private void UpdateActiveQueueProgress()
     {
@@ -350,6 +407,8 @@ public class WorkshopPanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
         gameObject.SetActive(true);
+        var anim = GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
     }
 
     public void ClosePanel()
@@ -372,7 +431,15 @@ public class WorkshopPanelController : MonoBehaviour
             return;
         }
 
-        gameObject.SetActive(false);
+        var anim = GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null)
+        {
+            anim.Hide(() => gameObject.SetActive(false));
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     public void CloseImmediately()

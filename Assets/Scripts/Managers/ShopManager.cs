@@ -45,32 +45,46 @@ namespace ForrestGame.Managers
             CheckAndFulfillPendingOrders(data, true);
         }
 
-        private void HandleTruckArrivalAtMarket()
+        private void HandleTruckArrivalAtMarket(TruckRouteController truck)
         {
+            if (truck == null) return;
             if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
+
             PlayerData data = CloudSaveManager.Instance.CurrentData;
-            
-            if (data.ReadyForTruck == null) return;
-            
             bool anyLoaded = false;
-            
-            for (int i = 0; i < data.ReadyForTruck.keys.Count; i++)
+
+            foreach (var kvp in truck.LoadedProducts)
             {
-                string itemId = data.ReadyForTruck.keys[i];
-                int hazirMiktar = data.ReadyForTruck.values[i];
-                
-                if (hazirMiktar > 0)
+                if (kvp.Value <= 0) continue;
+
+                if (HasPendingOrderFor(data, kvp.Key))
                 {
-                    data.ReadyForTruck.Set(itemId, 0);
-                    AddStock(itemId, hazirMiktar);
+                    AddStock(kvp.Key, kvp.Value);
                     anyLoaded = true;
                 }
+                else
+                {
+                    NotificationManager.Instance?.SendNotification($"{kvp.Key} icin siparis yoktu, kamyonla kayboldu!");
+                    GameLogger.Log($"ShopManager: {kvp.Value}x {kvp.Key} icin bekleyen siparis yok, kamyonla kayboldu.");
+                }
             }
-            
+
             if (anyLoaded)
             {
-                GameLogger.Log("ShopManager: Kamyon markete ulasti, urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
+                GameLogger.Log("ShopManager: Kamyon markete ulasti, siparis edilen urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
             }
+        }
+
+        private bool HasPendingOrderFor(PlayerData data, string itemId)
+        {
+            if (data == null || data.PendingCustomerOrders == null) return false;
+
+            foreach (CustomerOrderData order in data.PendingCustomerOrders)
+            {
+                if (order != null && order.ItemId == itemId) return true;
+            }
+
+            return false;
         }
 
         public void AddStock(string itemId, int amount)
@@ -98,48 +112,57 @@ namespace ForrestGame.Managers
         public void CheckAndFulfillPendingOrders(PlayerData data, bool autoSave = true)
         {
             if (data == null || data.PendingCustomerOrders == null || data.ShopInventory == null) return;
-            
+
             bool anyFulfilled = false;
-            
-            for (int i = 0; i < data.PendingCustomerOrders.keys.Count; i++)
+
+            int i = 0;
+            while (i < data.PendingCustomerOrders.Count)
             {
-                string itemId = data.PendingCustomerOrders.keys[i];
-                int pending = data.PendingCustomerOrders.values[i];
-                
-                if (pending > 0)
+                CustomerOrderData order = data.PendingCustomerOrders[i];
+                if (order == null)
                 {
-                    int currentStock = data.ShopInventory.Get(itemId, 0);
-                    if (currentStock > 0)
-                    {
-                        int fulfilled = Mathf.Min(pending, currentStock);
-                        
-                        data.PendingCustomerOrders.Set(itemId, pending - fulfilled);
-                        data.ShopInventory.Set(itemId, currentStock - fulfilled);
-                        
-                        int unitPrice = 100;
-                        if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
-                        {
-                            foreach (var r in WorkshopManager.Instance.tumTarifler)
-                            {
-                                if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
-                            }
-                        }
-                        
-                        EconomyManager.Instance?.AddMoney(fulfilled * unitPrice);
-                        OnItemSold?.Invoke(itemId, fulfilled);
-                        OnStockChanged?.Invoke(itemId, currentStock - fulfilled);
-                        AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
-                        NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: {fulfilled}x {itemId}!");
-                        GameLogger.Log($"ShopManager: Bekleyen siparis karsilandi. {fulfilled}x {itemId} satildi.");
-                        anyFulfilled = true;
-                    }
+                    data.PendingCustomerOrders.RemoveAt(i);
+                    continue;
                 }
+
+                int currentStock = data.ShopInventory.Get(order.ItemId, 0);
+                if (currentStock <= 0)
+                {
+                    i++;
+                    continue;
+                }
+
+                data.PendingCustomerOrders.RemoveAt(i);
+                data.ShopInventory.Set(order.ItemId, currentStock - 1);
+
+                int unitPrice = ResolveUnitPrice(order.ItemId);
+
+                EconomyManager.Instance?.AddMoney(unitPrice);
+                OnItemSold?.Invoke(order.ItemId, 1);
+                OnStockChanged?.Invoke(order.ItemId, currentStock - 1);
+                AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", order.ItemId);
+                NotificationManager.Instance?.SendNotification($"Bekleyen siparis karsilandi: 1x {order.ItemId}!");
+                GameLogger.Log($"ShopManager: Bekleyen siparis (#{order.OrderId}) karsilandi. 1x {order.ItemId} satildi.");
+                anyFulfilled = true;
             }
 
             if (anyFulfilled && autoSave)
             {
                 CloudSaveManager.Instance.SaveData(data);
             }
+        }
+
+        private int ResolveUnitPrice(string itemId)
+        {
+            int unitPrice = 100;
+            if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+            {
+                foreach (var r in WorkshopManager.Instance.tumTarifler)
+                {
+                    if (r != null && r.ItemID == itemId) { unitPrice = r.BaseSalePrice; break; }
+                }
+            }
+            return unitPrice;
         }
 
         public bool TryRemoveStock(string itemId, int amount)
@@ -180,39 +203,6 @@ namespace ForrestGame.Managers
             }
 
             return false;
-        }
-
-        public void ProcessCustomerOrder(string itemId, int amount, int unitPrice)
-        {
-            if (TryRemoveStock(itemId, amount))
-            {
-                EconomyManager.Instance?.AddMoney(amount * unitPrice);
-                NotificationManager.Instance?.SendNotification($"{amount} adet {itemId} satildi!");
-            }
-            else
-            {
-                if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
-                {
-                    GameLogger.LogWarning("ShopManager: CloudSaveManager veya PlayerData hazir degil.");
-                    return;
-                }
-
-                PlayerData data = CloudSaveManager.Instance.CurrentData;
-                
-                if (data.PendingCustomerOrders == null) 
-                {
-                    data.PendingCustomerOrders = new SerializableDict();
-                }
-
-                int currentPending = data.PendingCustomerOrders.Get(itemId, 0);
-                data.PendingCustomerOrders.Set(itemId, currentPending + amount);
-
-                NotificationManager.Instance?.SendNotification($"Yeni Siparis: {amount} adet {itemId} bekleniyor!");
-                
-                CheckAndFulfillPendingOrders(data, false);
-                
-                CloudSaveManager.Instance.SaveData(data);
-            }
         }
     }
 }

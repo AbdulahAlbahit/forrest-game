@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 395998868716554021}
   - component: {fileID: 6155645089984210320}
   - component: {fileID: 1448267460945354140}
+  - component: {fileID: 429090689222126180}
   m_Layer: 5
   m_Name: WorkShopButton
   m_TagString: Untagged
@@ -120,6 +121,22 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &429090689222126180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4471516126270333396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2cc59b5a4806e64cb859527c7ff647f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIButtonScaler
+  pressedScale: 0.92
+  pressDuration: 0.08
+  releaseDuration: 0.12
+  checkButtonInteractable: 1
 --- !u!1 &6096479966268512864
 GameObject:
   m_ObjectHideFlags: 0

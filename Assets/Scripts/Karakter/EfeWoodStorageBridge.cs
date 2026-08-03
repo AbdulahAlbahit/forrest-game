@@ -12,6 +12,7 @@ using UnityEngine.UI;
 public sealed class EfeWoodStorageBridge : MonoBehaviour
 {
     public static event Action<int, int> OnWoodStored;
+    public static event Action<int, int> OnWoodWithdrawn;
 
     [Header("Efe Karakter Akisi")]
     [SerializeField] private EfeOdunTasima odunTasima;
@@ -19,6 +20,9 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
     [Header("Main UI")]
     [SerializeField] private Button depositWoodButton;
     [SerializeField] private TMP_Text playerWoodStockText;
+
+    [Header("Ambar Gorseli")]
+    [SerializeField] private EfeWoodStorageVisual storageVisual;
 
     [Header("Kayit")]
     [SerializeField] private bool saveImmediately = true;
@@ -36,7 +40,7 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
         }
 
         ResolveCloudSaveManager();
-        RefreshWoodStockText();
+        RefreshWoodStockPresentation();
 
         if (_bindRoutine != null)
         {
@@ -67,7 +71,7 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
         while (isActiveAndEnabled)
         {
             ResolveCloudSaveManager();
-            RefreshWoodStockText();
+            RefreshWoodStockPresentation();
             yield return new WaitForSecondsRealtime(0.5f);
         }
     }
@@ -107,7 +111,7 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
         data.PlayerWoodStock = Mathf.Max(0, data.PlayerWoodStock) + aktarilanMiktar;
         int toplamStok = data.PlayerWoodStock;
 
-        RefreshWoodStockText();
+        RefreshWoodStockPresentation();
         OnWoodStored?.Invoke(aktarilanMiktar, toplamStok);
 
         if (saveImmediately)
@@ -119,6 +123,60 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
             $"{aktarilanMiktar} odun ambara aktarıldı. Toplam: {toplamStok}");
         Debug.Log(
             $"[EfeWoodStorageBridge] PlayerWoodStock güncellendi: +{aktarilanMiktar}, toplam {toplamStok}.",
+            this);
+    }
+
+    public void TakeStoredWood(EfeOdunTasima requestingCarrier, Vector3 storageWorldPosition)
+    {
+        ResolveCloudSaveManager();
+
+        if (requestingCarrier == null || requestingCarrier != odunTasima)
+        {
+            return;
+        }
+
+        if (_cloudSaveManager == null || _cloudSaveManager.CurrentData == null)
+        {
+            NotificationUIController.Instance?.ShowNotification("Kayıt sistemi hazırlanıyor, tekrar deneyin.");
+            return;
+        }
+
+        PlayerData data = _cloudSaveManager.CurrentData;
+        int mevcutStok = Mathf.Max(0, data.PlayerWoodStock);
+        if (mevcutStok <= 0)
+        {
+            NotificationUIController.Instance?.ShowNotification("Ambarda odun yok.");
+            return;
+        }
+
+        int bosKapasite = Mathf.Max(0, requestingCarrier.TasimaKapasitesi - requestingCarrier.TasinanOdunSayisi);
+        if (bosKapasite <= 0)
+        {
+            NotificationUIController.Instance?.ShowNotification("Sepetiniz dolu!");
+            return;
+        }
+
+        int istenenMiktar = Mathf.Min(mevcutStok, bosKapasite);
+        int alinanMiktar = requestingCarrier.AmbardanOdunAl(istenenMiktar, storageWorldPosition);
+        if (alinanMiktar <= 0)
+        {
+            return;
+        }
+
+        data.PlayerWoodStock = Mathf.Max(0, mevcutStok - alinanMiktar);
+        int kalanStok = data.PlayerWoodStock;
+        RefreshWoodStockPresentation();
+        OnWoodWithdrawn?.Invoke(alinanMiktar, kalanStok);
+
+        if (saveImmediately)
+        {
+            _cloudSaveManager.SaveData(data);
+        }
+
+        NotificationUIController.Instance?.ShowNotification(
+            $"{alinanMiktar} odun ambardan sepete alındı. Kalan: {kalanStok}");
+        Debug.Log(
+            $"[EfeWoodStorageBridge] PlayerWoodStock güncellendi: -{alinanMiktar}, kalan {kalanStok}.",
             this);
     }
 
@@ -142,7 +200,20 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
 
     private void HandleDataLoaded(PlayerData data)
     {
+        RefreshWoodStockPresentation();
+    }
+
+    private void RefreshWoodStockPresentation()
+    {
         RefreshWoodStockText();
+
+        if (storageVisual != null)
+        {
+            int woodStock = _cloudSaveManager != null && _cloudSaveManager.CurrentData != null
+                ? Mathf.Max(0, _cloudSaveManager.CurrentData.PlayerWoodStock)
+                : 0;
+            storageVisual.SetStoredAmount(woodStock);
+        }
     }
 
     private void RefreshWoodStockText()

@@ -954,7 +954,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 7620949821829376211}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.99999857
+  m_Size: 0
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2137,6 +2137,7 @@ GameObject:
   - component: {fileID: 3752893966051619654}
   - component: {fileID: 5595535899867268730}
   - component: {fileID: 3793968482074352490}
+  - component: {fileID: -6214218219019734938}
   m_Layer: 5
   m_Name: WorkshopPanel
   m_TagString: Untagged
@@ -2226,6 +2227,7 @@ MonoBehaviour:
   recipeItemPrefab: {fileID: 8254668770486009491, guid: 5cef84088ae3d4f4da89b5a6c9a56dd0, type: 3}
   selectedNameText: {fileID: 76548419404189465}
   requiredWoodText: {fileID: 1446917389560524614}
+  workshopWoodStockText: {fileID: 5220486373888318047}
   productionTimeText: {fileID: 3740336442243754285}
   selectedItemIcon: {fileID: 5748235541417525923}
   produceButton: {fileID: 2233412040636106323}
@@ -2233,6 +2235,22 @@ MonoBehaviour:
   queueItemPrefab: {fileID: 4195305252240752017, guid: 6bd522b06030fcc40a5ea2e300691c7c, type: 3}
   closeButton: {fileID: 2091408681443774539}
   buttonSfxName: Button0
+--- !u!114 &-6214218219019734938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7994272923608707089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbeda9867b99774789600ac884477a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIPanelAnimator
+  openDuration: 0.25
+  closeDuration: 0.18
+  startScale: {x: 0.85, y: 0.85, z: 0.85}
+  overshoot: 1.05
 --- !u!1 &8048630119546442251
 GameObject:
   m_ObjectHideFlags: 0
@@ -2618,7 +2636,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.0008588607, y: 0}
+  m_AnchoredPosition: {x: 277.3294, y: 0}
   m_SizeDelta: {x: -733, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &6435033071943882539

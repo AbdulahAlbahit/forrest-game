@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
 /// Atölye panelinin alt tarafındaki üretim sırasındaki (Queue) tek bir kutucuğu temsil eder.
 /// Şuan üretilen aktif ürün ise üzerindeki canlı % doluluk barını ve metnini günceller.
+/// Tıklandığında bağlı olduğu siparişten 1 adedi sıradan çıkarır.
 /// </summary>
-public class QueueItemUI : MonoBehaviour
+public class QueueItemUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("--- UI Elemanları ---")]
     [Tooltip("Üretilen mobilya ikonu.")]
@@ -28,10 +30,39 @@ public class QueueItemUI : MonoBehaviour
     [Tooltip("Bu siparişin aktif üretilip üretilmediğini belirten görsel parlaması.")]
     [SerializeField] private GameObject activeIndicator;
 
+    [Tooltip("Sıradan 1 adet çıkarmayı sağlayan tıklama butonu.")]
+    [SerializeField] private Button clickButton;
+
     private string itemID;
     private int amount;
     private bool isActiveItem;
     private RecipeConfig linkedRecipe;
+    private System.Action<string> onClickCallback;
+    private float lastClickTime = 0f;
+
+    private void Awake()
+    {
+        // Kök objede veya çocuklarında tıklama algılaması garanti olsun
+        var img = GetComponent<Image>();
+        if (img != null) img.raycastTarget = true;
+
+        if (clickButton == null)
+            clickButton = GetComponent<Button>();
+
+        if (clickButton == null)
+            clickButton = gameObject.AddComponent<Button>();
+
+        if (clickButton != null)
+        {
+            clickButton.onClick.RemoveAllListeners();
+            clickButton.onClick.AddListener(OnItemClicked);
+        }
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        OnItemClicked();
+    }
 
     /// <summary>
     /// Mevcut mobilya prefab referansı. Üretim tamamlandığında sahneye spawn için kullanılabilir.
@@ -41,9 +72,10 @@ public class QueueItemUI : MonoBehaviour
     /// <summary>
     /// Kutucuğu RecipeConfig ile kurar. İkon ve prefab otomatik bağlanır.
     /// </summary>
-    public void Setup(RecipeConfig recipe, int count, bool isCurrentlyProcessing)
+    public void Setup(RecipeConfig recipe, int count, bool isCurrentlyProcessing, System.Action<string> onClicked = null)
     {
         linkedRecipe = recipe;
+        onClickCallback = onClicked;
         string id = recipe != null ? recipe.ItemID : "???";
 
         SetupInternal(id, count, isCurrentlyProcessing);
@@ -57,10 +89,11 @@ public class QueueItemUI : MonoBehaviour
     /// Kutucuğu string ID ile kurar (geriye uyumluluk).
     /// WorkshopManager.tumTarifler içinde eşleşen tarifi arar.
     /// </summary>
-    public void Setup(string id, int count, bool isCurrentlyProcessing)
+    public void Setup(string id, int count, bool isCurrentlyProcessing, System.Action<string> onClicked = null)
     {
         // tumTarifler içinde RecipeConfig'i bulmaya çalış
         linkedRecipe = FindRecipeByID(id);
+        onClickCallback = onClicked;
 
         SetupInternal(id, count, isCurrentlyProcessing);
 
@@ -121,7 +154,15 @@ public class QueueItemUI : MonoBehaviour
             if (recipe != null && recipe.ItemID == id)
                 return recipe;
         }
+
         return null;
     }
-}
 
+    private void OnItemClicked()
+    {
+        if (Time.unscaledTime - lastClickTime < 0.25f) return;
+        lastClickTime = Time.unscaledTime;
+
+        onClickCallback?.Invoke(itemID);
+    }
+}

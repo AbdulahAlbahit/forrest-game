@@ -103,7 +103,11 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 0f;
 
         if (pausePanel != null)
+        {
             pausePanel.SetActive(true);
+            var anim = pausePanel.GetComponent<ForrestGame.UI.UIPanelAnimator>() ?? pausePanel.AddComponent<ForrestGame.UI.UIPanelAnimator>();
+            if (anim != null) anim.Show();
+        }
 
         Debug.Log("[PauseMenu] Oyun duraklatıldı. Time.timeScale = 0");
     }
@@ -121,7 +125,17 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 1f;
 
         if (pausePanel != null)
-            pausePanel.SetActive(false);
+        {
+            var anim = pausePanel.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+            if (anim != null)
+            {
+                anim.Hide(() => pausePanel.SetActive(false));
+            }
+            else
+            {
+                pausePanel.SetActive(false);
+            }
+        }
 
         Debug.Log("[PauseMenu] Oyun devam ediyor. Time.timeScale = 1");
     }

@@ -3,6 +3,7 @@ using ForrestGame.Utils;
 using Firebase;
 using Firebase.Analytics;
 using Firebase.Extensions;
+using System;
 
 namespace ForrestGame.Managers
 {
@@ -12,6 +13,7 @@ namespace ForrestGame.Managers
 
         private bool firebaseInitialized = false;
         private float sessionStartTime;
+        private DateTime sessionStartDateTime;
 
         private void Awake()
         {
@@ -54,6 +56,10 @@ namespace ForrestGame.Managers
 
                     LogCustomEvent("game_session_start", "daily_session_count", dailySessionCount);
                     sessionStartTime = Time.realtimeSinceStartup;
+                    sessionStartDateTime = DateTime.Now;
+
+                    // Oyun acildiginda otomatik login eventi
+                    LogUserLogin("guest");
                 }
                 else
                 {
@@ -86,27 +92,70 @@ namespace ForrestGame.Managers
             GameLogger.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
         }
 
+        /// <summary>
+        /// Firebase standart login eventini tetikler.
+        /// </summary>
+        public void LogUserLogin(string loginMethod = "guest")
+        {
+            if (!firebaseInitialized)
+            {
+                GameLogger.LogWarning("AnalyticsManager: Firebase henuz hazir degil, login eventi gonderilemedi.");
+                return;
+            }
+
+            FirebaseAnalytics.LogEvent(FirebaseAnalytics.EventLogin,
+                new Parameter(FirebaseAnalytics.ParameterMethod, loginMethod));
+            GameLogger.Log($"AnalyticsManager: Login eventi gonderildi -> method: {loginMethod}");
+        }
+
+        /// <summary>
+        /// Firebase standart reklam gosterim eventini tetikler.
+        /// </summary>
+        public void LogAdImpression(string adNetwork = "dummy_network")
+        {
+            if (!firebaseInitialized)
+            {
+                GameLogger.LogWarning("AnalyticsManager: Firebase henuz hazir degil, ad impression eventi gonderilemedi.");
+                return;
+            }
+
+            FirebaseAnalytics.LogEvent(FirebaseAnalytics.EventAdImpression,
+                new Parameter("ad_network", adNetwork));
+            GameLogger.Log($"AnalyticsManager: Ad impression eventi gonderildi -> network: {adNetwork}");
+        }
+
+        /// <summary>
+        /// Oturum bitis eventini gonderir, sure dakika cinsinden hesaplanir.
+        /// </summary>
+        private void LogSessionEnd()
+        {
+            if (!firebaseInitialized) return;
+
+            double sessionLengthMinutes = (DateTime.Now - sessionStartDateTime).TotalMinutes;
+
+            FirebaseAnalytics.LogEvent("game_session_end",
+                new Parameter("session_length_minutes", sessionLengthMinutes));
+            GameLogger.Log($"AnalyticsManager: game_session_end gonderildi -> session_length_minutes: {sessionLengthMinutes:F2}");
+        }
+
         private void OnApplicationPause(bool isPaused)
         {
             if (!firebaseInitialized) return;
 
             if (isPaused)
             {
-                float sessionMinutes = (Time.realtimeSinceStartup - sessionStartTime) / 60f;
-                LogCustomEvent("game_session_end", "session_minutes", sessionMinutes);
+                LogSessionEnd();
             }
             else
             {
                 sessionStartTime = Time.realtimeSinceStartup;
+                sessionStartDateTime = DateTime.Now;
             }
         }
 
         private void OnApplicationQuit()
         {
-            if (!firebaseInitialized) return;
-
-            float sessionMinutes = (Time.realtimeSinceStartup - sessionStartTime) / 60f;
-            LogCustomEvent("game_session_end", "session_minutes", sessionMinutes);
+            LogSessionEnd();
         }
     }
 }

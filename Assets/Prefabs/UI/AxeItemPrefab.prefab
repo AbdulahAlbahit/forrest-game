@@ -290,6 +290,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1fdc6cf9ab10e446b6583c8eb27fcdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AxeItemUI
+  cardButton: {fileID: 0}
   axeIcon: {fileID: 504488181468424637}
   axeNameText: {fileID: 4131238390061093238}
   axeStatText: {fileID: 1161861798749744766}

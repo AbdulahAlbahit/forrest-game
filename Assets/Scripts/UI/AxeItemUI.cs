@@ -132,6 +132,56 @@ public class AxeItemUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Beş bağımsız balta için satın alma/kuşanma kartını doldurur.
+    /// Eski sıralı seviye Setup API'si UI uyumluluğu için korunur.
+    /// </summary>
+    public void SetupIndependent(
+        int listIndex,
+        string axeName,
+        Sprite icon,
+        float statValue,
+        int currentLevel,
+        bool isOwned,
+        bool isEquipped,
+        int purchasePrice,
+        System.Action onAction)
+    {
+        onClickCallback = onAction;
+
+        if (axeNameText != null)
+            axeNameText.text = string.IsNullOrWhiteSpace(axeName) ? $"Balta {listIndex}" : axeName;
+
+        if (axeIcon != null)
+        {
+            axeIcon.sprite = icon;
+            axeIcon.gameObject.SetActive(icon != null);
+        }
+
+        if (axeStatText != null)
+            axeStatText.text = $"Güç: {statValue:F0}  |  Seviye: {currentLevel}";
+
+        if (lockOverlay != null)
+        {
+            lockOverlay.SetActive(!isOwned);
+            foreach (Graphic graphic in lockOverlay.GetComponentsInChildren<Graphic>(true))
+                graphic.raycastTarget = false;
+        }
+
+        if (equippedHighlight != null)
+            equippedHighlight.SetActive(isEquipped);
+
+        isInteractableState = !isEquipped;
+
+        if (cardButton != null)
+            cardButton.interactable = true;
+
+        string actionText = !isOwned
+            ? $"Satın Al\n{purchasePrice:N0} Para"
+            : isEquipped ? "Kullanılıyor" : "Kuşan";
+        SetButtonText(actionText, isInteractableState);
+    }
+
     private void SetButtonText(string text, bool interactable)
     {
         if (actionButton != null)

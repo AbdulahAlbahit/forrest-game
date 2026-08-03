@@ -431,18 +431,14 @@ public class SystemTester : MonoBehaviour
 
         GameLogger.Log($"[Test 6A] Kamyon gelmeden once: Workshop={eskiWorkshop}, PlayerDepo={eskiPlayer}");
 
-        if (eskiPlayer < kamyonOdunu)
-        {
-            GameLogger.LogWarning($"[Test 6A] UYARI: Oyuncunun deposunda sadece {eskiPlayer} odun var, kamyon {kamyonOdunu} tasimaya calisiyor. (Eksiye dusmeyecek, 0'da kalacak)");
-        }
-
         // Kamyon 30 odun birakti
         WorkshopManager.Instance.AddWood(kamyonOdunu);
 
-        // Beklenen sonuclar:
+        // Beklenen sonuclar: PlayerWoodStock kamyon teslimatindan hic etkilenmez
+        // (kamyona yuklenen odun zaten PlayerWoodStock'tan gelmiyor, EfeOdunTasima'dan geliyor).
         expectedWorkshopRawWood = eskiWorkshop + kamyonOdunu;
-        expectedPlayerWoodStock = Mathf.Max(0, eskiPlayer - kamyonOdunu);
-        
+        expectedPlayerWoodStock = eskiPlayer;
+
         if (testRecipe != null)
             expectedPostProductionWood = expectedWorkshopRawWood - testRecipe.RequiredWood;
 
@@ -525,24 +521,30 @@ public class SystemTester : MonoBehaviour
     [ContextMenu("Test 5: Yeni NPC Siparis Sistemi (Stok Yoksa BekleyenSiparise Atar)")]
     public void TestNPC_NewOrderSystem()
     {
-        if (ShopManager.Instance == null)
+        if (CustomerOrderManager.Instance == null)
         {
-            GameLogger.LogError("[Test 5] ShopManager bulunamadi!");
+            GameLogger.LogError("[Test 5] CustomerOrderManager bulunamadi!");
             return;
         }
 
-        string itemId = testRecipe != null ? testRecipe.ItemID : "Chair";
-        int siparisMiktari = 3;
-        int fiyat = 100;
+        if (testRecipe == null)
+        {
+            GameLogger.LogWarning("[Test 5] testRecipe atanmamis, test icin atayin.");
+            return;
+        }
 
-        GameLogger.Log($"[Test 5] NPC Geldi! {siparisMiktari} adet {itemId} istiyor.");
-        ShopManager.Instance.ProcessCustomerOrder(itemId, siparisMiktari, fiyat);
+        string itemId = testRecipe.ItemID;
+
+        GameLogger.Log($"[Test 5] NPC Geldi! 1 adet {itemId} istiyor.");
+        CustomerOrderManager.Instance.CreateOrder(testRecipe);
 
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             PlayerData d = CloudSaveManager.Instance.CurrentData;
-            int bekleyenSiparis = d.PendingCustomerOrders != null ? d.PendingCustomerOrders.Get(itemId, 0) : 0;
-            GameLogger.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis miktari: {bekleyenSiparis}");
+            int bekleyenSiparis = d.PendingCustomerOrders != null
+                ? d.PendingCustomerOrders.FindAll(o => o.ItemId == itemId).Count
+                : 0;
+            GameLogger.Log($"[Test 5] Islem sonrasi '{itemId}' bekleyen siparis sayisi: {bekleyenSiparis}");
         }
     }
 }

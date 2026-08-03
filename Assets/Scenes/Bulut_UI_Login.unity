@@ -238,7 +238,7 @@ MonoBehaviour:
   loadingText1: {fileID: 882806560775351045}
   loadingText2: {fileID: 5782241529660732512}
   dotAnimationInterval: 0.4
-  targetSceneName: Bulut_UI
+  targetSceneName: AbdulahTestsEkran
   firebaseTimeout: 5
   bgMusicName: ArkaPlan
   buttonSfxName: Button0
@@ -2007,6 +2007,7 @@ GameObject:
   - component: {fileID: 5791630026676870198}
   - component: {fileID: 638498652134625618}
   - component: {fileID: 7220959307637786781}
+  - component: {fileID: 8802695759349607031}
   m_Layer: 0
   m_Name: AudioManager
   m_TagString: Untagged
@@ -3968,6 +3969,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8802695759349607031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2419292613306417550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9e58ebb89a924048ab7224e7239fa47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Audio.AudioEventSubscriber
 --- !u!1 &8927482887814392350
 GameObject:
   m_ObjectHideFlags: 0
@@ -3995,5 +4008,5 @@ SceneRoots:
   - {fileID: 146007668}
   - {fileID: 325783332}
   - {fileID: 1071300424}
-  - {fileID: 8802695759349607030}
   - {fileID: 785474773}
+  - {fileID: 8802695759349607030}
