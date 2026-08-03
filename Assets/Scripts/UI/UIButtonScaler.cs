@@ -66,7 +66,13 @@ namespace ForrestGame.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            // Click olayında ekstra yaylanma yapılabilir
+            if (!IsInteractable()) return;
+
+            // Click olayında dokunmanın tescil edildiğini hissettirmek için mikro bounce efekti
+            StartScaleAnimation(initialScale * 1.05f, 0.05f, () =>
+            {
+                StartScaleAnimation(initialScale, 0.08f);
+            });
         }
 
         private bool IsInteractable()
@@ -76,7 +82,7 @@ namespace ForrestGame.UI
             return true;
         }
 
-        private void StartScaleAnimation(Vector3 targetScale, float duration)
+        private void StartScaleAnimation(Vector3 targetScale, float duration, System.Action onComplete = null)
         {
             if (activeScaleCoroutine != null)
             {
@@ -85,15 +91,16 @@ namespace ForrestGame.UI
 
             if (gameObject.activeInHierarchy)
             {
-                activeScaleCoroutine = StartCoroutine(ScaleRoutine(targetScale, duration));
+                activeScaleCoroutine = StartCoroutine(ScaleRoutine(targetScale, duration, onComplete));
             }
             else
             {
                 transform.localScale = targetScale;
+                onComplete?.Invoke();
             }
         }
 
-        private IEnumerator ScaleRoutine(Vector3 targetScale, float duration)
+        private IEnumerator ScaleRoutine(Vector3 targetScale, float duration, System.Action onComplete = null)
         {
             Vector3 startScale = transform.localScale;
             float elapsed = 0f;
@@ -110,6 +117,7 @@ namespace ForrestGame.UI
 
             transform.localScale = targetScale;
             activeScaleCoroutine = null;
+            onComplete?.Invoke();
         }
     }
 }
