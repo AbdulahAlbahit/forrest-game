@@ -7,6 +7,7 @@ using Firebase.Auth;
 using Firebase.Extensions;
 using Google;
 
+[DefaultExecutionOrder(-150)]
 public class FirebaseAuthManager : MonoBehaviour
 {
     public static FirebaseAuthManager Instance { get; private set; }

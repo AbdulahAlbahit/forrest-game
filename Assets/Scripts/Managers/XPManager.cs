@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using ForrestGame.Utils;
 
+[DefaultExecutionOrder(-50)]
 public class XPManager : MonoBehaviour
 {
     public static XPManager Instance { get; private set; }
@@ -100,6 +101,7 @@ public class XPManager : MonoBehaviour
 
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
+            NotificationManager.Instance?.SendNotification("HATA: XP eklenemiyor, CloudData hazir degil!");
             GameLogger.LogWarning("XPManager: CloudSaveManager veya CurrentData hazir degil. XP eklenemiyor.");
             return;
         }
@@ -107,6 +109,7 @@ public class XPManager : MonoBehaviour
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
         data.XP += amount;
+        NotificationManager.Instance?.SendNotification($"BİLGİ: +{amount} XP eklendi. Yeni XP: {data.XP}");
         GameLogger.Log($"XPManager: +{amount} XP kazanildi. Toplam XP: {data.XP}");
 
 

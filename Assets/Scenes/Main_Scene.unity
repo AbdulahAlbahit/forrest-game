@@ -1708,29 +1708,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 4011565344721846904, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+    - {fileID: 4348945368860897657, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+    - {fileID: 945245529113248150, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3227559618511051333, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 50516396}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
---- !u!1 &50516395 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3227559618511051333, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-  m_PrefabInstance: {fileID: 50516394}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &50516396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 50516395}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ab825ec5763d5f4b8ba98506b92ca40, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FirebaseAuthManager
 --- !u!1 &53916291
 GameObject:
   m_ObjectHideFlags: 0
@@ -10124,6 +10106,7 @@ MonoBehaviour:
   notificationPanel: {fileID: 423322079}
   notificationText: {fileID: 1720425365}
   defaultDuration: 1
+  animDuration: 0.22
 --- !u!114 &423322082
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10193,6 +10176,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MainHUDController
   coinValueText: {fileID: 0}
   woodValueText: {fileID: 0}
+  basketFillImage: {fileID: 0}
   workshopWoodText: {fileID: 733231362}
   xpValueText: {fileID: 337583062}
   xpFillImage: {fileID: 152181154}
@@ -11509,50 +11493,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1837506719}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &487800681
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 487800683}
-  - component: {fileID: 487800682}
-  m_Layer: 0
-  m_Name: analaticTest
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &487800682
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 487800681}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 457026a1417a9c34ca5e83556155e624, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.AnalyticsManager
---- !u!4 &487800683
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 487800681}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1280, y: 720, z: -2.32}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &493884036
 PrefabInstance:
@@ -56276,7 +56216,6 @@ SceneRoots:
   - {fileID: 1466849526}
   - {fileID: 1442968411}
   - {fileID: 1589001042}
-  - {fileID: 487800683}
   - {fileID: 2034302758}
   - {fileID: 209115248}
   - {fileID: 424990542}
