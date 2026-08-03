@@ -138,6 +138,6 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _KarRengi: {r: 0.9215686, g: 0.9529411, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _TabanRengi: {r: 0.8039216, g: 0.5215687, b: 0.2470588, a: 1}
+    - _TabanRengi: {r: 0.80204785, g: 0.5235221, b: 0.25009817, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

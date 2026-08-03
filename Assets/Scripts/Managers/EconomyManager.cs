@@ -3,6 +3,7 @@ using UnityEngine;
 using ForrestGame.Utils;
 using ForrestGame.Core;
 
+[DefaultExecutionOrder(-50)]
 public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }

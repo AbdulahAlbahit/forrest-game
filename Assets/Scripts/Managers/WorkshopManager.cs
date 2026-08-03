@@ -4,6 +4,7 @@ using ForrestGame.Core;
 using System.Collections.Generic;
 using ForrestGame.Utils;
 
+[DefaultExecutionOrder(-50)]
 public class WorkshopManager : MonoBehaviour
 {
     public static WorkshopManager Instance { get; private set; }

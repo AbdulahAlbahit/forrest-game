@@ -331,8 +331,24 @@ public class CloudSaveManager : MonoBehaviour
                 Dictionary<string, object> dict = snapshot.ToDictionary();
 
                 if (dict.ContainsKey("Para")) data.Para = Convert.ToInt32(dict["Para"]);
-                if (dict.ContainsKey("XP")) data.XP = Convert.ToInt32(dict["XP"]);
-                if (dict.ContainsKey("OyuncuSeviyesi")) data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
+                
+                if (dict.ContainsKey("XP")) 
+                {
+                    data.XP = Convert.ToInt32(dict["XP"]);
+                }
+                else 
+                {
+                    NotificationManager.Instance?.SendNotification("HATA: Firebase verisinde 'XP' alani bulunamadi!");
+                }
+                
+                if (dict.ContainsKey("OyuncuSeviyesi")) 
+                {
+                    data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
+                }
+                else
+                {
+                    NotificationManager.Instance?.SendNotification("HATA: Firebase verisinde 'OyuncuSeviyesi' alani bulunamadi!");
+                }
 
 
                 if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
@@ -454,14 +470,25 @@ public class CloudSaveManager : MonoBehaviour
                 PlayerData localData = GetLocalData();
                 if (localData != null && localData.LastSaveTime > data.LastSaveTime)
                 {
-                    GameLogger.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttaki veriden (Time: {data.LastSaveTime}) daha guncel! Lokal veri korunuyor ve buluta yaziliyor...");
-                    CurrentData = localData;
-                    isDataLoaded = true; // Veri hazir, artik kayit yapilabilir
+                    long localScore = localData.XP + localData.Para + ((long)localData.OyuncuSeviyesi * 10000);
+                    long cloudScore = data.XP + data.Para + ((long)data.OyuncuSeviyesi * 10000);
 
-                    SaveData(localData);
-                    
-                    OnDataLoaded?.Invoke(localData);
-                    return;
+                    if (localScore < cloudScore)
+                    {
+                        GameLogger.LogWarning($"CloudSaveManager: Lokal kayit daha yeni (Time: {localData.LastSaveTime}) fakat BULUT ilerlemesi daha yuksek (Cloud: {cloudScore} > Local: {localScore}). Bulut verisi kullanilacak!");
+                        // Burada return yapmiyoruz, kod asagi dogru devam edip buluttan gelen 'data'yi yukleyecek.
+                    }
+                    else
+                    {
+                        GameLogger.LogWarning($"CloudSaveManager: [Cakisma] Lokal veri (Time: {localData.LastSaveTime}) buluttan daha guncel ve ilerlemesi (Score: {localScore}) yeterli. Lokal veri buluta yaziliyor...");
+                        CurrentData = localData;
+                        isDataLoaded = true; // Veri hazir, artik kayit yapilabilir
+
+                        SaveData(localData);
+                        
+                        OnDataLoaded?.Invoke(localData);
+                        return;
+                    }
                 }
 
                 CurrentData = data;
