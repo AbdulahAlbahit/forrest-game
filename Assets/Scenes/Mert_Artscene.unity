@@ -2349,6 +2349,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7065799305617673210, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
+      propertyPath: balta
+      value: 
+      objectReference: {fileID: 422369418}
     - target: {fileID: 7204569171676720323, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
       propertyPath: toplamaYaricapi
       value: 1.3
@@ -2374,7 +2378,8 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 342956299}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 722519233556452532, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 893042180401084536, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
       insertIndex: -1
@@ -12058,9 +12063,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 422369418}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5431029, y: 0.48952124, z: -0.45132554, w: 0.51157933}
-  m_LocalPosition: {x: -0.0006258345, y: 0.0007312486, z: -0.00008117968}
-  m_LocalScale: {x: 0.0080891885, y: 0.0080891885, z: 0.008089193}
+  m_LocalRotation: {x: 0.54310304, y: 0.4895216, z: -0.4513255, w: 0.511579}
+  m_LocalPosition: {x: -0.00062583445, y: 0.00073124864, z: -0.00008117968}
+  m_LocalScale: {x: 0.008089186, y: 0.008089186, z: 0.008089188}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 74895800}
