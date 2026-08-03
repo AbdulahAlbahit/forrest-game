@@ -57,6 +57,9 @@ namespace ForrestGame.Managers
                     LogCustomEvent("game_session_start", "daily_session_count", dailySessionCount);
                     sessionStartTime = Time.realtimeSinceStartup;
                     sessionStartDateTime = DateTime.Now;
+
+                    // Oyun acildiginda otomatik login eventi
+                    LogUserLogin("guest");
                 }
                 else
                 {
@@ -89,7 +92,10 @@ namespace ForrestGame.Managers
             GameLogger.Log($"AnalyticsManager: Event gonderildi -> {eventName} | {parameterName}: {parameterValue}");
         }
 
-        public void LogUserLogin(string loginMethod, string userId = null)
+        /// <summary>
+        /// Firebase standart login eventini tetikler.
+        /// </summary>
+        public void LogUserLogin(string loginMethod = "guest")
         {
             if (!firebaseInitialized)
             {
@@ -97,14 +103,9 @@ namespace ForrestGame.Managers
                 return;
             }
 
-            if (!string.IsNullOrEmpty(userId))
-            {
-                FirebaseAnalytics.SetUserId(userId);
-            }
-
             FirebaseAnalytics.LogEvent(FirebaseAnalytics.EventLogin,
                 new Parameter(FirebaseAnalytics.ParameterMethod, loginMethod));
-            GameLogger.Log($"AnalyticsManager: Login eventi gonderildi -> method: {loginMethod}, userId: {userId}");
+            GameLogger.Log($"AnalyticsManager: Login eventi gonderildi -> method: {loginMethod}");
         }
 
         /// <summary>

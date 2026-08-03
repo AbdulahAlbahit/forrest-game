@@ -139,6 +139,10 @@ public class InventoryPanelController : MonoBehaviour
         if (mainPanel != null && !mainPanel.activeSelf)
             mainPanel.SetActive(true);
 
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
+
         RefreshPanel();
     }
 
@@ -146,10 +150,25 @@ public class InventoryPanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
 
-        gameObject.SetActive(false);
+        if (anim != null)
+        {
+            anim.Hide(() =>
+            {
+                if (mainPanel != null)
+                    mainPanel.SetActive(false);
+                gameObject.SetActive(false);
+            });
+        }
+        else
+        {
+            if (mainPanel != null)
+                mainPanel.SetActive(false);
+
+            gameObject.SetActive(false);
+        }
     }
 
     public void TogglePanel()
