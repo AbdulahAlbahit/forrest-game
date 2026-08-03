@@ -87,6 +87,7 @@ public class EfeBaltaKontrol : MonoBehaviour
     private bool animatorSaldiriHiziParametresiVar;
     private bool upgradeEventlerineAbone;
     private bool dataEventineAbone;
+    private bool axeEquippedEventineAbone;
 
     public int AktifAgacHasari => aktifAgacHasari;
     public float AktifSaldiriBeklemeSuresi => aktifSaldiriBeklemeSuresi;
@@ -453,6 +454,12 @@ public class EfeBaltaKontrol : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded += DataYuklendiginde;
             dataEventineAbone = true;
         }
+
+        if (!axeEquippedEventineAbone)
+        {
+            AxeTablePanelController.OnAxeEquipped += UpgradeAyarlariniUygula;
+            axeEquippedEventineAbone = true;
+        }
     }
 
     private void UpgradeEventlerindenCik()
@@ -467,13 +474,23 @@ public class EfeBaltaKontrol : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded -= DataYuklendiginde;
         }
 
+        if (axeEquippedEventineAbone)
+        {
+            AxeTablePanelController.OnAxeEquipped -= UpgradeAyarlariniUygula;
+        }
+
         upgradeEventlerineAbone = false;
         dataEventineAbone = false;
+        axeEquippedEventineAbone = false;
     }
 
     private void UpgradeYapildiginda(string itemId, int newLevel)
     {
-        if (itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
+        bool kusanilanBaltaGuncellendi =
+            AxeTablePanelController.Instance != null &&
+            itemId == AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+
+        if (kusanilanBaltaGuncellendi || itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
         {
             UpgradeAyarlariniUygula();
         }
@@ -491,7 +508,12 @@ public class EfeBaltaKontrol : MonoBehaviour
         aktifVurusGecikmesi = vurusAnGecikmesi;
         aktifSaldiriAnimasyonHizi = 1f;
 
-        if (useUpgradeLevels && UpgradeManager.Instance != null)
+        if (AxeTablePanelController.Instance != null)
+        {
+            // Kusanilan baltanin Axe Table panelinde gosterilen gercek Guc degeri kullanilir.
+            aktifAgacHasari = Mathf.Max(1, Mathf.RoundToInt(AxeTablePanelController.Instance.CurrentlyEquippedPower));
+        }
+        else if (useUpgradeLevels && UpgradeManager.Instance != null)
         {
             int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
             AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
@@ -499,7 +521,10 @@ public class EfeBaltaKontrol : MonoBehaviour
             {
                 aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
             }
+        }
 
+        if (useUpgradeLevels && UpgradeManager.Instance != null)
+        {
             int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
             HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
             if (speedSetting != null)
