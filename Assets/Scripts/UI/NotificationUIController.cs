@@ -73,20 +73,56 @@ public class NotificationUIController : MonoBehaviour
         ShowNotification(message);
     }
 
+    private System.Collections.Generic.Queue<(string message, float duration)> notificationQueue = new System.Collections.Generic.Queue<(string, float)>();
+    private bool isProcessingQueue = false;
+
     /// <summary>
-    /// Ekranda kısa süreli bildirim pop-up'ı gösterir.
+    /// Ekranda kısa süreli bildirim pop-up'ı gösterir (Kuyruğa ekler).
     /// </summary>
     public void ShowNotification(string message, float duration = -1f)
     {
+        if (string.IsNullOrEmpty(message)) return;
         if (duration <= 0) duration = defaultDuration;
+
+        // Mükerrer bildirim engelleme (NotificationManager hem event hem doğrudan Instance çağırdığında çift eklenmesini önler)
+        if (notificationQueue.Count > 0)
+        {
+            var array = notificationQueue.ToArray();
+            if (array[array.Length - 1].message == message) return;
+        }
+
+        if (isProcessingQueue && notificationText != null && notificationText.text == message)
+        {
+            return;
+        }
 
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);
 
-        if (currentNoticeCoroutine != null)
-            StopCoroutine(currentNoticeCoroutine);
+        // Maksimum 5 bildirim birikebilsin
+        if (notificationQueue.Count < 5)
+        {
+            notificationQueue.Enqueue((message, duration));
+        }
 
-        currentNoticeCoroutine = StartCoroutine(NotificationRoutine(message, duration));
+        if (!isProcessingQueue)
+        {
+            currentNoticeCoroutine = StartCoroutine(ProcessQueueRoutine());
+        }
+    }
+
+    private IEnumerator ProcessQueueRoutine()
+    {
+        isProcessingQueue = true;
+
+        while (notificationQueue.Count > 0)
+        {
+            var item = notificationQueue.Dequeue();
+            yield return StartCoroutine(NotificationRoutine(item.message, item.duration));
+        }
+
+        isProcessingQueue = false;
+        currentNoticeCoroutine = null;
     }
 
     private IEnumerator NotificationRoutine(string message, float duration)
@@ -139,8 +175,6 @@ public class NotificationUIController : MonoBehaviour
 
         SetVisibilityImmediate(false);
         if (targetRectTransform != null) targetRectTransform.anchoredPosition = originalAnchoredPosition;
-
-        currentNoticeCoroutine = null;
     }
 
     private void SetVisibilityImmediate(bool visible)
