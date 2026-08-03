@@ -6,6 +6,7 @@ using ForrestGame.Utils;
 using Firebase.Firestore;
 using Firebase.Extensions;
 
+[DefaultExecutionOrder(-100)]
 public class CloudSaveManager : MonoBehaviour
 {
     public static CloudSaveManager Instance { get; private set; }
