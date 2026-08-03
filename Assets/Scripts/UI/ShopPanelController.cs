@@ -128,6 +128,9 @@ public class ShopPanelController : MonoBehaviour
         ShopManager.OnStockChanged += HandleStockChanged;
         ShopManager.OnItemSold += HandleItemSold;
 
+        CustomerOrderManager.OnOrderCreated += HandleCustomerOrderCreated;
+        CustomerOrderManager.OnOrderInstantlyFulfilled += HandleCustomerOrderFulfilled;
+
         if (EconomyManager.Instance != null)
             EconomyManager.Instance.OnMoneyChanged += HandleMoneyChanged;
 
@@ -140,11 +143,26 @@ public class ShopPanelController : MonoBehaviour
         ShopManager.OnStockChanged -= HandleStockChanged;
         ShopManager.OnItemSold -= HandleItemSold;
 
+        CustomerOrderManager.OnOrderCreated -= HandleCustomerOrderCreated;
+        CustomerOrderManager.OnOrderInstantlyFulfilled -= HandleCustomerOrderFulfilled;
+
         if (EconomyManager.Instance != null)
             EconomyManager.Instance.OnMoneyChanged -= HandleMoneyChanged;
 
         if (CloudSaveManager.Instance != null)
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+    }
+
+    private void HandleCustomerOrderCreated(CustomerOrderData orderData)
+    {
+        if (mainPanel != null && mainPanel.activeSelf)
+            RefreshPanel();
+    }
+
+    private void HandleCustomerOrderFulfilled(string itemId)
+    {
+        if (mainPanel != null && mainPanel.activeSelf)
+            RefreshPanel();
     }
 
     private void HandleStockChanged(string itemId, int newStock)
@@ -184,6 +202,10 @@ public class ShopPanelController : MonoBehaviour
         if (mainPanel != null && !mainPanel.activeSelf)
             mainPanel.SetActive(true);
 
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
+
         RefreshPanel();
     }
 
@@ -191,10 +213,25 @@ public class ShopPanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
 
-        gameObject.SetActive(false);
+        if (anim != null)
+        {
+            anim.Hide(() =>
+            {
+                if (mainPanel != null)
+                    mainPanel.SetActive(false);
+                gameObject.SetActive(false);
+            });
+        }
+        else
+        {
+            if (mainPanel != null)
+                mainPanel.SetActive(false);
+
+            gameObject.SetActive(false);
+        }
     }
 
     public void TogglePanel()

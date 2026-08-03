@@ -146,23 +146,39 @@ public class MainHUDController : MonoBehaviour
         RefreshAllHUD();
     }
 
+    private Coroutine _bindRoutine;
+    private EconomyManager _boundEconomy;
+    private XPManager _boundXP;
+    private BasketManager _boundBasket;
+    private WorkshopManager _boundWorkshop;
+    private CloudSaveManager _boundCloudSave;
+
     private void OnEnable()
     {
         SubscribeEvents();
         RefreshAllHUD();
+
+        if (_bindRoutine != null) StopCoroutine(_bindRoutine);
+        _bindRoutine = StartCoroutine(BindManagersRoutine());
     }
 
     private void OnDisable()
     {
         UnsubscribeEvents();
+        if (_bindRoutine != null)
+        {
+            StopCoroutine(_bindRoutine);
+            _bindRoutine = null;
+        }
     }
 
-    private void Update()
+    private System.Collections.IEnumerator BindManagersRoutine()
     {
-        // Sepet Bar Yumuşak Lerp Dolumu
-        if (basketFillImage != null && Mathf.Abs(basketFillImage.fillAmount - targetBasketFill) > 0.001f)
+        while (isActiveAndEnabled)
         {
-            basketFillImage.fillAmount = Mathf.MoveTowards(basketFillImage.fillAmount, targetBasketFill, Time.unscaledDeltaTime * 2.5f);
+            SubscribeEvents();
+            RefreshAllHUD();
+            yield return new WaitForSecondsRealtime(0.5f);
         }
     }
 
@@ -172,44 +188,110 @@ public class MainHUDController : MonoBehaviour
 
     private void SubscribeEvents()
     {
-        if (EconomyManager.Instance != null)
-            EconomyManager.Instance.OnMoneyChanged += UpdateCoinText;
-
-        if (XPManager.Instance != null)
+        if (EconomyManager.Instance != null && _boundEconomy != EconomyManager.Instance)
         {
-            XPManager.Instance.OnXPChanged += UpdateXPText;
-            XPManager.Instance.OnLevelUp += UpdateLevelText;
+            if (_boundEconomy != null) _boundEconomy.OnMoneyChanged -= UpdateCoinText;
+            _boundEconomy = EconomyManager.Instance;
+            if (_boundEconomy != null) _boundEconomy.OnMoneyChanged += UpdateCoinText;
         }
 
-        if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged += UpdateBasketWoodText;
+        if (XPManager.Instance != null && _boundXP != XPManager.Instance)
+        {
+            if (_boundXP != null)
+            {
+                _boundXP.OnXPChanged -= UpdateXPText;
+                _boundXP.OnLevelUp -= UpdateLevelText;
+            }
+            _boundXP = XPManager.Instance;
+            if (_boundXP != null)
+            {
+                _boundXP.OnXPChanged += UpdateXPText;
+                _boundXP.OnLevelUp += UpdateLevelText;
+            }
+        }
 
-        if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged += UpdateWorkshopWoodText;
+        if (BasketManager.Instance != null && _boundBasket != BasketManager.Instance)
+        {
+            if (_boundBasket != null) _boundBasket.OnBasketChanged -= UpdateBasketWoodText;
+            _boundBasket = BasketManager.Instance;
+            if (_boundBasket != null) _boundBasket.OnBasketChanged += UpdateBasketWoodText;
+        }
 
-        if (CloudSaveManager.Instance != null)
-            CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
+        if (WorkshopManager.Instance != null && _boundWorkshop != WorkshopManager.Instance)
+        {
+            if (_boundWorkshop != null) _boundWorkshop.OnQueueChanged -= UpdateWorkshopWoodText;
+            _boundWorkshop = WorkshopManager.Instance;
+            if (_boundWorkshop != null) _boundWorkshop.OnQueueChanged += UpdateWorkshopWoodText;
+        }
+
+        if (CloudSaveManager.Instance != null && _boundCloudSave != CloudSaveManager.Instance)
+        {
+            if (_boundCloudSave != null) _boundCloudSave.OnDataLoaded -= HandleDataLoaded;
+            _boundCloudSave = CloudSaveManager.Instance;
+            if (_boundCloudSave != null) _boundCloudSave.OnDataLoaded += HandleDataLoaded;
+        }
+
+        // Oynanış eventleri (Efe karakter/market uyumu)
+        EfeOynanisEventleri.OdunToplandi -= HandleEfeWoodEvent;
+        EfeOynanisEventleri.OdunToplandi += HandleEfeWoodEvent;
+
+        EfeOynanisEventleri.OdunKamyonaYuklendi -= HandleEfeWoodEvent;
+        EfeOynanisEventleri.OdunKamyonaYuklendi += HandleEfeWoodEvent;
+
+        EfeOynanisEventleri.SepetBosaldi -= HandleEfeBasketEmpty;
+        EfeOynanisEventleri.SepetBosaldi += HandleEfeBasketEmpty;
+
+        EfeMarketSalesController.OnBalanceChanged -= UpdateCoinText;
+        EfeMarketSalesController.OnBalanceChanged += UpdateCoinText;
     }
 
     private void UnsubscribeEvents()
     {
-        if (EconomyManager.Instance != null)
-            EconomyManager.Instance.OnMoneyChanged -= UpdateCoinText;
-
-        if (XPManager.Instance != null)
+        if (_boundEconomy != null)
         {
-            XPManager.Instance.OnXPChanged -= UpdateXPText;
-            XPManager.Instance.OnLevelUp -= UpdateLevelText;
+            _boundEconomy.OnMoneyChanged -= UpdateCoinText;
+            _boundEconomy = null;
         }
 
-        if (BasketManager.Instance != null)
-            BasketManager.Instance.OnBasketChanged -= UpdateBasketWoodText;
+        if (_boundXP != null)
+        {
+            _boundXP.OnXPChanged -= UpdateXPText;
+            _boundXP.OnLevelUp -= UpdateLevelText;
+            _boundXP = null;
+        }
 
-        if (WorkshopManager.Instance != null)
-            WorkshopManager.Instance.OnQueueChanged -= UpdateWorkshopWoodText;
+        if (_boundBasket != null)
+        {
+            _boundBasket.OnBasketChanged -= UpdateBasketWoodText;
+            _boundBasket = null;
+        }
 
-        if (CloudSaveManager.Instance != null)
-            CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
+        if (_boundWorkshop != null)
+        {
+            _boundWorkshop.OnQueueChanged -= UpdateWorkshopWoodText;
+            _boundWorkshop = null;
+        }
+
+        if (_boundCloudSave != null)
+        {
+            _boundCloudSave.OnDataLoaded -= HandleDataLoaded;
+            _boundCloudSave = null;
+        }
+
+        EfeOynanisEventleri.OdunToplandi -= HandleEfeWoodEvent;
+        EfeOynanisEventleri.OdunKamyonaYuklendi -= HandleEfeWoodEvent;
+        EfeOynanisEventleri.SepetBosaldi -= HandleEfeBasketEmpty;
+        EfeMarketSalesController.OnBalanceChanged -= UpdateCoinText;
+    }
+
+    private void HandleEfeWoodEvent(Transform source, int current, int max)
+    {
+        UpdateBasketWoodText(current, max);
+    }
+
+    private void HandleEfeBasketEmpty(Transform source)
+    {
+        UpdateBasketWoodText(0, BasketManager.Instance != null ? BasketManager.Instance.MaksKapasite : 6);
     }
 
     // ═══════════════════════════════════════════
@@ -228,6 +310,8 @@ public class MainHUDController : MonoBehaviour
     {
         if (EconomyManager.Instance != null)
             UpdateCoinText(EconomyManager.Instance.MevcutPara);
+        else if (CloudSaveManager.Instance?.CurrentData != null)
+            UpdateCoinText(CloudSaveManager.Instance.CurrentData.Para);
 
         if (XPManager.Instance != null)
         {
@@ -235,15 +319,37 @@ public class MainHUDController : MonoBehaviour
             UpdateLevelText(XPManager.Instance.MevcutSeviye);
             lastObservedLevel = XPManager.Instance.MevcutSeviye;
         }
+        else if (CloudSaveManager.Instance?.CurrentData != null)
+        {
+            UpdateXPText(CloudSaveManager.Instance.CurrentData.XP);
+            UpdateLevelText(CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi);
+            lastObservedLevel = CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+        }
 
         if (BasketManager.Instance != null)
         {
             UpdateBasketWoodText(BasketManager.Instance.MevcutDoluluk, BasketManager.Instance.MaksKapasite);
         }
+        else
+        {
+            var efeOdun = FindFirstObjectByType<EfeOdunTasima>();
+            if (efeOdun != null)
+            {
+                UpdateBasketWoodText(efeOdun.TasinanOdunSayisi, efeOdun.TasimaKapasitesi);
+            }
+            else if (CloudSaveManager.Instance?.CurrentData != null)
+            {
+                UpdateBasketWoodText(CloudSaveManager.Instance.CurrentData.PlayerWoodStock, 6);
+            }
+        }
 
         if (WorkshopManager.Instance != null)
         {
             UpdateWorkshopWoodText(WorkshopManager.Instance.MevcutKuyruk, WorkshopManager.Instance.GetWorkshopCapacity());
+        }
+        else if (CloudSaveManager.Instance?.CurrentData != null)
+        {
+            UpdateWorkshopWoodText(CloudSaveManager.Instance.CurrentData.WorkshopRawWood, 25);
         }
     }
 
@@ -398,6 +504,8 @@ public class MainHUDController : MonoBehaviour
         }
     }
 
+    private bool wasBasketFull = false;
+
     private void UpdateBasketWoodText(int current, int max)
     {
         if (woodValueText != null)
@@ -416,8 +524,15 @@ public class MainHUDController : MonoBehaviour
             if (isFull)
             {
                 TriggerPulse(woodValueText.transform, ref basketPulseCoroutine, 1.15f);
+
+                if (!wasBasketFull)
+                {
+                    NotificationUIController.Instance?.ShowNotification("Sepetiniz Doldu!");
+                }
             }
         }
+
+        wasBasketFull = isFull;
     }
 
     private void TriggerPulse(Transform targetTransform, ref Coroutine coroutineTracker, float targetScaleFactor)

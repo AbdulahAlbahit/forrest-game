@@ -48,6 +48,7 @@ public class CharacterStatsPanelController : MonoBehaviour
     [SerializeField] private Color headerColorAxe       = new Color(1f, 0.4f, 0.3f, 1f);   // Kırmızı / Hasar
     [SerializeField] private Color headerColorInventory = new Color(0.4f, 0.9f, 0.4f, 1f);   // Yeşil
     [SerializeField] private Color headerColorWorkshop  = new Color(0.9f, 0.5f, 0.9f, 1f);   // Mor
+    [SerializeField] private Color headerColorTruck     = new Color(1f, 0.65f, 0.25f, 1f);   // Turuncu
     [SerializeField] private Color headerColorSeason    = new Color(0.3f, 0.9f, 0.9f, 1f);   // Turkuaz
     [SerializeField] private Color headerColorStats     = new Color(0.8f, 0.8f, 0.8f, 1f);   // Gri / Gümüş
 
@@ -327,35 +328,78 @@ public class CharacterStatsPanelController : MonoBehaviour
         AddHeader("BALTA İSTATİSTİKLERİ", headerColorAxe);
         string currentAxeId = AxeVisualManager.Instance != null ? AxeVisualManager.Instance.currentAxeId : "lowpoly_axe";
         int equippedTier = GetEquippedAxeTier(currentAxeId);
-        float equippedPower = GetAxePowerForTier(equippedTier);
-
-        int maxUnlockedLevel = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Axe") : 1;
-        float maxUnlockedPower = GetAxePowerForTier(maxUnlockedLevel);
+        string equippedItemId = GetAxeItemId(equippedTier);
+        string equippedAxeName = GetEquippedAxeName(equippedTier);
+        int equippedLevel = GetAxeItemLevel(equippedItemId, data);
+        float equippedPower = GetAxePower(equippedItemId, equippedLevel);
+        bool equippedAxeIsMaxLevel = UpgradeManager.Instance != null &&
+                                     UpgradeManager.Instance.IsMaxLevel(equippedItemId);
+        float nextLevelPower = equippedAxeIsMaxLevel
+            ? equippedPower
+            : GetAxePower(equippedItemId, equippedLevel + 1);
 
         MevsimTuru currentSeason = SeasonManager.Instance != null ? SeasonManager.Instance.aktifMevsim : MevsimTuru.Ilkbahar;
         SeasonSettings currentSettings = SeasonManager.Instance != null ? SeasonManager.Instance.ayarlar : null;
         float seasonAxeMult = GetAxeMultiplierForSeason(currentSeason, currentSettings);
         float effectiveEquippedDamage = equippedPower * seasonAxeMult;
 
-        AddRow("Kuşanılan Balta", $"Seviye {equippedTier}", headerColorAxe);
+        AddRow("Kuşanılan Balta", equippedAxeName, headerColorAxe);
+        AddRow("Balta Seviyesi", $"Seviye {equippedLevel}", normalValueColor);
         AddRow("Kuşanılan Balta Gücü", $"{equippedPower:F1} Hasar", headerColorAxe);
 
         Color netDamageColor = seasonAxeMult > 1.0f ? buffValueColor : (seasonAxeMult < 1.0f ? debuffValueColor : normalValueColor);
         AddRow("Net Hasar (Mevsim Etkisiyle)", $"{effectiveEquippedDamage:F1} Hasar", netDamageColor);
 
-        AddRow("Maksimum Açılan Seviye", $"Seviye {maxUnlockedLevel}", normalValueColor);
-        AddRow("Maksimum Balta Gücü", $"{maxUnlockedPower:F1} Hasar", normalValueColor);
+        AddRow(
+            "Sonraki Seviye",
+            equippedAxeIsMaxLevel ? "Maksimum Seviye" : $"Seviye {equippedLevel + 1}",
+            normalValueColor);
+        AddRow(
+            "Sonraki Seviye Gücü",
+            equippedAxeIsMaxLevel ? "Maksimum Seviye" : $"{nextLevelPower:F1} Hasar",
+            normalValueColor);
 
         // 4. ENVANTER & DEPO
         AddHeader("ENVANTER & DEPO", headerColorInventory);
-        int basketCur = BasketManager.Instance != null ? BasketManager.Instance.MevcutDoluluk : 0;
-        int basketMax = BasketManager.Instance != null ? BasketManager.Instance.MaksKapasite : 5;
-        int basketLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Basket") : 1;
+        int basketLvl = GetBasketLevel(data);
+        int configuredBasketCapacity = GetBasketCapacity(basketLvl);
+        // Gercek oynanis kapasitesi EfeOdunTasima tarafinda tutuluyor. BasketManager
+        // eski/yardimci sistem oldugu icin yuksek seviyelerde 5 degerinde kalabiliyor.
+        EfeOdunTasima woodCarrier = FindFirstObjectByType<EfeOdunTasima>();
+        int basketCur = woodCarrier != null
+            ? woodCarrier.TasinanOdunSayisi
+            : (BasketManager.Instance != null ? BasketManager.Instance.MevcutDoluluk : 0);
+        int basketMax = woodCarrier != null && woodCarrier.TasimaKapasitesi > 0
+            ? woodCarrier.TasimaKapasitesi
+            : configuredBasketCapacity;
+        bool basketIsMaxLevel = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.IsMaxLevel("Basket")
+            : basketLvl >= 5;
+        float basketAttackSpeed = GetBasketAttackSpeed(basketLvl);
+        int nextBasketCapacity = GetBasketCapacity(Mathf.Min(5, basketLvl + 1));
+        float nextBasketAttackSpeed = GetBasketAttackSpeed(Mathf.Min(5, basketLvl + 1));
+        int basketUpgradePrice = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetUpgradeCost("Basket")
+            : Mathf.Max(100, 100 + (basketLvl - 1) * 50);
         int workshopRawWood = data != null ? data.WorkshopRawWood : 0;
         int workshopCap = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetWorkshopCapacity() : 10;
 
         AddRow("Sepet Odun Miktarı", $"{basketCur} / {basketMax}", normalValueColor);
-        AddRow("Sepet Seviyesi", $"Seviye {basketLvl}", normalValueColor);
+        AddRow("Taşıma ve Vuruş Hızı Seviyesi", $"Seviye {basketLvl}", normalValueColor);
+        AddRow("Sepet Kapasitesi", $"{basketMax} Odun", headerColorInventory);
+        AddRow("Vuruş Hızı", $"x{basketAttackSpeed:F2}", headerColorInventory);
+        AddRow(
+            "Sonraki Seviye Kapasitesi",
+            basketIsMaxLevel ? "Maksimum Seviye" : $"{nextBasketCapacity} Odun",
+            normalValueColor);
+        AddRow(
+            "Sonraki Seviye Vuruş Hızı",
+            basketIsMaxLevel ? "Maksimum Seviye" : $"x{nextBasketAttackSpeed:F2}",
+            normalValueColor);
+        AddRow(
+            "Yükseltme Fiyatı",
+            basketIsMaxLevel ? "Maksimum Seviye" : $"{basketUpgradePrice:N0} Para",
+            basketIsMaxLevel ? normalValueColor : headerColorInventory);
         AddRow("Atölye Odun Stoku", $"{workshopRawWood} / {workshopCap}", headerColorInventory);
 
         // 5. ATÖLYE
@@ -369,7 +413,25 @@ public class CharacterStatsPanelController : MonoBehaviour
         AddRow("Üretim Hızı", $"{prodSpeed:F2} /sn", headerColorWorkshop);
         AddRow("Atölye Kapasitesi", $"{workshopCap} Ürün", normalValueColor);
 
-        // 6. MEVSİM & BUFF / DEBUFFS
+        // 6. KAMYON GELİŞTİRME
+        AddHeader("KAMYON GELİŞTİRME", headerColorTruck);
+        int truckLevel = GetTruckLevel(data);
+        int truckCapacity = GetTruckCapacity(truckLevel);
+        int truckModel = GetTruckModel(truckLevel);
+        bool truckIsMaxLevel = UpgradeManager.Instance != null && UpgradeManager.Instance.IsMaxLevel("Truck");
+        int truckUpgradePrice = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetUpgradeCost("Truck")
+            : Mathf.Max(100, 100 + (truckLevel - 1) * 50);
+
+        AddRow("Kamyon Seviyesi", $"Seviye {truckLevel}", normalValueColor);
+        AddRow("Taşıma Kapasitesi", $"{truckCapacity} Odun", headerColorTruck);
+        AddRow("Kamyon Modeli", $"Model {truckModel}", normalValueColor);
+        AddRow(
+            "Yükseltme Fiyatı",
+            truckIsMaxLevel ? "Maksimum Seviye" : $"{truckUpgradePrice:N0} Para",
+            truckIsMaxLevel ? normalValueColor : headerColorTruck);
+
+        // 7. MEVSİM & BUFF / DEBUFFS
         AddHeader("MEVSİM & ETKİLERİ", headerColorSeason);
         MevsimTuru activeSeason = SeasonManager.Instance != null ? SeasonManager.Instance.aktifMevsim : MevsimTuru.Ilkbahar;
         float remainingSec = SeasonManager.Instance != null ? SeasonManager.Instance.kalanSaniye : 0f;
@@ -404,7 +466,7 @@ public class CharacterStatsPanelController : MonoBehaviour
             AddRow("Ağaç Büyüme Çarpanı", $"x{treeMult:F2}", treeMultColor);
         }
 
-        // 7. GENEL İSTATİSTİKLER
+        // 8. GENEL İSTATİSTİKLER
         AddHeader("GENEL İSTATİSTİKLER", headerColorStats);
         float playTime = data != null ? data.OyunSuresi : 0f;
         TimeSpan pt = TimeSpan.FromSeconds(playTime);
@@ -445,26 +507,39 @@ public class CharacterStatsPanelController : MonoBehaviour
     {
         if (contentTransform == null) return;
 
-        // Content uzerinde VerticalLayoutGroup var mi kontrol et, yoksa ekle/ayarla
-        VerticalLayoutGroup layout = contentTransform.GetComponent<VerticalLayoutGroup>();
-        if (layout == null)
+        LayoutGroup existingLayout = contentTransform.GetComponent<LayoutGroup>();
+        if (existingLayout is VerticalLayoutGroup vLayout)
         {
-            layout = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
+            vLayout.childControlWidth = true;
+            vLayout.childControlHeight = true;
+            vLayout.childForceExpandWidth = true;
+            vLayout.childForceExpandHeight = false;
+            vLayout.spacing = 4f;
         }
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = false;
-        layout.spacing = 4f;
+        else if (existingLayout == null)
+        {
+            VerticalLayoutGroup newLayout = contentTransform.gameObject.AddComponent<VerticalLayoutGroup>();
+            if (newLayout != null)
+            {
+                newLayout.childControlWidth = true;
+                newLayout.childControlHeight = true;
+                newLayout.childForceExpandWidth = true;
+                newLayout.childForceExpandHeight = false;
+                newLayout.spacing = 4f;
+            }
+        }
 
-        // Content uzerinde ContentSizeFitter var mi kontrol et, yoksa ekle/ayarla
         ContentSizeFitter fitter = contentTransform.GetComponent<ContentSizeFitter>();
         if (fitter == null)
         {
             fitter = contentTransform.gameObject.AddComponent<ContentSizeFitter>();
         }
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+        if (fitter != null)
+        {
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        }
     }
 
     private bool IsCategoryExpanded(string category)
@@ -561,61 +636,107 @@ public class CharacterStatsPanelController : MonoBehaviour
     {
         PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
 
-        // 1. Kaydedilmiş kuşanılan balta tercihi (EquippedAxe) varsa onu al
+        // 1. Kaydedilmiş kuşanılan balta tercihi bir seviye değil, 1 tabanlı balta indeksidir.
         if (data != null && data.ItemLevels != null && data.ItemLevels.ContainsKey("EquippedAxe"))
         {
-            return data.GetItemLevel("EquippedAxe");
+            return Mathf.Clamp(data.GetItemLevel("EquippedAxe"), 1, 5);
         }
 
-        // 2. Kuşanılan kaydedilmemişse, en yüksek açılmış balta seviyesini al
-        if (data != null)
+        // 2. Balta masası çalışıyorsa onun güncel seçimini kullan.
+        if (AxeTablePanelController.Instance != null)
         {
-            int maxAxeLevel = data.GetItemLevel("Axe");
-            if (maxAxeLevel > 1) return maxAxeLevel;
+            return Mathf.Clamp(AxeTablePanelController.Instance.CurrentlyEquippedTier, 1, 5);
         }
 
-        // 3. AxeTablePanelController aktif kuşanılan seviyesi varsa onu al
-        if (AxeTablePanelController.Instance != null && AxeTablePanelController.Instance.CurrentlyEquippedTier > 1)
+        // 3. Görsel yöneticisinin gerçek model ID'sinden çözümle.
+        if (!string.IsNullOrWhiteSpace(axeId))
         {
-            return AxeTablePanelController.Instance.CurrentlyEquippedTier;
-        }
+            if (axeId.Equals("lowpoly_axe", StringComparison.OrdinalIgnoreCase) ||
+                axeId.Equals("Axe", StringComparison.OrdinalIgnoreCase))
+                return 1;
 
-        // 4. UpgradeManager seviyesi
-        if (UpgradeManager.Instance != null)
-        {
-            int upgradeLvl = UpgradeManager.Instance.GetItemLevel("Axe");
-            if (upgradeLvl > 1) return upgradeLvl;
-        }
-
-        // 5. Görsel ID'den çözümle (axe_tier_X)
-        if (!string.IsNullOrEmpty(axeId) && axeId.StartsWith("axe_tier_"))
-        {
-            if (int.TryParse(axeId.Replace("axe_replace_", "").Replace("axe_tier_", ""), out int t))
-                return t;
+            string normalizedId = axeId
+                .Replace("axe_replace_", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("axe_tier_", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("Axe", "", StringComparison.OrdinalIgnoreCase);
+            if (int.TryParse(normalizedId, out int tier))
+                return Mathf.Clamp(tier, 1, 5);
         }
 
         return 1;
     }
 
+    private string GetAxeItemId(int tier)
+    {
+        return tier <= 1 ? "Axe" : $"Axe{Mathf.Clamp(tier, 2, 5)}";
+    }
 
-    private float GetAxePowerForTier(int tier)
+    private string GetEquippedAxeName(int tier)
+    {
+        if (AxeTablePanelController.Instance != null &&
+            AxeTablePanelController.Instance.CurrentlyEquippedTier == tier &&
+            !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedDisplayName))
+        {
+            return AxeTablePanelController.Instance.CurrentlyEquippedDisplayName;
+        }
+
+        return $"Balta {Mathf.Clamp(tier, 1, 5)}";
+    }
+
+    private int GetAxeItemLevel(string itemId, PlayerData data)
     {
         if (UpgradeManager.Instance != null)
-        {
-            var configField = typeof(UpgradeManager).GetField("configs",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (configField != null)
-            {
-                var configs = configField.GetValue(UpgradeManager.Instance) as List<ItemUpgradeConfig>;
-                if (configs != null)
-                {
-                    var axeConfig = configs.Find(c => c != null && c.ItemID == "Axe");
-                    if (axeConfig != null)
-                        return axeConfig.GetStatValue(tier);
-                }
-            }
-        }
-        return 10f + (tier - 1) * 5f;
+            return Mathf.Max(1, UpgradeManager.Instance.GetItemLevel(itemId));
+
+        return data != null ? Mathf.Max(1, data.GetItemLevel(itemId)) : 1;
+    }
+
+    private float GetAxePower(string itemId, int level)
+    {
+        if (UpgradeManager.Instance != null)
+            return UpgradeManager.Instance.GetItemValueAtLevel(itemId, Mathf.Max(1, level));
+
+        return 1f;
+    }
+
+    private int GetTruckLevel(PlayerData data)
+    {
+        if (UpgradeManager.Instance != null)
+            return Mathf.Clamp(UpgradeManager.Instance.GetItemLevel("Truck"), 1, 10);
+
+        return data != null ? Mathf.Clamp(data.GetItemLevel("Truck"), 1, 10) : 1;
+    }
+
+    private int GetBasketLevel(PlayerData data)
+    {
+        if (UpgradeManager.Instance != null)
+            return Mathf.Clamp(UpgradeManager.Instance.GetItemLevel("Basket"), 1, 5);
+
+        return data != null ? Mathf.Clamp(data.GetItemLevel("Basket"), 1, 5) : 1;
+    }
+
+    private int GetBasketCapacity(int level)
+    {
+        if (UpgradeManager.Instance != null)
+            return Mathf.RoundToInt(UpgradeManager.Instance.GetItemValueAtLevel("Basket", Mathf.Clamp(level, 1, 5)));
+
+        return 6 + (Mathf.Clamp(level, 1, 5) - 1) * 2;
+    }
+
+    private float GetBasketAttackSpeed(int level)
+    {
+        float[] attackSpeedByLevel = { 1.00f, 1.12f, 1.25f, 1.38f, 1.50f };
+        return attackSpeedByLevel[Mathf.Clamp(level, 1, attackSpeedByLevel.Length) - 1];
+    }
+
+    private int GetTruckCapacity(int level)
+    {
+        return 30 + (Mathf.Clamp(level, 1, 10) - 1) * 5;
+    }
+
+    private int GetTruckModel(int level)
+    {
+        return Mathf.Clamp(((Mathf.Clamp(level, 1, 10) - 1) / 2) + 1, 1, 5);
     }
 
     private float GetTreeGrowthMultiplierForSeason(MevsimTuru season, SeasonSettings settings)
