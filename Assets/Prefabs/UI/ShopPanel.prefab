@@ -1200,6 +1200,7 @@ GameObject:
   - component: {fileID: 313776362618485427}
   - component: {fileID: 3892934942240252609}
   - component: {fileID: 2299298497645757153}
+  - component: {fileID: -5382781836283034604}
   m_Layer: 5
   m_Name: ShopPanel
   m_TagString: Untagged
@@ -1304,6 +1305,22 @@ MonoBehaviour:
   fulfillOrderButtonText: {fileID: 4184443897013847040}
   totalGoldText: {fileID: 2383748568291558790}
   buttonSfxName: 
+--- !u!114 &-5382781836283034604
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3721101518465344652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbeda9867b99774789600ac884477a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIPanelAnimator
+  openDuration: 0.25
+  closeDuration: 0.18
+  startScale: {x: 0.85, y: 0.85, z: 0.85}
+  overshoot: 1.05
 --- !u!1 &3740447975969224237
 GameObject:
   m_ObjectHideFlags: 0

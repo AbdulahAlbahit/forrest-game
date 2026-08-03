@@ -103,7 +103,11 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 0f;
 
         if (pausePanel != null)
+        {
             pausePanel.SetActive(true);
+            var anim = pausePanel.GetComponent<ForrestGame.UI.UIPanelAnimator>() ?? pausePanel.AddComponent<ForrestGame.UI.UIPanelAnimator>();
+            if (anim != null) anim.Show();
+        }
 
         Debug.Log("[PauseMenu] Oyun duraklatıldı. Time.timeScale = 0");
     }
@@ -121,7 +125,17 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 1f;
 
         if (pausePanel != null)
-            pausePanel.SetActive(false);
+        {
+            var anim = pausePanel.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+            if (anim != null)
+            {
+                anim.Hide(() => pausePanel.SetActive(false));
+            }
+            else
+            {
+                pausePanel.SetActive(false);
+            }
+        }
 
         Debug.Log("[PauseMenu] Oyun devam ediyor. Time.timeScale = 1");
     }
@@ -181,10 +195,9 @@ public class PauseMenuController : MonoBehaviour
         yield return null;
 
         // Belirtilen sahneye asenkron olarak geçiş yap
-        string sceneToLoad = exitSceneName != null ? exitSceneName.Trim() : "";
-        if (!string.IsNullOrEmpty(sceneToLoad))
+        if (!string.IsNullOrEmpty(exitSceneName))
         {
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneToLoad);
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(exitSceneName);
             if (asyncLoad != null)
             {
                 asyncLoad.allowSceneActivation = false;
@@ -194,10 +207,6 @@ public class PauseMenuController : MonoBehaviour
                 }
                 asyncLoad.allowSceneActivation = true;
                 yield break;
-            }
-            else
-            {
-                Debug.LogError($"[PauseMenu] HATA: '{sceneToLoad}' adinda bir sahne bulunamadi! Lutfen File -> Build Settings menusunden sahnenin eklendigine emin olun.");
             }
         }
 

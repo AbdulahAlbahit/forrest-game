@@ -2137,6 +2137,7 @@ GameObject:
   - component: {fileID: 3752893966051619654}
   - component: {fileID: 5595535899867268730}
   - component: {fileID: 3793968482074352490}
+  - component: {fileID: -6214218219019734938}
   m_Layer: 5
   m_Name: WorkshopPanel
   m_TagString: Untagged
@@ -2234,6 +2235,22 @@ MonoBehaviour:
   queueItemPrefab: {fileID: 4195305252240752017, guid: 6bd522b06030fcc40a5ea2e300691c7c, type: 3}
   closeButton: {fileID: 2091408681443774539}
   buttonSfxName: Button0
+--- !u!114 &-6214218219019734938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7994272923608707089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cbeda9867b99774789600ac884477a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.UI.UIPanelAnimator
+  openDuration: 0.25
+  closeDuration: 0.18
+  startScale: {x: 0.85, y: 0.85, z: 0.85}
+  overshoot: 1.05
 --- !u!1 &8048630119546442251
 GameObject:
   m_ObjectHideFlags: 0

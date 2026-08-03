@@ -83,8 +83,6 @@ public class FirebaseAuthManager : MonoBehaviour
                     GameLogger.Log("FirebaseAuthManager: Mevcut oyuncu bulundu, yeniden giris yapilmadi.");
                     GameLogger.Log($"  -> Kullanici ID: {currentUser.UserId}");
                     GameLogger.Log($"  -> Anonim mi: {currentUser.IsAnonymous}");
-                    string loginMethod = currentUser.IsAnonymous ? "guest" : "google";
-                    ForrestGame.Managers.AnalyticsManager.Instance?.LogUserLogin(loginMethod, currentUser.UserId);
                     OnLoginSuccess?.Invoke();
                 }
                 else
@@ -119,7 +117,6 @@ public class FirebaseAuthManager : MonoBehaviour
             GameLogger.Log($"  -> Kullanici ID: {currentUser.UserId}");
             GameLogger.Log($"  -> Anonim mi: {currentUser.IsAnonymous}");
 
-            ForrestGame.Managers.AnalyticsManager.Instance?.LogUserLogin("guest", currentUser.UserId);
             OnLoginSuccess?.Invoke();
         }
         catch (Exception ex)
@@ -171,7 +168,6 @@ public class FirebaseAuthManager : MonoBehaviour
             GameLogger.Log($"  -> Kullanici ID: {currentUser.UserId}");
             GameLogger.Log($"  -> Email: {currentUser.Email}");
 
-            ForrestGame.Managers.AnalyticsManager.Instance?.LogUserLogin("google", currentUser.UserId);
             OnGoogleSignInSuccess?.Invoke();
             OnLoginSuccess?.Invoke();
         }
@@ -192,11 +188,7 @@ public class FirebaseAuthManager : MonoBehaviour
         if (auth != null)
         {
             // Google oturumunu da kapat
-            if (GoogleSignIn.DefaultInstance != null)
-            {
-                GoogleSignIn.DefaultInstance.SignOut();
-            }
-            
+            GoogleSignIn.DefaultInstance.SignOut();
             auth.SignOut();
             currentUser = null;
             GameLogger.Log("FirebaseAuthManager: Oturum kapatildi.");

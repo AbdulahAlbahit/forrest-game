@@ -47,6 +47,7 @@ public class SettingsPanelController : MonoBehaviour
 
     private bool isMusicOn = true;
     private bool isSfxOn = true;
+    private ForrestGame.UI.UIPanelAnimator panelAnimator;
 
     private void PlayButtonClickSFX()
     {
@@ -62,6 +63,8 @@ public class SettingsPanelController : MonoBehaviour
 
     private void Awake()
     {
+        panelAnimator = GetComponent<ForrestGame.UI.UIPanelAnimator>();
+
         // Ilk calismada varsayilan olarak sesleri ACIK (1) yap
         if (!PlayerPrefs.HasKey(MUSIC_PREF_KEY))
         {
@@ -109,6 +112,11 @@ public class SettingsPanelController : MonoBehaviour
     {
         ApplyAudioSettings();
         UpdateToggleTexts();
+
+        if (panelAnimator != null)
+        {
+            panelAnimator.Show();
+        }
     }
 
     // ═══════════════════════════════════════════
@@ -161,7 +169,15 @@ public class SettingsPanelController : MonoBehaviour
     private void ClosePanel()
     {
         PlayButtonClickSFX();
-        gameObject.SetActive(false);
+
+        if (panelAnimator != null)
+        {
+            panelAnimator.Hide(() => gameObject.SetActive(false));
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     // ═══════════════════════════════════════════
