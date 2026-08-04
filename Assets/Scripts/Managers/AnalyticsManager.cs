@@ -125,6 +125,20 @@ namespace ForrestGame.Managers
         }
 
         /// <summary>
+        /// Esya yukseltme event'ini gonderir.
+        /// </summary>
+        public void LogItemUpgrade(string itemId, int newLevel, int cost)
+        {
+            if (!firebaseInitialized) return;
+
+            FirebaseAnalytics.LogEvent("item_upgrade",
+                new Parameter("item_id", itemId),
+                new Parameter("new_level", newLevel),
+                new Parameter("cost", cost));
+            GameLogger.Log($"AnalyticsManager: item_upgrade -> {itemId} Lv{newLevel}, Maliyet: {cost}");
+        }
+
+        /// <summary>
         /// Oturum bitis eventini gonderir, sure dakika cinsinden hesaplanir.
         /// </summary>
         private void LogSessionEnd()
