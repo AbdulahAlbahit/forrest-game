@@ -437,4 +437,40 @@ public class WorkshopManager : MonoBehaviour
 
         return Mathf.Clamp01(uretimZamanlayicisi / gercekUretimSuresi);
     }
+
+    /// <summary>
+    /// Bir urunun mevcut hiz seviyesinde uretilmesi icin gecen gercek sureyi (saniye) dondurur.
+    /// GetProcessingSpeed() sadece bir carpan oldugu icin (seviye arttikca buyur, ornek: 1.0, 1.2, 1.4)
+    /// dogrudan UI'da gosterilirse "yavaslıyor" gibi yanlis anlasilir. Bu metot gercek
+    /// sn/urun degerini verir; seviye arttikca bu deger azalir (daha hizli uretim).
+    /// </summary>
+    public float GetEstimatedProductionTime()
+    {
+        RecipeConfig recipe = GetReferenceRecipe();
+        if (recipe == null) return 0f;
+
+        float hizCarpani = GetProcessingSpeed();
+        if (hizCarpani <= 0f) hizCarpani = 1f;
+
+        return recipe.BaseProductionTime / hizCarpani;
+    }
+
+    /// <summary>
+    /// UI'da genel "uretim hizi" gostermek icin referans alinacak tarifi bulur:
+    /// su an aktif uretilen tarif varsa onu, yoksa listedeki ilk tarifi kullanir.
+    /// </summary>
+    private RecipeConfig GetReferenceRecipe()
+    {
+        if (tumTarifler == null || tumTarifler.Length == 0) return null;
+
+        if (!string.IsNullOrEmpty(aktifUretilenItem))
+        {
+            foreach (var r in tumTarifler)
+            {
+                if (r != null && r.ItemID == aktifUretilenItem) return r;
+            }
+        }
+
+        return tumTarifler[0];
+    }
 }

@@ -406,11 +406,11 @@ public class CharacterStatsPanelController : MonoBehaviour
         AddHeader("ATÖLYE", headerColorWorkshop);
         int workshopLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Workshop") : 1;
         int queueLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("WorkshopQueue") : 1;
-        float prodSpeed = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetProcessingSpeed() : 1f;
+        float prodTime = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetEstimatedProductionTime() : 0f;
 
         AddRow("Atölye Seviyesi", $"Seviye {workshopLvl}", normalValueColor);
         AddRow("Kuyruk Seviyesi", $"Seviye {queueLvl}", normalValueColor);
-        AddRow("Üretim Hızı", $"{prodSpeed:F2} /sn", headerColorWorkshop);
+        AddRow("Üretim Hızı", $"{prodTime:F2} sn/ürün", headerColorWorkshop);
         AddRow("Atölye Kapasitesi", $"{workshopCap} Ürün", normalValueColor);
 
         // 6. KAMYON GELİŞTİRME
