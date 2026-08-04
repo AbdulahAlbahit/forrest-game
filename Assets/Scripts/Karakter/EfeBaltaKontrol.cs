@@ -515,11 +515,21 @@ public class EfeBaltaKontrol : MonoBehaviour
         }
         else if (useUpgradeLevels && UpgradeManager.Instance != null)
         {
-            int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
-            AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
-            if (damageSetting != null)
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
             {
-                aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
+                // AxeTablePanelController henuz olusmadiysa (panel hic acilmadiysa) kusanilan
+                // baltayi kayitli veriden dogrudan cozup gercek Guc degerini kullan.
+                string equippedAxeItemId = ResolveEquippedAxeItemIdFromSaveData();
+                aktifAgacHasari = Mathf.Max(1, Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue(equippedAxeItemId)));
+            }
+            else
+            {
+                int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
+                AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
+                if (damageSetting != null)
+                {
+                    aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
+                }
             }
         }
 
@@ -539,6 +549,16 @@ public class EfeBaltaKontrol : MonoBehaviour
         {
             animator.SetFloat(saldiriHiziParametresi, aktifSaldiriAnimasyonHizi);
         }
+    }
+
+    private string ResolveEquippedAxeItemIdFromSaveData()
+    {
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        int equippedTier = data.ItemLevels != null && data.ItemLevels.ContainsKey(AxeTablePanelController.EquippedAxeSaveKey)
+            ? data.GetItemLevel(AxeTablePanelController.EquippedAxeSaveKey)
+            : 1;
+
+        return equippedTier <= 1 ? axeUpgradeItemId : $"Axe{equippedTier}";
     }
 
     private AxeDamageUpgradeLevel UygunHasarAyariniBul(int level)

@@ -39356,7 +39356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.AdManager
   rewardGold: 100
   rewardWood: 50
-  interstitialIntervalSeconds: 30
+  interstitialIntervalSeconds: 300
 --- !u!1 &1886158798
 GameObject:
   m_ObjectHideFlags: 0
