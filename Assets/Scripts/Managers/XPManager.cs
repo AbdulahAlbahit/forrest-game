@@ -7,6 +7,9 @@ public class XPManager : MonoBehaviour
 {
     public static XPManager Instance { get; private set; }
 
+    // --- Analitik: Seviye atlama süresi takibi ---
+    private float timeSinceLastLevelUp = 0f;
+
     [Header("Seviye Ayarlari")]
     [Tooltip("Seviye 1'den 2'ye gecmek icin gereken temel XP miktari.")]
     [SerializeField] private int temelGerekenXP = 100;
@@ -60,6 +63,11 @@ public class XPManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Update()
+    {
+        timeSinceLastLevelUp += Time.deltaTime;
     }
 
     private void OnEnable()
@@ -117,6 +125,14 @@ public class XPManager : MonoBehaviour
         {
             data.XP -= GetRequiredXPForLevel(data.OyuncuSeviyesi);
             data.OyuncuSeviyesi++;
+
+            // Analitik: Seviye atlama süresi event'i
+            float dakika = timeSinceLastLevelUp / 60f;
+            ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
+                "level_up_time", "minutes_played", dakika);
+            ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
+                "level_up_time", "new_level", data.OyuncuSeviyesi);
+            timeSinceLastLevelUp = 0f;
 
             GameLogger.Log($"XPManager: LEVEL UP! Yeni seviye: {data.OyuncuSeviyesi}");
             OnLevelUp?.Invoke(data.OyuncuSeviyesi);

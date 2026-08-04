@@ -8,6 +8,11 @@ public class EconomyManager : MonoBehaviour
 {
     public static EconomyManager Instance { get; private set; }
 
+    // --- Analitik: Altın kazanma hızı takibi (5 dakikalık pencere) ---
+    private int goldEarnedInWindow = 0;
+    private float goldWindowTimer = 0f;
+    private const float GOLD_WINDOW_SECONDS = 300f; // 5 dakika
+
 
 
 
@@ -64,6 +69,21 @@ public class EconomyManager : MonoBehaviour
         GameLogger.Log($"EconomyManager: Bulut verisi yuklendi. Para: {data.Para}");
     }
 
+    private void Update()
+    {
+        goldWindowTimer += Time.deltaTime;
+        if (goldWindowTimer >= GOLD_WINDOW_SECONDS)
+        {
+            if (goldEarnedInWindow > 0)
+            {
+                ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
+                    "gold_rate_5min", "gold_earned", goldEarnedInWindow);
+            }
+            goldEarnedInWindow = 0;
+            goldWindowTimer = 0f;
+        }
+    }
+
 
 
 
@@ -85,6 +105,7 @@ public class EconomyManager : MonoBehaviour
         int effectiveAmount = Mathf.RoundToInt(amount * GetSeasonGoldMultiplier());
 
         CloudSaveManager.Instance.CurrentData.Para += effectiveAmount;
+        goldEarnedInWindow += effectiveAmount; // Analitik: Pencereye ekle
         OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
 
         GameLogger.Log($"EconomyManager: {effectiveAmount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");

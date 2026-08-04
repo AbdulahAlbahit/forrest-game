@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7285855459411080309
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3752864725785904221}
+  - component: {fileID: 2844715243998988279}
+  m_Layer: 0
+  m_Name: TreeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3752864725785904221
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7285855459411080309}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 88.8259, y: 19.99939, z: 139.44574}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2844715243998988279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7285855459411080309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 852cda154f75f2d4e8df18f7375cdf63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TreeManager
+  treeTypes:
+  - typeName: Pine
+    fullTreePrefab: {fileID: 9096819312181756694, guid: 904fa0cab1cc15a47a30c840efa1da96, type: 3}
+    fallenPrefab: {fileID: 7773929083540792719, guid: b1687f6c57a46584ead6fd402cc43040, type: 3}
+  - typeName: cone
+    fullTreePrefab: {fileID: 7030184234819137472, guid: ffdb998533008784284e4b397ba81446, type: 3}
+    fallenPrefab: {fileID: 7030184234819137472, guid: ffdb998533008784284e4b397ba81446, type: 3}
+  - typeName: simple
+    fullTreePrefab: {fileID: 8589803065706466894, guid: 4e9c4b3b66b1e664fa3b994b0654e9cb, type: 3}
+    fallenPrefab: {fileID: 8589803065706466894, guid: 4e9c4b3b66b1e664fa3b994b0654e9cb, type: 3}
+  stumpPrefab: {fileID: 7935266037486513781, guid: 44cf5469f383b6d45a657f00a960bee0, type: 3}
+  woodLogPrefab: {fileID: 3529099527776252549, guid: 7424526aba8b34e4aaf824363e648451, type: 3}
+  logSpawnCount: 3
+  logJumpForce: 2
+  logSpawnScale: 0.65
+  defaultTreeHealth: 100
+  searchRadius: 2.5
+  fallTorque: 23.3
+  nonTreePrototypeIndices: 03000000
+  disappearDelay: 2
+  logDisappearDelay: 8
+  shrinkDuration: 0.5
+  respawnTime: 10
+  poolSize: 5
+  logPoolSize: 20
+  OnTreeFelled:
+    m_PersistentCalls:
+      m_Calls: []
