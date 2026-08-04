@@ -23,12 +23,40 @@ public class SettingsPanelController : MonoBehaviour
     [Tooltip("Ses efektleri acma/kapama butonu.")]
     [SerializeField] private Button sfxToggleButton;
 
-    [Header("--- Toggle Metinleri ---")]
+    [Header("--- Toggle Metinleri (Opsiyonel) ---")]
     [Tooltip("Muzik butonunun text'i. Duruma gore 'Muzik: Acik/Kapali' yazar.")]
     [SerializeField] private TextMeshProUGUI musicToggleText;
 
     [Tooltip("SFX butonunun text'i. Duruma gore 'Ses Efektleri: Acik/Kapali' yazar.")]
     [SerializeField] private TextMeshProUGUI sfxToggleText;
+
+    [Header("--- Toggle İkonları / Görselleri (2 Farklı Obje) ---")]
+    [Tooltip("Müzik AÇIK olduğunda görünecek resim / obje.")]
+    [SerializeField] private GameObject musicOnImage;
+
+    [Tooltip("Müzik KAPALI olduğunda görünecek resim / obje.")]
+    [SerializeField] private GameObject musicOffImage;
+
+    [Tooltip("SFX AÇIK olduğunda görünecek resim / obje.")]
+    [SerializeField] private GameObject sfxOnImage;
+
+    [Tooltip("SFX KAPALI olduğunda görünecek resim / obje.")]
+    [SerializeField] private GameObject sfxOffImage;
+
+    [Header("--- Toggle İkonları / Görselleri (Tek Image Sprite Değiştirme) ---")]
+    [Tooltip("Müzik butonunun varsayılan Image bileşeni.")]
+    [SerializeField] private Image musicImage;
+    [Tooltip("Müzik AÇIK iken gösterilecek Sprite.")]
+    [SerializeField] private Sprite musicOnSprite;
+    [Tooltip("Müzik KAPALI iken gösterilecek Sprite.")]
+    [SerializeField] private Sprite musicOffSprite;
+
+    [Tooltip("SFX butonunun varsayılan Image bileşeni.")]
+    [SerializeField] private Image sfxImage;
+    [Tooltip("SFX AÇIK iken gösterilecek Sprite.")]
+    [SerializeField] private Sprite sfxOnSprite;
+    [Tooltip("SFX KAPALI iken gösterilecek Sprite.")]
+    [SerializeField] private Sprite sfxOffSprite;
 
     [Header("--- Diger ---")]
     [Tooltip("Ayarlar panelini kapatan buton.")]
@@ -224,14 +252,43 @@ public class SettingsPanelController : MonoBehaviour
     }
 
     /// <summary>
-    /// Toggle butonlarinin metinlerini mevcut duruma gore gunceller.
+    /// Toggle butonlarının metinlerini, ikonlarını ve görsellerini mevcut duruma göre günceller.
     /// </summary>
     private void UpdateToggleTexts()
     {
+        // 1. Text Güncellemesi (Opsiyonel)
         if (musicToggleText != null)
             musicToggleText.text = isMusicOn ? "Music: On" : "Music: Off";
 
         if (sfxToggleText != null)
             sfxToggleText.text = isSfxOn ? "SFX: On" : "SFX: Off";
+
+        // 2. Müzik 2 Farklı Resim / Obje Göster / Gizle
+        if (musicOnImage != null)
+            musicOnImage.SetActive(isMusicOn);
+
+        if (musicOffImage != null)
+            musicOffImage.SetActive(!isMusicOn);
+
+        // Müzik Tek Image için Sprite Değiştirme
+        if (musicImage != null)
+        {
+            if (isMusicOn && musicOnSprite != null) musicImage.sprite = musicOnSprite;
+            else if (!isMusicOn && musicOffSprite != null) musicImage.sprite = musicOffSprite;
+        }
+
+        // 3. SFX 2 Farklı Resim / Obje Göster / Gizle
+        if (sfxOnImage != null)
+            sfxOnImage.SetActive(isSfxOn);
+
+        if (sfxOffImage != null)
+            sfxOffImage.SetActive(!isSfxOn);
+
+        // SFX Tek Image için Sprite Değiştirme
+        if (sfxImage != null)
+        {
+            if (isSfxOn && sfxOnSprite != null) sfxImage.sprite = sfxOnSprite;
+            else if (!isSfxOn && sfxOffSprite != null) sfxImage.sprite = sfxOffSprite;
+        }
     }
 }

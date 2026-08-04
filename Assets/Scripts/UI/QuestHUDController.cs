@@ -208,18 +208,20 @@ public class QuestHUDController : MonoBehaviour
 
     private void ApplyDisplayMode()
     {
+        // Tüm Görevler Paneli butonu bağımsız bir buton yapıldığı için mod değişikliklerinde gizlenmesin
+        if (openFullQuestPanelButton != null)
+            openFullQuestPanelButton.gameObject.SetActive(true);
+
         switch (currentMode)
         {
             case QuestDisplayMode.ShowQuests:
                 if (questPanel != null) questPanel.SetActive(true);
-                if (openFullQuestPanelButton != null) openFullQuestPanelButton.gameObject.SetActive(true);
                 UpdateToggleButtonText("Görevler (3)");
                 RefreshQuestDisplay();
                 break;
 
             case QuestDisplayMode.ShowOrders:
                 if (questPanel != null) questPanel.SetActive(true);
-                if (openFullQuestPanelButton != null) openFullQuestPanelButton.gameObject.SetActive(false);
                 UpdateToggleButtonText("Siparişler (3)");
                 RefreshQuestDisplay();
                 break;
@@ -332,16 +334,13 @@ public class QuestHUDController : MonoBehaviour
             {
                 string itemId = pendingEntry.Key;
                 int pending = pendingEntry.Value;
-                int currentStock = data.ShopInventory != null ? data.ShopInventory.Get(itemId, 0) : 0;
-                bool canFulfill = currentStock >= pending;
-                float ratio = Mathf.Clamp01((float)currentStock / pending);
 
                 result.Add(new QuestDisplayData
                 {
                     Name = itemId,
-                    ProgressString = canFulfill ? $"Hazır! ({currentStock}/{pending})" : $"Bekleniyor: {pending} (Stok: {currentStock})",
-                    ProgressRatio = ratio,
-                    IsCompleted = canFulfill
+                    ProgressString = $"Sipariş: {pending} Adet",
+                    ProgressRatio = 0f,
+                    IsCompleted = false
                 });
             }
         }
