@@ -20,14 +20,15 @@ namespace ForrestGame.UI
     {
         public static UIFloatingTextManager Instance { get; private set; }
 
-        [Header("--- UI Konteyner ve Ayarlar ---")]
+        [Header("--- UI Konteyner ve Genel Ayarlar ---")]
         [Tooltip("Uçan yazıların içinde doğacağı Canvas / RectTransform (Boş bırakılırsa sahnede otomatik Canvas bulur).")]
         [SerializeField] private RectTransform textContainer;
 
-        [Tooltip("Ekran sol-sağ konum oranı (0.22 = Ekranın %22 sol tarafı).")]
-        [SerializeField] private float screenLeftRatio = 0.22f;
+        [Header("--- Sol Taraf Floating Text Ayarları (Altın, XP, Odun) ---")]
+        [Tooltip("Altın, XP ve Odun yazılarının ekran sol-sağ konum oranı (0.18 = Ekranın %18 sol tarafı).")]
+        [SerializeField] private float screenLeftRatio = 0.18f;
 
-        [Tooltip("Ekran yükseklik konumu oranı (0.55 = Ekranın %55 yüksekliği).")]
+        [Tooltip("Altın, XP ve Odun yazılarının ekran yükseklik konumu oranı (0.55 = Ekranın %55 yüksekliği).")]
         [SerializeField] private float screenHeightRatio = 0.55f;
 
         [Tooltip("Ekranda uçma süresi (saniye).")]
@@ -42,10 +43,32 @@ namespace ForrestGame.UI
         [Tooltip("Yazı tipi boyutu.")]
         [SerializeField] private float fontSize = 32f;
 
-        [Header("--- Renk Paleti ---")]
+        [Header("--- Renk Paleti (Altın, XP, Odun) ---")]
         [SerializeField] private Color goldColor = new Color(1f, 0.85f, 0.15f, 1f);
         [SerializeField] private Color xpColor = new Color(0.2f, 0.8f, 1f, 1f);
         [SerializeField] private Color woodColor = new Color(0.4f, 0.9f, 0.3f, 1f);
+
+        [Header("--- Ekran Ortası Floating Text Ayarları (Ağaç Vuruş Hasarı) ---")]
+        [Tooltip("Ağaç vuruşlarında ekran ortasında floating text çıksın mı?")]
+        [SerializeField] private bool enableTreeDamageText = true;
+
+        [Tooltip("1. Seviye / Min Hasar durumundaki metin rengi (Canlı Yeşil).")]
+        [SerializeField] private Color minLevelDamageColor = new Color(0.2f, 0.95f, 0.3f, 1f);
+
+        [Tooltip("Max Seviye / Max Hasar durumundaki metin rengi (Canlı Kırmızı).")]
+        [SerializeField] private Color maxLevelDamageColor = new Color(1f, 0.2f, 0.2f, 1f);
+
+        [Tooltip("Ekran ortası konum oranı (0.50 X = Orta, 0.52 Y = Hafif Üst).")]
+        [SerializeField] private Vector2 treeDamageScreenRatio = new Vector2(0.50f, 0.52f);
+
+        [Tooltip("Ağaç vuruş metni formatı ({0} = hasar miktarı). Örn: '-{0} Hasar' veya '-{0}'")]
+        [SerializeField] private string treeDamageFormat = "-{0} Hasar";
+
+        [Tooltip("Ağaç vuruş metni font boyutu.")]
+        [SerializeField] private float treeDamageFontSize = 44f;
+
+        [Tooltip("Hızlı vuruşlarda üst üste binmeyi önlemek için rastgele offset aralığı (piksel).")]
+        [SerializeField] private float randomOffsetRange = 25f;
 
         private Queue<(string message, Color color, Vector2? position)> textQueue = new Queue<(string, Color, Vector2?)>();
         private bool isProcessingQueue = false;
@@ -53,6 +76,9 @@ namespace ForrestGame.UI
         private int lastObservedMoney = -1;
         private int lastObservedXP = -1;
         private int lastObservedWood = -1;
+
+        private int lastHitFrame = -1;
+        private float lastHitTime = -1f;
 
         private Coroutine bindRoutine;
         private EconomyManager boundEconomy;
@@ -177,6 +203,15 @@ namespace ForrestGame.UI
 
             EfeOynanisEventleri.OdunToplandi -= HandleEfeWoodCollected;
             EfeOynanisEventleri.OdunToplandi += HandleEfeWoodCollected;
+
+            TreeManager.OnTreeHitAction -= HandleTreeHitWorldPos;
+            TreeManager.OnTreeHitAction += HandleTreeHitWorldPos;
+
+            TreeController.OnTreeHitAction -= HandleTreeHitSimple;
+            TreeController.OnTreeHitAction += HandleTreeHitSimple;
+
+            EfeOynanisEventleri.BaltaAgacaVurdu -= HandleBaltaAgacaVurdu;
+            EfeOynanisEventleri.BaltaAgacaVurdu += HandleBaltaAgacaVurdu;
         }
 
         private void UnsubscribeEvents()
@@ -207,6 +242,10 @@ namespace ForrestGame.UI
 
             EfeMarketSalesController.OnSaleCompleted -= HandleMarketSaleCompleted;
             EfeOynanisEventleri.OdunToplandi -= HandleEfeWoodCollected;
+
+            TreeManager.OnTreeHitAction -= HandleTreeHitWorldPos;
+            TreeController.OnTreeHitAction -= HandleTreeHitSimple;
+            EfeOynanisEventleri.BaltaAgacaVurdu -= HandleBaltaAgacaVurdu;
         }
 
         private void HandleDataLoaded(PlayerData data)
@@ -361,6 +400,167 @@ namespace ForrestGame.UI
             Destroy(rect.gameObject);
         }
 
+        // =========================================================================
+        // AĞAÇ VURUŞ HASARI VE BALTA SEVİYE GRADYAN RENK SİSTEMİ
+        // =========================================================================
+
+        private void HandleTreeHitWorldPos(Vector3 worldHitPos)
+        {
+            TriggerTreeHitDamageText();
+        }
+
+        private void HandleTreeHitSimple()
+        {
+            TriggerTreeHitDamageText();
+        }
+
+        private void HandleBaltaAgacaVurdu(Transform source)
+        {
+            TriggerTreeHitDamageText();
+        }
+
+        /// <summary>
+        /// Ağaca baltayla vurulduğunda çağrılır. 
+        /// Ekranın ortasında balta seviyesine göre gradyan renkli (Yeşil -> Kırmızı) hasar floating text'i fırlatır.
+        /// </summary>
+        public void TriggerTreeHitDamageText()
+        {
+            if (!enableTreeDamageText) return;
+
+            // Aynı karede veya çok kısa aralıklarla çifte tetiklenmeyi önleme
+            if (Time.frameCount == lastHitFrame || (Time.time - lastHitTime < 0.05f))
+            {
+                return;
+            }
+            lastHitFrame = Time.frameCount;
+            lastHitTime = Time.time;
+
+            int damage = GetCurrentAxeDamage(out float levelProgress);
+
+            // Balta Seviyesine/Hasarına Göre Gradyan Renk Hesaplama (0 = Min/Yeşil, 1 = Max/Kırmızı)
+            Color damageColor = Color.Lerp(minLevelDamageColor, maxLevelDamageColor, levelProgress);
+            string message = string.Format(treeDamageFormat, damage);
+
+            // Ekranın Ortası + Dinamik Ufak Offset (Çakışmayı önlemek için)
+            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            Vector2 spawnPos = new Vector2(posX, posY);
+
+            CreateAndAnimateTreeDamageText(message, damageColor, spawnPos);
+        }
+
+        private int GetCurrentAxeDamage(out float levelProgress)
+        {
+            int damage = 1;
+            levelProgress = 0f;
+
+            // 1. EfeBaltaKontrol varsa aktif balta hasarını al
+            EfeBaltaKontrol baltaKontrol = FindFirstObjectByType<EfeBaltaKontrol>();
+            if (baltaKontrol != null)
+            {
+                damage = Mathf.Max(1, baltaKontrol.AktifAgacHasari);
+            }
+
+            // 2. UpgradeManager üzerinden Balta seviyesini ve gradyan oranını hesapla
+            string axeItemId = "Axe";
+            if (UpgradeManager.Instance != null)
+            {
+                int currentLevel = UpgradeManager.Instance.GetItemLevel(axeItemId);
+                if (UpgradeManager.Instance.TryGetConfig(axeItemId, out ItemUpgradeConfig config) && config != null)
+                {
+                    int maxLvl = Mathf.Max(1, config.MaxLevel);
+                    if (maxLvl > 1)
+                    {
+                        levelProgress = Mathf.Clamp01((float)(currentLevel - 1) / (maxLvl - 1));
+                    }
+
+                    float statVal = config.GetStatValue(currentLevel);
+                    if (statVal > damage) damage = Mathf.RoundToInt(statVal);
+                }
+                else
+                {
+                    levelProgress = Mathf.Clamp01((float)(currentLevel - 1) / 9f); // Varsayılan 10 seviye kabulü
+                }
+            }
+
+            return damage;
+        }
+
+        private void CreateAndAnimateTreeDamageText(string message, Color color, Vector2 spawnPos)
+        {
+            EnsureContainer();
+
+            GameObject textObj = new GameObject("TreeDamageText", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(CanvasGroup));
+            Transform parentTransform = textContainer != null ? textContainer : transform;
+            textObj.transform.SetParent(parentTransform, false);
+
+            RectTransform rect = textObj.GetComponent<RectTransform>();
+            TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
+            CanvasGroup group = textObj.GetComponent<CanvasGroup>();
+
+            rect.position = spawnPos;
+            rect.sizeDelta = new Vector2(350f, 80f);
+
+            tmp.text = message;
+            tmp.fontSize = treeDamageFontSize;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = color;
+            tmp.raycastTarget = false;
+
+            // Belirgin Dış Çizgi Stili
+            tmp.outlineWidth = 0.35f;
+            tmp.outlineColor = Color.black;
+
+            StartCoroutine(AnimateTreeDamageTextRoutine(rect, tmp, group));
+        }
+
+        private IEnumerator AnimateTreeDamageTextRoutine(RectTransform rect, TextMeshProUGUI tmp, CanvasGroup group)
+        {
+            Vector3 startPos = rect.position;
+            Vector3 targetPos = startPos + new Vector3(0f, floatDistance * 0.9f, 0f);
+
+            float damageDuration = duration * 0.85f;
+            float elapsed = 0f;
+
+            while (elapsed < damageDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / damageDuration);
+
+                // Punchy Pop Animasyonu (Hızlı Büyüyüp Yumuşakça Yerleşme)
+                float scale;
+                if (t < 0.2f)
+                {
+                    scale = Mathf.Lerp(0.6f, 1.35f, t / 0.2f);
+                }
+                else if (t < 0.4f)
+                {
+                    scale = Mathf.Lerp(1.35f, 1.0f, (t - 0.2f) / 0.2f);
+                }
+                else
+                {
+                    scale = 1.0f;
+                }
+
+                rect.localScale = new Vector3(scale, scale, 1f);
+                rect.position = Vector3.Lerp(startPos, targetPos, t);
+
+                // Saydamlaşma (Fade Out)
+                if (group != null)
+                {
+                    group.alpha = Mathf.Lerp(1f, 0f, Mathf.Clamp01((t - 0.45f) / 0.55f));
+                }
+
+                yield return null;
+            }
+
+            if (rect != null && rect.gameObject != null)
+            {
+                Destroy(rect.gameObject);
+            }
+        }
+
         [ContextMenu("TEST: Görev Ödülü Fırlat (+50 Altın +50 XP)")]
         public void TestQuestReward()
         {
@@ -384,6 +584,26 @@ namespace ForrestGame.UI
         public void TestWoodText()
         {
             SpawnText("+1 Odun", woodColor);
+        }
+
+        [ContextMenu("TEST: Ağaç Hasar Yazısı Fırlat (Seviye 1 - Yeşil)")]
+        public void TestTreeDamageMinLevel()
+        {
+            Color damageColor = minLevelDamageColor;
+            string message = string.Format(treeDamageFormat, 1);
+            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            CreateAndAnimateTreeDamageText(message, damageColor, new Vector2(posX, posY));
+        }
+
+        [ContextMenu("TEST: Ağaç Hasar Yazısı Fırlat (Max Seviye - Kırmızı)")]
+        public void TestTreeDamageMaxLevel()
+        {
+            Color damageColor = maxLevelDamageColor;
+            string message = string.Format(treeDamageFormat, 10);
+            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
+            CreateAndAnimateTreeDamageText(message, damageColor, new Vector2(posX, posY));
         }
     }
 }
