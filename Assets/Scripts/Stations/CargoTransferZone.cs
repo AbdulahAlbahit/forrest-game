@@ -3,6 +3,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using TMPro;
 using ForrestGame.Utils;
 
 public class CargoTransferZone : MonoBehaviour
@@ -24,6 +25,10 @@ public class CargoTransferZone : MonoBehaviour
     public Color craftingColor = new Color(0.9f, 0.8f, 0.1f, 1f);
     public Color readyColor = new Color(0f, 0.9f, 0.9f, 1f);
     public Image fillImage;
+
+    [Header("Text UI")]
+    public TMP_Text statusText;
+    public string textFormat = "{0} / {1}";
 
     [Header("Storage Status")]
     public int currentWoodCount = 0;
@@ -97,6 +102,14 @@ public class CargoTransferZone : MonoBehaviour
             fillImage.color = emptyColor;
         }
         UpdatePadColor(emptyColor);
+
+        if (statusText != null && mode == StationMode.PlayerToTruck_WoodLoading)
+        {
+            if (_activeTruck != null)
+                statusText.text = string.Format(textFormat, 0, _activeTruck.requiredWoodToDepart);
+            else
+                statusText.text = "";
+        }
         
         if (mode == StationMode.TruckToWorkshop_CraftAndReturn)
         {
@@ -189,6 +202,11 @@ public class CargoTransferZone : MonoBehaviour
 
         float progress = Mathf.Clamp01((float)_activeTruck.currentLoadedWood / _activeTruck.requiredWoodToDepart);
         
+        if (statusText != null)
+        {
+            statusText.text = string.Format(textFormat, _activeTruck.currentLoadedWood, _activeTruck.requiredWoodToDepart);
+        }
+
         if (fillImage != null)
         {
             fillImage.fillAmount = progress;

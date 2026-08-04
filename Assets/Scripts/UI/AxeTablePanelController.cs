@@ -66,7 +66,7 @@ public class AxeTablePanelController : MonoBehaviour
     [Header("--- Ses Ayarları ---")]
     [SerializeField] private string buttonSfxName = "";
 
-    private const string EquippedAxeSaveKey = "EquippedAxe";
+    public const string EquippedAxeSaveKey = "EquippedAxe";
     private readonly List<AxeItemUI> spawnedItems = new List<AxeItemUI>();
 
     // Bu değer artık balta seviyesi değil, axeTiers listesindeki 1 tabanlı kart indeksidir.
