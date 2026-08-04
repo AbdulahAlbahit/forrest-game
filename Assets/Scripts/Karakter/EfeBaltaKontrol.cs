@@ -29,6 +29,8 @@ public class EfeBaltaKontrol : MonoBehaviour
     [Header("Upgrade Baglantilari")]
     [SerializeField] private bool useUpgradeLevels = true;
     [SerializeField] private string axeUpgradeItemId = "Axe";
+    [Tooltip("Karakter saldiri zamanlamalarini tutan ItemUpgradeConfig ItemID degeri.")]
+    [SerializeField] private string characterAttackUpgradeItemId = "Character";
     [Tooltip("Zone_house_Power icin kullanilan ana level. Bu level sepet kapasitesini ve vurma hizini birlikte yonetir.")]
     [SerializeField] private string housePowerUpgradeItemId = "Basket";
     [SerializeField] private string attackSpeedAnimatorParameter = "SaldiriHizi";
@@ -478,7 +480,8 @@ public class EfeBaltaKontrol : MonoBehaviour
             AxeTablePanelController.Instance != null &&
             itemId == AxeTablePanelController.Instance.CurrentlyEquippedItemId;
 
-        if (kusanilanBaltaGuncellendi || itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
+        if (kusanilanBaltaGuncellendi || itemId == axeUpgradeItemId ||
+            itemId == characterAttackUpgradeItemId || itemId == housePowerUpgradeItemId)
         {
             UpgradeAyarlariniUygula();
         }
@@ -514,13 +517,29 @@ public class EfeBaltaKontrol : MonoBehaviour
 
         if (useUpgradeLevels && UpgradeManager.Instance != null)
         {
-            int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
-            HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
-            if (speedSetting != null)
+            bool characterConfigApplied = false;
+            if (UpgradeManager.Instance.TryGetConfig(characterAttackUpgradeItemId, out ItemUpgradeConfig characterConfig))
             {
-                aktifSaldiriBeklemeSuresi = Mathf.Max(0.1f, speedSetting.attackCooldown);
-                aktifVurusGecikmesi = Mathf.Clamp(speedSetting.hitDelay, 0f, aktifSaldiriBeklemeSuresi);
-                aktifSaldiriAnimasyonHizi = Mathf.Max(0.1f, speedSetting.animationSpeed);
+                int characterLevel = UpgradeManager.Instance.GetItemLevel(characterAttackUpgradeItemId);
+                characterConfigApplied = characterConfig.TryGetCharacterAttackTiming(
+                    characterLevel,
+                    out aktifSaldiriBeklemeSuresi,
+                    out aktifVurusGecikmesi,
+                    out aktifSaldiriAnimasyonHizi);
+            }
+
+            // Eski sahne/prefablar Character config'i baglamadiysa mevcut Basket tablosu
+            // aynen calismaya devam eder. Bu geriye uyumluluk oyun akisinin bozulmasini onler.
+            if (!characterConfigApplied)
+            {
+                int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
+                HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
+                if (speedSetting != null)
+                {
+                    aktifSaldiriBeklemeSuresi = Mathf.Max(0.1f, speedSetting.attackCooldown);
+                    aktifVurusGecikmesi = Mathf.Clamp(speedSetting.hitDelay, 0f, aktifSaldiriBeklemeSuresi);
+                    aktifSaldiriAnimasyonHizi = Mathf.Max(0.1f, speedSetting.animationSpeed);
+                }
             }
         }
 

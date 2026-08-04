@@ -1,4 +1,21 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+
+[Serializable]
+public class CharacterAttackUpgradeLevel
+{
+    [Min(1)] public int Level = 1;
+
+    [Tooltip("Iki balta sallama arasindaki bekleme suresi. Daha hizli saldiri icin dusurulur.")]
+    [Min(0.1f)] public float AttackCooldown = 0.95f;
+
+    [Tooltip("Butona basildiktan sonra hasarin uygulanacagi an. Animasyon hizlandikca dusurulur.")]
+    [Range(0f, 1f)] public float HitDelay = 0.42f;
+
+    [Tooltip("Saldiri animasyonunun oynatma hizi carpani. Daha hizli animasyon icin artirilir.")]
+    [Min(0.1f)] public float AnimationSpeed = 1f;
+}
 
 /// <summary>
 /// Upgrade kategorileri. Yeni kategori eklemek icin buraya ekleme yapilir.
@@ -73,6 +90,13 @@ public class ItemUpgradeConfig : ScriptableObject
     [Tooltip("Maksimum ulasilabilecek seviye. 0 = sinirsiz.")]
     public int MaxLevel = 100;
 
+    [Header("--- Karakter Saldiri Ayarlari ---")]
+    [Tooltip("Bu config karakterin saldiri zamanlamalarini yonetiyorsa acilir.")]
+    public bool UseCharacterAttackTimings;
+
+    [Tooltip("Her karakter seviyesi icin saldiri bekleme, vurus ani ve animasyon hizi degerleri.")]
+    public List<CharacterAttackUpgradeLevel> CharacterAttackLevels = new List<CharacterAttackUpgradeLevel>();
+
     // ═══════════════════════════════════════════
     //  Hesaplama Metotlari
     // ═══════════════════════════════════════════
@@ -111,5 +135,58 @@ public class ItemUpgradeConfig : ScriptableObject
     {
         if (MaxLevel <= 0) return false; // Sinirsiz
         return currentLevel >= MaxLevel;
+    }
+
+    public bool TryGetCharacterAttackTiming(
+        int level,
+        out float attackCooldown,
+        out float hitDelay,
+        out float animationSpeed)
+    {
+        attackCooldown = 0f;
+        hitDelay = 0f;
+        animationSpeed = 1f;
+
+        if (!UseCharacterAttackTimings || CharacterAttackLevels == null)
+        {
+            return false;
+        }
+
+        CharacterAttackUpgradeLevel selected = null;
+        foreach (CharacterAttackUpgradeLevel setting in CharacterAttackLevels)
+        {
+            if (setting != null && setting.Level <= level &&
+                (selected == null || setting.Level > selected.Level))
+            {
+                selected = setting;
+            }
+        }
+
+        if (selected == null)
+        {
+            return false;
+        }
+
+        attackCooldown = Mathf.Max(0.1f, selected.AttackCooldown);
+        hitDelay = Mathf.Clamp(selected.HitDelay, 0f, attackCooldown);
+        animationSpeed = Mathf.Max(0.1f, selected.AnimationSpeed);
+        return true;
+    }
+
+    private void OnValidate()
+    {
+        if (CharacterAttackLevels == null)
+        {
+            return;
+        }
+
+        foreach (CharacterAttackUpgradeLevel setting in CharacterAttackLevels)
+        {
+            if (setting == null) continue;
+            setting.Level = Mathf.Max(1, setting.Level);
+            setting.AttackCooldown = Mathf.Max(0.1f, setting.AttackCooldown);
+            setting.HitDelay = Mathf.Clamp(setting.HitDelay, 0f, setting.AttackCooldown);
+            setting.AnimationSpeed = Mathf.Max(0.1f, setting.AnimationSpeed);
+        }
     }
 }
