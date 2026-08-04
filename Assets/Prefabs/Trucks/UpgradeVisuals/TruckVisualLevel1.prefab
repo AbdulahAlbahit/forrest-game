@@ -60,6 +60,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: -724493364965441153, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2f5b22b3da1f07942a757d2fd41271e2, type: 2}
     - target: {fileID: 919132149155446097, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
       propertyPath: m_Name
       value: TruckVisualLevel1
@@ -72,10 +76,26 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 2717756171294132697, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2f5b22b3da1f07942a757d2fd41271e2, type: 2}
+    - target: {fileID: 3758833742942399946, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2f5b22b3da1f07942a757d2fd41271e2, type: 2}
+    - target: {fileID: 7038207622098808634, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 2f5b22b3da1f07942a757d2fd41271e2, type: 2}
     - target: {fileID: 7752030738778784939, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 8449996119470504636, guid: 7f4560a719c6fea4097ce1d5d52bce5b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c82ec893e6ca4894398fbccf5218e747, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

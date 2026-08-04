@@ -38,8 +38,14 @@ public class UpgradeZoneController : MonoBehaviour
 
     [Header("Managed Upgrade World Text")]
     [SerializeField] private TMP_Text statusText;
+    [Tooltip("Aciksa yazida seviye vb. yerine sadece ucret (sade sayi) yazar.")]
+    [SerializeField] private bool showOnlyPrice = true;
     [SerializeField] private string currencyLabel = "Para";
     [SerializeField] private List<UpgradeLevelDescription> levelDescriptions = new List<UpgradeLevelDescription>();
+
+    [Header("VFX Settings")]
+    [SerializeField] private GameObject upgradeVfxPrefab;
+    [SerializeField] private Transform vfxSpawnPoint;
 
     [Header("Visual Feedback")]
     public Color emptyColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
@@ -212,6 +218,7 @@ public class UpgradeZoneController : MonoBehaviour
 
         int newLevel = UpgradeManager.Instance.GetItemLevel(resolvedItemId);
         GameLogger.Log($"[UpgradeZone] {upgradeTitle}: {oldLevel} -> {newLevel}, fiyat: {price}", this);
+        PlayUpgradeVfx();
         OnUpgradeComplete?.Invoke();
         OnUpgradeCompletedAction?.Invoke();
         OnManagedUpgradeCompleted?.Invoke(resolvedItemId, newLevel);
@@ -253,11 +260,22 @@ public class UpgradeZoneController : MonoBehaviour
 
     private string ResolveItemId()
     {
-        if (useEquippedAxeItem &&
-            AxeTablePanelController.Instance != null &&
-            !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
+        if (useEquippedAxeItem)
         {
-            return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+            if (AxeTablePanelController.Instance != null &&
+                !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
+            {
+                return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+            }
+            else if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+            {
+                // Fallback: Read directly from save data if panel is not initialized
+                PlayerData data = CloudSaveManager.Instance.CurrentData;
+                int equippedTier = data.ItemLevels != null && data.ItemLevels.ContainsKey("EquippedAxe")
+                    ? data.GetItemLevel("EquippedAxe")
+                    : 1;
+                return equippedTier <= 1 ? itemId : $"Axe{equippedTier}";
+            }
         }
 
         return itemId;
@@ -271,13 +289,19 @@ public class UpgradeZoneController : MonoBehaviour
         }
 
         int level = CurrentLevel;
-        string currentDescription = GetLevelDescription(level);
         if (IsManagedMaxLevel(level))
         {
-            statusText.text = BuildDisplayText(level, currentDescription, "MAKSIMUM SEVIYE");
+            statusText.text = showOnlyPrice ? "MAX" : BuildDisplayText(level, GetLevelDescription(level), "MAKSIMUM SEVIYE");
             return;
         }
 
+        if (showOnlyPrice)
+        {
+            statusText.text = GetCurrentPrice(level).ToString();
+            return;
+        }
+
+        string currentDescription = GetLevelDescription(level);
         string nextDescription = GetLevelDescription(level + 1);
         string changeLine = string.IsNullOrWhiteSpace(nextDescription)
             ? currentDescription
@@ -354,11 +378,22 @@ public class UpgradeZoneController : MonoBehaviour
         isCompleted = true;
         SetProgressVisual(1f);
         GameLogger.Log($"[UpgradeZone] Upgrade Complete: {upgradeTitle} unlocked!", this);
+        PlayUpgradeVfx();
         OnUpgradeComplete?.Invoke();
         OnUpgradeCompletedAction?.Invoke();
 
         Collider zoneCollider = GetComponent<Collider>();
         if (zoneCollider != null) zoneCollider.enabled = false;
+    }
+
+    private void PlayUpgradeVfx()
+    {
+        if (upgradeVfxPrefab != null)
+        {
+            Vector3 spawnPos = vfxSpawnPoint != null ? vfxSpawnPoint.position : transform.position;
+            GameObject vfxInstance = Instantiate(upgradeVfxPrefab, spawnPos, Quaternion.identity);
+            Destroy(vfxInstance, 5f);
+        }
     }
 
     private void OnValidate()

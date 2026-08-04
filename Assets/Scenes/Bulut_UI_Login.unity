@@ -238,7 +238,7 @@ MonoBehaviour:
   loadingText1: {fileID: 882806560775351045}
   loadingText2: {fileID: 5782241529660732512}
   dotAnimationInterval: 0.4
-  targetSceneName: Main_Scene
+  targetSceneName: Mert_Artscene
   firebaseTimeout: 5
   bgMusicName: ArkaPlan
   buttonSfxName: Button0
