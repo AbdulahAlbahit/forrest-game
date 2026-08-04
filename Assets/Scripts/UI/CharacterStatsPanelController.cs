@@ -319,6 +319,19 @@ public class CharacterStatsPanelController : MonoBehaviour
         AddRow("Mevcut XP", $"{currentXP:N0} / {reqXP:N0}", normalValueColor);
         AddRow("XP İlerleme", $"%{xpPercent:F1}", normalValueColor);
 
+        int characterAttackLevel = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Character") : 1;
+        AddRow("Karakter Vuruş Seviyesi", $"Seviye {characterAttackLevel}", normalValueColor);
+
+        string hitsPerSecondText = "—";
+        if (UpgradeManager.Instance != null &&
+            UpgradeManager.Instance.TryGetConfig("Character", out ItemUpgradeConfig characterAttackConfig) &&
+            characterAttackConfig.TryGetCharacterAttackTiming(characterAttackLevel, out float attackCooldown, out _, out _) &&
+            attackCooldown > 0f)
+        {
+            hitsPerSecondText = $"{1f / attackCooldown:F2} vuruş/sn";
+        }
+        AddRow("Vuruş Hızı (Karakter)", hitsPerSecondText, headerColorCharacter);
+
         // 2. EKONOMİ
         AddHeader("EKONOMİ", headerColorEconomy);
         int gold = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : (data?.Para ?? 0);
@@ -375,9 +388,7 @@ public class CharacterStatsPanelController : MonoBehaviour
         bool basketIsMaxLevel = UpgradeManager.Instance != null
             ? UpgradeManager.Instance.IsMaxLevel("Basket")
             : basketLvl >= 5;
-        float basketAttackSpeed = GetBasketAttackSpeed(basketLvl);
         int nextBasketCapacity = GetBasketCapacity(Mathf.Min(5, basketLvl + 1));
-        float nextBasketAttackSpeed = GetBasketAttackSpeed(Mathf.Min(5, basketLvl + 1));
         int basketUpgradePrice = UpgradeManager.Instance != null
             ? UpgradeManager.Instance.GetUpgradeCost("Basket")
             : Mathf.Max(100, 100 + (basketLvl - 1) * 50);
@@ -385,16 +396,11 @@ public class CharacterStatsPanelController : MonoBehaviour
         int workshopCap = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetWorkshopCapacity() : 10;
 
         AddRow("Sepet Odun Miktarı", $"{basketCur} / {basketMax}", normalValueColor);
-        AddRow("Taşıma ve Vuruş Hızı Seviyesi", $"Seviye {basketLvl}", normalValueColor);
+        AddRow("Sepet Seviyesi", $"Seviye {basketLvl}", normalValueColor);
         AddRow("Sepet Kapasitesi", $"{basketMax} Odun", headerColorInventory);
-        AddRow("Vuruş Hızı", $"x{basketAttackSpeed:F2}", headerColorInventory);
         AddRow(
             "Sonraki Seviye Kapasitesi",
             basketIsMaxLevel ? "Maksimum Seviye" : $"{nextBasketCapacity} Odun",
-            normalValueColor);
-        AddRow(
-            "Sonraki Seviye Vuruş Hızı",
-            basketIsMaxLevel ? "Maksimum Seviye" : $"x{nextBasketAttackSpeed:F2}",
             normalValueColor);
         AddRow(
             "Yükseltme Fiyatı",
@@ -721,12 +727,6 @@ public class CharacterStatsPanelController : MonoBehaviour
             return Mathf.RoundToInt(UpgradeManager.Instance.GetItemValueAtLevel("Basket", Mathf.Clamp(level, 1, 5)));
 
         return 6 + (Mathf.Clamp(level, 1, 5) - 1) * 2;
-    }
-
-    private float GetBasketAttackSpeed(int level)
-    {
-        float[] attackSpeedByLevel = { 1.00f, 1.12f, 1.25f, 1.38f, 1.50f };
-        return attackSpeedByLevel[Mathf.Clamp(level, 1, attackSpeedByLevel.Length) - 1];
     }
 
     private int GetTruckCapacity(int level)

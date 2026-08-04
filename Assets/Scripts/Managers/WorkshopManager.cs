@@ -236,8 +236,6 @@ public class WorkshopManager : MonoBehaviour
         return true;
     }
 
-    private float debugLogTimer = 0f;
-
     /// <summary>
     /// Su an atolyede fiilen sayaci ilerleyen bir uretim var mi (kuyrukta urun olup
     /// odun yetersizligiyle beklemede olmak bu sayilmaz). Kamyonun atolyede
@@ -377,13 +375,6 @@ public class WorkshopManager : MonoBehaviour
 
         uretimZamanlayicisi += Time.deltaTime;
         workshopVisuals?.PlayQueueCraftingProgress(uretimZamanlayicisi / gercekUretimSuresi);
-
-        debugLogTimer += Time.deltaTime;
-        if (debugLogTimer >= 2f)
-        {
-            debugLogTimer = 0f;
-            GameLogger.Log($"[Workshop Timer] {aktifUretilenItem}: {uretimZamanlayicisi:F2} / {gercekUretimSuresi:F2} sn (Hiz:{hizCarpani:F2})");
-        }
 
         if (uretimZamanlayicisi >= gercekUretimSuresi)
         {

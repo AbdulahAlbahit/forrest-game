@@ -21,7 +21,7 @@ MonoBehaviour:
   LinearPriceIncrease: 50
   BaseValue: 1
   ValueGrowth: 0
-  MaxLevel: 5
+  MaxLevel: 10
   UseCharacterAttackTimings: 1
   CharacterAttackLevels:
   - Level: 1
@@ -44,3 +44,23 @@ MonoBehaviour:
     AttackCooldown: 0.52
     HitDelay: 0.23
     AnimationSpeed: 1.5
+  - Level: 6
+    AttackCooldown: 0.45
+    HitDelay: 0.215
+    AnimationSpeed: 1.6
+  - Level: 7
+    AttackCooldown: 0.38
+    HitDelay: 0.2
+    AnimationSpeed: 1.7
+  - Level: 8
+    AttackCooldown: 0.31
+    HitDelay: 0.19
+    AnimationSpeed: 1.8
+  - Level: 9
+    AttackCooldown: 0.27
+    HitDelay: 0.18
+    AnimationSpeed: 1.9
+  - Level: 10
+    AttackCooldown: 0.25
+    HitDelay: 0.175
+    AnimationSpeed: 2
