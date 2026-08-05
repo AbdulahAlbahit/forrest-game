@@ -1304,7 +1304,7 @@ MonoBehaviour:
   fulfillOrderButton: {fileID: 2065819244048686786}
   fulfillOrderButtonText: {fileID: 4184443897013847040}
   totalGoldText: {fileID: 2383748568291558790}
-  buttonSfxName: 
+  buttonSfxName: Button0
 --- !u!114 &-5382781836283034604
 MonoBehaviour:
   m_ObjectHideFlags: 0
