@@ -93,15 +93,15 @@ MonoBehaviour:
   - name: AgacDusme
     clip: {fileID: 8300000, guid: e7013d42d34bb8a47804423c857de763, type: 3}
     volume: 1
-    pitch: 0
-  - name: YazarKasaSesi
-    clip: {fileID: 8300000, guid: bec9c27f0eb16b04ea17c8e2e26194f7, type: 3}
-    volume: 0.5
-    pitch: 0
+    pitch: 0.1
   - name: GenelBakiyeSesi
-    clip: {fileID: 8300000, guid: 9ecbb3d97f44c6a47820630cddbb0a4b, type: 3}
+    clip: {fileID: 8300000, guid: 64d1e151af2732a4b99dd1caf91ffd8e, type: 3}
     volume: 0.7
     pitch: 0
+  - name: YazarKasaSesi
+    clip: {fileID: 8300000, guid: e2bd86dcebe7e5949b50f583eee32746, type: 3}
+    volume: 0.5
+    pitch: 0.1
   - name: LevelAtlamaSesi
     clip: {fileID: 8300000, guid: cfea3699d378a94449035b7f51c71c9c, type: 3}
     volume: 1
