@@ -50,6 +50,7 @@ public class GameControlPanel : EditorWindow
         DrawSceneComponentButton<EfeMevsimKiyafetleri>("Efe Mevsim Kıyafetleri");
         DrawSceneComponentButton<EfeKiyafetAnimatorEsleyici>("Efe Kıyafet Animatör Eşleyici");
         DrawSceneComponentButton<EfeBaltaGorunurElBaglayici>("Efe Balta El Bağlayıcı");
+        DrawSceneComponentButton<CustomerOrderManager>("Sipariş Süreleri (Order Manager)");
 
         GUILayout.EndScrollView();
         GUILayout.EndVertical();
