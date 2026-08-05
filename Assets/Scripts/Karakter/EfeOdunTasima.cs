@@ -41,6 +41,7 @@ public class EfeOdunTasima : MonoBehaviour
 
     public int TasinanOdunSayisi { get; private set; }
     public int TasimaKapasitesi => tasimaKapasitesi;
+    public float YuklemeTekrarAraligi => yuklemeTekrarAraligi;
     public bool SepetDolu => TasinanOdunSayisi >= tasimaKapasitesi;
 
     private readonly Collider[] toplamaSonuclari = new Collider[24];
