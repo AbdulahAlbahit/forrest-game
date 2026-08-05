@@ -20,6 +20,9 @@ public class MainHUDController : MonoBehaviour
     [Tooltip("Para miktarını gösteren metin.")]
     [SerializeField] private TextMeshProUGUI coinValueText;
 
+    [Tooltip("Para arttığında CoinBar'ın yanında oynatılacak partikül efekti (VFX_Coins).")]
+    [SerializeField] private ParticleSystem coinsVFX;
+
     [Header("--- Sepet Odun Göstergesi ---")]
     [Tooltip("Sepetteki odun miktarını gösteren metin. Örn: 3/5")]
     [SerializeField] private TextMeshProUGUI woodValueText;
@@ -372,6 +375,7 @@ public class MainHUDController : MonoBehaviour
         if (targetAmount > currentDisplayedCoins)
         {
             TriggerPulse(coinValueText.transform, ref coinPulseCoroutine, 1.18f);
+            coinsVFX?.Play();
         }
     }
 
