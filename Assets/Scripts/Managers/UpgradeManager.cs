@@ -146,25 +146,31 @@ public class UpgradeManager : MonoBehaviour
             return false;
         }
 
-        data.SetItemLevel(itemId, newLevel);
+        // Senkron her zaman gruptaki (ana item + bagli item'lar) en yuksek seviyeye gore yapilir.
+        int targetLevel = newLevel;
         foreach (string linkedId in validLinkedIds)
         {
-            int linkedLevel = data.GetItemLevel(linkedId);
-            data.SetItemLevel(linkedId, Mathf.Max(linkedLevel, newLevel));
+            targetLevel = Mathf.Max(targetLevel, data.GetItemLevel(linkedId));
+        }
+
+        data.SetItemLevel(itemId, targetLevel);
+        foreach (string linkedId in validLinkedIds)
+        {
+            data.SetItemLevel(linkedId, targetLevel);
         }
 
         CloudSaveManager.Instance.SaveData(data);
 
-        float newValue = config.GetStatValue(newLevel);
-        GameLogger.Log($"[UpgradeManager] '{itemId}' yukseltildi! Seviye: {currentLevel} -> {newLevel}, Yeni Deger: {newValue:F1}, Harcanan: {cost}");
+        float newValue = config.GetStatValue(targetLevel);
+        GameLogger.Log($"[UpgradeManager] '{itemId}' yukseltildi! Seviye: {currentLevel} -> {targetLevel}, Yeni Deger: {newValue:F1}, Harcanan: {cost}");
 
-        OnItemUpgraded?.Invoke(itemId, newLevel);
+        OnItemUpgraded?.Invoke(itemId, targetLevel);
         foreach (string linkedId in validLinkedIds)
         {
-            OnItemUpgraded?.Invoke(linkedId, data.GetItemLevel(linkedId));
+            OnItemUpgraded?.Invoke(linkedId, targetLevel);
         }
 
-        OnUpgradeTransactionCompleted?.Invoke(itemId, newLevel, cost, EconomyManager.Instance.MevcutPara);
+        OnUpgradeTransactionCompleted?.Invoke(itemId, targetLevel, cost, EconomyManager.Instance.MevcutPara);
 
         // Analitik: Esya yukseltme takibi
         ForrestGame.Managers.AnalyticsManager.Instance?.LogItemUpgrade(itemId, newLevel, cost);

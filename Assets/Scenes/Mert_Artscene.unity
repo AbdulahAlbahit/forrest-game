@@ -45430,6 +45430,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: BaltaSalla
       objectReference: {fileID: 0}
+    - target: {fileID: 4246138082049714743, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: baltaKontrol
+      value: 
+      objectReference: {fileID: 1461704596}
     - target: {fileID: 4945840179710586727, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: displayTierCount
       value: 5
