@@ -203,6 +203,24 @@ public class UpgradeZoneController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Zone MAX seviyeye ulastiktan sonra linkedItemIds listesine yeni
+    /// eklenen item'lar icin kullan. Play Mode'da bu component'in dislisine
+    /// (Inspector) sag tiklayip calistir; para harcamadan mevcut seviyeye esitler.
+    /// </summary>
+    [ContextMenu("DEBUG: Bagli Itemlari Zorla Senkronla")]
+    public void ForceSyncLinkedItems()
+    {
+        if (UpgradeManager.Instance == null)
+        {
+            GameLogger.LogWarning("[UpgradeZone] UpgradeManager bulunamadi, senkron yapilamadi.", this);
+            return;
+        }
+
+        UpgradeManager.Instance.ForceSyncLinkedItemLevel(ItemId, linkedItemIds);
+        RefreshManagedDisplay();
+    }
+
     private bool ManagedDependenciesReady()
     {
         return UpgradeManager.Instance != null

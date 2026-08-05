@@ -58,21 +58,21 @@ MonoBehaviour:
     volume: 1
     pitch: 1.08
   - name: IlkbaharMuzik
-    clip: {fileID: 8300000, guid: 575f92fb55641d0458393fa3e41b3c8d, type: 3}
-    volume: 1
-    pitch: 1.08
+    clip: {fileID: 8300000, guid: e16fd55e5390e1f4480e73dc6ec0a0da, type: 3}
+    volume: 0.5
+    pitch: 1
   - name: KisMuzik
-    clip: {fileID: 8300000, guid: ce63ffbd71e16c74a83e0a3075c94440, type: 3}
-    volume: 1
-    pitch: 1.08
+    clip: {fileID: 8300000, guid: c079af5b5e0bdc449aad610ba5bb270b, type: 3}
+    volume: 0.6
+    pitch: 1
   - name: YazMuzik
-    clip: {fileID: 8300000, guid: 9ffe73953329a2b419f25ebf33bd7f65, type: 3}
-    volume: 1
-    pitch: 1.08
+    clip: {fileID: 8300000, guid: 1320cfb8ccba55046ac9d84fac47cabf, type: 3}
+    volume: 0.4
+    pitch: 1
   - name: SonbaharMuzik
-    clip: {fileID: 8300000, guid: 5f42cee49bed5564187c712c69726acc, type: 3}
-    volume: 1
-    pitch: 1.08
+    clip: {fileID: 8300000, guid: 7e4dfb8ddda9b6c41843742f1ac91830, type: 3}
+    volume: 0.5
+    pitch: 1
   sfxSounds:
   - name: Button0
     clip: {fileID: 8300000, guid: 73148831c81eba2469d76ee64820d7c1, type: 3}
@@ -84,7 +84,7 @@ MonoBehaviour:
     pitch: 0
   - name: BaltaSallama
     clip: {fileID: 8300000, guid: a88d0b0d33ad7254db297c47e7d7eb90, type: 3}
-    volume: 0.4
+    volume: 0.5
     pitch: 0
   - name: BaltaVurma
     clip: {fileID: 8300000, guid: 2e126ce435f987d4c809a32627807121, type: 3}
@@ -94,15 +94,15 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: e7013d42d34bb8a47804423c857de763, type: 3}
     volume: 1
     pitch: 0
-  - name: para sesi1
-    clip: {fileID: 8300000, guid: dd56c959a74b30f4b8549882d9ca9a36, type: 3}
-    volume: 1
+  - name: YazarKasaSesi
+    clip: {fileID: 8300000, guid: bec9c27f0eb16b04ea17c8e2e26194f7, type: 3}
+    volume: 0.5
     pitch: 0
-  - name: ParaSesi
-    clip: {fileID: 8300000, guid: 557517c6d0d1a4f4d906a25666fb9c1b, type: 3}
-    volume: 1
+  - name: GenelBakiyeSesi
+    clip: {fileID: 8300000, guid: 9ecbb3d97f44c6a47820630cddbb0a4b, type: 3}
+    volume: 0.7
     pitch: 0
-  - name: SeviyeGecisi
+  - name: LevelAtlamaSesi
     clip: {fileID: 8300000, guid: cfea3699d378a94449035b7f51c71c9c, type: 3}
     volume: 1
     pitch: 0
@@ -112,11 +112,11 @@ MonoBehaviour:
     pitch: 0.1
   - name: YurumeSesi
     clip: {fileID: 8300000, guid: 9547b3db197f22345a450da5c7bea3cf, type: 3}
-    volume: 1
+    volume: 0.05
     pitch: 0
   - name: KosmaSesi
-    clip: {fileID: 8300000, guid: fb7c2a65aad60c344acb2ab00121dbdc, type: 3}
-    volume: 1
+    clip: {fileID: 8300000, guid: 6d51173908f789942bb65fbcc30b4c97, type: 3}
+    volume: 0.4
     pitch: 0.1
   - name: SepetDoldu
     clip: {fileID: 8300000, guid: 391f22b26bf3e9d4fbb920cf390bf85b, type: 3}
@@ -126,43 +126,75 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: 50e3224a7f5e79f41a2874914174c8bd, type: 3}
     volume: 1
     pitch: 0.1
-  - name: YeniBolge
+  - name: BolgeAcilmaSesi
     clip: {fileID: 8300000, guid: 21a7f842ba917ac40bacd8f2af3a5969, type: 3}
     volume: 1
     pitch: 0.1
   - name: KamyonaOdunAtma
     clip: {fileID: 8300000, guid: 55772a57f521e3c45b7acb3082277b74, type: 3}
-    volume: 1
+    volume: 0.5
     pitch: 0.1
   - name: ArabaCalistirma
     clip: {fileID: 8300000, guid: b38f3dd93c3daa54892e77a346dc51b8, type: 3}
-    volume: 1
+    volume: 0.4
     pitch: 1
   - name: ArabaFren
     clip: {fileID: 8300000, guid: a7445f70d1ae20d49a6487c2fb600814, type: 3}
-    volume: 1
+    volume: 0.3
     pitch: 0.1
   - name: CekicVurma
     clip: {fileID: 8300000, guid: 1e5e48ba05f90cf4d9b6bf0a7a0cc70c, type: 3}
-    volume: 1
+    volume: 0.3
     pitch: 0.1
   - name: UretimTamamlandi
     clip: {fileID: 8300000, guid: 9985657a1b9daf44dbba1222590b67c2, type: 3}
+    volume: 0.5
+    pitch: 0.1
+  - name: XPKazanmaSesi
+    clip: {fileID: 8300000, guid: b0a3f5e9dad9e924db25ac9ad9c960b1, type: 3}
+    volume: 0.5
+    pitch: 0.1
+  - name: DukkanSatisSesi
+    clip: {fileID: 8300000, guid: bf4d325ad6efe4246a0d28d979d502ff, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: PazarSatisSesi
+    clip: {fileID: 8300000, guid: bf4d325ad6efe4246a0d28d979d502ff, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: KargoHazirSesi
+    clip: {fileID: 8300000, guid: 2ef5739ea8f8848449b05c6c38f5f841, type: 3}
+    volume: 0.5
+    pitch: 0.1
+  - name: OdunTransferSesi
+    clip: {fileID: 0}
+    volume: 0.5
+    pitch: 0.1
+  - name: GelistirmeSesi
+    clip: {fileID: 8300000, guid: 7a70d5b6190eba542a37aafd504d63a6, type: 3}
+    volume: 0.5
+    pitch: 0.1
+  - name: SudanCikma
+    clip: {fileID: 8300000, guid: b30453aeec6c8ac4e9295f98724e566a, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: SuyaDusme
+    clip: {fileID: 8300000, guid: 41e4ac9191ccec248a6b3a7263186724, type: 3}
     volume: 1
     pitch: 0.1
   ambienceSounds:
   - name: AtolyeMakine
     clip: {fileID: 8300000, guid: a123084147ae4324d98db4792ebab199, type: 3}
-    volume: 1
+    volume: 0.4
     pitch: 1
   vehicleSounds:
   - name: ArabaYurume
     clip: {fileID: 8300000, guid: 3c475a33d88f87a4ca4a02177a8a5da3, type: 3}
-    volume: 1
+    volume: 0.2
     pitch: 1
   - name: ArabaRolanti
     clip: {fileID: 8300000, guid: f1b89c98835b2a041826194c99762838, type: 3}
-    volume: 1
+    volume: 0.1
     pitch: 1
 --- !u!82 &-781825273070750688
 AudioSource:
