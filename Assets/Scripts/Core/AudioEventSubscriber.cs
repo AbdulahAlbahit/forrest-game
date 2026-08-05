@@ -28,6 +28,11 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketDurumuDegisti += OnHareketDurumuDegisti;
 
+            // Su Eventleri
+            EfeOynanisEventleri.SuyaGirdi += OnSuyaGirdi;
+            EfeOynanisEventleri.SudanCikti += OnSudanCikti;
+            EfeOynanisEventleri.SudanKurtarildi += OnSudanKurtarildi;
+
             
             TruckRouteController.OnTruckDepartedHome += EvdenAyrilis;
             TruckRouteController.OnTruckDeparture += DuraktanKalkis;
@@ -72,6 +77,11 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.KamyonYuklemeBitti -= OnKamyonYuklemeBitti;
             
             EfeOynanisEventleri.HareketDurumuDegisti -= OnHareketDurumuDegisti;
+
+            // Su Eventleri
+            EfeOynanisEventleri.SuyaGirdi -= OnSuyaGirdi;
+            EfeOynanisEventleri.SudanCikti -= OnSudanCikti;
+            EfeOynanisEventleri.SudanKurtarildi -= OnSudanKurtarildi;
 
 
             TruckRouteController.OnTruckDepartedHome -= EvdenAyrilis;
@@ -194,6 +204,24 @@ namespace ForrestGame.Audio
         {
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("KamyonDoldu");
+        }
+
+        private void OnSuyaGirdi(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SuyaDusme");
+        }
+
+        private void OnSudanCikti(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SudanCikma");
+        }
+
+        private void OnSudanKurtarildi(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SudanKurtarilma");
         }
 
         private Coroutine hareketSesCoroutine;

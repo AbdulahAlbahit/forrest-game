@@ -58,19 +58,19 @@ MonoBehaviour:
     volume: 1
     pitch: 1.08
   - name: IlkbaharMuzik
-    clip: {fileID: 8300000, guid: cd6f2b36d392adf48ab500a74864c8e8, type: 3}
+    clip: {fileID: 8300000, guid: d9654b1f507da4141b47e8f57bf20724, type: 3}
     volume: 1
     pitch: 1
   - name: KisMuzik
-    clip: {fileID: 8300000, guid: 9ed814aac1a684947ad2caa856fc9dc7, type: 3}
+    clip: {fileID: 8300000, guid: c7c8af10e75b8f64bb8ff7f98e5119b4, type: 3}
     volume: 0.2
     pitch: 1
   - name: YazMuzik
-    clip: {fileID: 8300000, guid: c19f49f0c835ffb4985d26b7769a450f, type: 3}
+    clip: {fileID: 8300000, guid: 93c43a68103c41449b3e2727ffea40b1, type: 3}
     volume: 0.2
     pitch: 1
   - name: SonbaharMuzik
-    clip: {fileID: 8300000, guid: 5f42cee49bed5564187c712c69726acc, type: 3}
+    clip: {fileID: 8300000, guid: 288571c68a188cd4e8c2df50a0998cb3, type: 3}
     volume: 1
     pitch: 1
   sfxSounds:
@@ -111,7 +111,7 @@ MonoBehaviour:
     volume: 1
     pitch: 0.1
   - name: YurumeSesi
-    clip: {fileID: 8300000, guid: 00502a3d783a48a4e9e4d3971c2f7d51, type: 3}
+    clip: {fileID: 8300000, guid: 9547b3db197f22345a450da5c7bea3cf, type: 3}
     volume: 0.08
     pitch: 0
   - name: KosmaSesi
@@ -163,7 +163,7 @@ MonoBehaviour:
     volume: 1
     pitch: 0.1
   - name: KargoHazirSesi
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 2ef5739ea8f8848449b05c6c38f5f841, type: 3}
     volume: 0.5
     pitch: 0.1
   - name: OdunTransferSesi
@@ -173,6 +173,14 @@ MonoBehaviour:
   - name: GelistirmeSesi
     clip: {fileID: 8300000, guid: 7a70d5b6190eba542a37aafd504d63a6, type: 3}
     volume: 0.5
+    pitch: 0.1
+  - name: SudanCikma
+    clip: {fileID: 8300000, guid: b30453aeec6c8ac4e9295f98724e566a, type: 3}
+    volume: 1
+    pitch: 0.1
+  - name: SuyaDusme
+    clip: {fileID: 8300000, guid: 41e4ac9191ccec248a6b3a7263186724, type: 3}
+    volume: 1
     pitch: 0.1
   ambienceSounds:
   - name: AtolyeMakine
