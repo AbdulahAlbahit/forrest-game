@@ -3993,11 +3993,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EfeBaltaKontrol
   animator: {fileID: 8937085415346931207}
-  balta: {fileID: 722519233556452532}
+  balta: {fileID: 7489366617908221484, guid: 8207f08d825b5df47ade0278a6be1134, type: 3}
   saldiriBeklemeSuresi: 0.95
   agacEtkilesimMesafesi: 1
-  agacHasari: 1
   vurusAnGecikmesi: 0.42
+  useUpgradeLevels: 1
+  axeUpgradeItemId: Axe
+  characterAttackUpgradeItemId: Character
+  housePowerUpgradeItemId: Basket
+  attackSpeedAnimatorParameter: SaldiriHizi
+  housePowerAttackLevels:
+  - level: 1
+    attackCooldown: 0.95
+    hitDelay: 0.42
+    animationSpeed: 1
+  - level: 2
+    attackCooldown: 0.82
+    hitDelay: 0.36
+    animationSpeed: 1.12
+  - level: 3
+    attackCooldown: 0.7
+    hitDelay: 0.31
+    animationSpeed: 1.25
+  - level: 4
+    attackCooldown: 0.6
+    hitDelay: 0.27
+    animationSpeed: 1.38
+  - level: 5
+    attackCooldown: 0.52
+    hitDelay: 0.23
+    animationSpeed: 1.5
   sagAyakIleriMesafesi: 0.17
   solAyakGeriMesafesi: 0.11
   ayakYanalMesafesi: 0.11
@@ -4019,6 +4044,8 @@ MonoBehaviour:
   toplamaYaricapi: 1.15
   toplamaTaramaAraligi: 0.08
   odunYerdeKalmaSuresi: 60
+  useBasketUpgradeLevel: 1
+  basketUpgradeItemId: Basket
   odunYuvasiAdi: LogStackAnchor
   sepetOdunuOlcegi: 0.74
   sepeteUcusSuresi: 0.45
@@ -4076,7 +4103,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa944f0ce83a4432951c2ce7bbfcdb9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EfeBaltaGorunurElBaglayici
-  balta: {fileID: 722519233556452532}
+  balta: {fileID: 7489366617908221484, guid: 8207f08d825b5df47ade0278a6be1134, type: 3}
   kaynakAnimator: {fileID: 8937085415346931207}
   mevsimKiyafetleri: {fileID: 5952622430919129665}
   tutusLocalDonusu: {x: 0.54310304, y: 0.48952156, z: -0.4513255, w: 0.5115789}
@@ -13477,11 +13504,6 @@ PrefabInstance:
 --- !u!4 &93792493626543630 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5758078093688256151, guid: 8a2ce7d9fc7298c43861ad8787b2d529, type: 3}
-  m_PrefabInstance: {fileID: 5667210869269493913}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &722519233556452532 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 4945828874921405485, guid: 8a2ce7d9fc7298c43861ad8787b2d529, type: 3}
   m_PrefabInstance: {fileID: 5667210869269493913}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7659064928068977629
