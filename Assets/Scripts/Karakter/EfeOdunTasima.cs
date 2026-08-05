@@ -29,6 +29,10 @@ public class EfeOdunTasima : MonoBehaviour
     [Header("Kamyon Yukleme")]
     [Min(0.02f)] [SerializeField] private float yuklemeTekrarAraligi = 0.15f;
 
+    [Header("Kamyon Yukleme Upgrade Baglantisi")]
+    [SerializeField] private bool useTruckLoadSpeedUpgrade = true;
+    [SerializeField] private string truckLoadSpeedItemId = "TruckLoadSpeed";
+
     [Header("Kamyon Yukleme Gorseli")]
     [Min(0.1f)] [SerializeField] private float kamyonaUcusSuresi = 0.5f;
     [Min(0f)] [SerializeField] private float kamyonaUcusYuksekligi = 1.35f;
@@ -61,6 +65,7 @@ public class EfeOdunTasima : MonoBehaviour
     {
         UpgradeEventlerineAboneOl();
         UpgradeKapasitesiniUygula();
+        TruckYuklemeHiziniUygula();
     }
 
     private void Start()
@@ -68,6 +73,7 @@ public class EfeOdunTasima : MonoBehaviour
         tasimaKapasitesi = Mathf.Max(tasimaKapasitesi, 6);
         UpgradeEventlerineAboneOl();
         UpgradeKapasitesiniUygula();
+        TruckYuklemeHiziniUygula();
 
         if (TreeManager.Instance != null)
         {
@@ -767,7 +773,7 @@ public class EfeOdunTasima : MonoBehaviour
 
     private void UpgradeEventlerineAboneOl()
     {
-        if (!useBasketUpgradeLevel) return;
+        if (!useBasketUpgradeLevel && !useTruckLoadSpeedUpgrade) return;
 
         if (!upgradeEventineAbone && UpgradeManager.Instance != null)
         {
@@ -804,11 +810,38 @@ public class EfeOdunTasima : MonoBehaviour
         {
             UpgradeKapasitesiniUygula();
         }
+
+        if (itemId == truckLoadSpeedItemId)
+        {
+            TruckYuklemeHiziniUygula();
+        }
     }
 
     private void DataYuklendiginde(PlayerData data)
     {
         UpgradeKapasitesiniUygula();
+        TruckYuklemeHiziniUygula();
+    }
+
+    /// <summary>
+    /// TruckLoadSpeed config'i "saniyede yuklenen odun" hizi olarak tanimlanir
+    /// (WorkshopManager'daki hiz upgrade'leriyle ayni format). Yukleme araligi
+    /// bu hizin tersine (1 / hiz) cevrilerek uygulanir.
+    /// </summary>
+    public void TruckYuklemeHiziniUygula()
+    {
+        if (!useTruckLoadSpeedUpgrade || UpgradeManager.Instance == null)
+        {
+            return;
+        }
+
+        if (!UpgradeManager.Instance.TryGetConfig(truckLoadSpeedItemId, out _))
+        {
+            return;
+        }
+
+        float odunBasinaHiz = UpgradeManager.Instance.GetItemValue(truckLoadSpeedItemId);
+        yuklemeTekrarAraligi = Mathf.Max(0.02f, 1f / Mathf.Max(0.01f, odunBasinaHiz));
     }
 
     public void UpgradeKapasitesiniUygula()

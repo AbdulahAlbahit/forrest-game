@@ -264,6 +264,43 @@ public class UpgradeManager : MonoBehaviour
         return config != null;
     }
 
+    /// <summary>
+    /// Bir zone'a sonradan eklenen bagli item'lari, normal satin alma
+    /// akisi disinda (para harcamadan) ana item'in mevcut seviyesine
+    /// tek seferlik esitler. Zone zaten MAX seviyedeyse ve bir daha
+    /// satin alma tetiklenemiyorsa kullanilir.
+    /// </summary>
+    public void ForceSyncLinkedItemLevel(string itemId, IReadOnlyList<string> linkedItemIds)
+    {
+        if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null || linkedItemIds == null)
+        {
+            return;
+        }
+
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        int targetLevel = data.GetItemLevel(itemId);
+
+        foreach (string linkedId in linkedItemIds)
+        {
+            if (string.IsNullOrWhiteSpace(linkedId) || linkedId == itemId)
+            {
+                continue;
+            }
+
+            int linkedLevel = data.GetItemLevel(linkedId);
+            if (linkedLevel >= targetLevel)
+            {
+                continue;
+            }
+
+            data.SetItemLevel(linkedId, targetLevel);
+            OnItemUpgraded?.Invoke(linkedId, targetLevel);
+            GameLogger.Log($"[UpgradeManager] '{linkedId}' zorla senkronlandi -> Seviye {targetLevel} (kaynak: '{itemId}')");
+        }
+
+        CloudSaveManager.Instance.SaveData(data);
+    }
+
     private ItemUpgradeConfig FindConfig(string itemId)
     {
         if (string.IsNullOrWhiteSpace(itemId))

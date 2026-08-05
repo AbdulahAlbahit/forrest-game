@@ -31,8 +31,25 @@ public class TreeManager : MonoBehaviour
     public float logJumpForce = 5f;
     public float logSpawnScale = 0.65f;
 
+    [System.Serializable]
+    public class TreeHealthEntry
+    {
+        [Tooltip("Terrain'deki ağaç prototip index'i (Terrain > Paint Trees listesindeki sıra).")]
+        public int prototypeIndex;
+        public int health = 60;
+    }
+
     [Header("Tree Settings")]
     public int defaultTreeHealth = 3;
+
+    [Tooltip("Listede olmayan prototip index'leri defaultTreeHealth kullanir.")]
+    public List<TreeHealthEntry> treeHealthByPrototypeIndex = new List<TreeHealthEntry>
+    {
+        new TreeHealthEntry { prototypeIndex = 0, health = 60 },
+        new TreeHealthEntry { prototypeIndex = 1, health = 200 },
+        new TreeHealthEntry { prototypeIndex = 3, health = 400 }
+    };
+
     public float searchRadius = 2.5f;
     [Range(5f, 50f)]
     public float fallTorque = 15f;
@@ -164,11 +181,12 @@ public class TreeManager : MonoBehaviour
         TreeInstance hitTree = _activeTerrain.terrainData.treeInstances[treeIndex];
         Vector3 treeWorldPos = GetTreeWorldPos(hitTree);
 
+        int treeMaxHealth = GetTreeHealthForPrototype(hitTree.prototypeIndex);
         if (!_damagedTrees.ContainsKey(treeIndex))
-            _damagedTrees[treeIndex] = defaultTreeHealth;
+            _damagedTrees[treeIndex] = treeMaxHealth;
 
         _damagedTrees[treeIndex] -= damage;
-        GameLogger.Log($"[TreeManager] Tree Hit! Health: {_damagedTrees[treeIndex]}/{defaultTreeHealth}", this);
+        GameLogger.Log($"[TreeManager] Tree Hit! Health: {_damagedTrees[treeIndex]}/{treeMaxHealth}", this);
         
         OnTreeHitAction?.Invoke(treeWorldPos);
 
@@ -194,25 +212,21 @@ public class TreeManager : MonoBehaviour
             OnTreeFelled?.Invoke(treeWorldPos);
             OnTreeFelledAction?.Invoke(treeWorldPos);
 
-            // --- ÖDÜLLER ---
             if (XPManager.Instance != null)
             {
-                XPManager.Instance.AddXP(20); // Ağaç başına 20 XP
+                XPManager.Instance.AddXP(20);
                 GameLogger.Log("[TreeManager] +20 XP kazanildi!", this);
             }
             else
             {
                 GameLogger.LogWarning("[TreeManager] UYARI: XPManager bulunamadi! XP verilemedi.", this);
             }
-            // ---------------
 
-            // --- REKLAM ANALITIGI (Test) ---
             if (ForrestGame.Managers.AnalyticsManager.Instance != null)
             {
                 ForrestGame.Managers.AnalyticsManager.Instance.LogAdImpression("tree_cut_ad_test");
                 GameLogger.Log("[TreeManager] Ad impression (tree_cut_ad_test) analytics eventi gonderildi.", this);
             }
-            // -------------------------------
 
             GameLogger.Log($"[TreeManager] Tree Felled! Type: {typeIndex}. Respawn in {effectiveRespawnTime}s.", this);
         }
@@ -240,7 +254,17 @@ public class TreeManager : MonoBehaviour
     {
         if (prototypeIndex >= 0 && prototypeIndex < treeTypes.Length)
             return prototypeIndex;
-        return 0; 
+        return 0;
+    }
+
+    private int GetTreeHealthForPrototype(int prototypeIndex)
+    {
+        foreach (TreeHealthEntry entry in treeHealthByPrototypeIndex)
+        {
+            if (entry != null && entry.prototypeIndex == prototypeIndex)
+                return entry.health;
+        }
+        return defaultTreeHealth;
     }
 
     public bool IsChoppablePrototype(int prototypeIndex)
