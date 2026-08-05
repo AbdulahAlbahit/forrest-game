@@ -1,6 +1,7 @@
 using UnityEngine;
 using ForrestGame.Core;
 using System.Collections;
+using ForrestGame.Managers;
 
 namespace ForrestGame.Audio
 {
@@ -27,6 +28,11 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketDurumuDegisti += OnHareketDurumuDegisti;
 
+            // Su Eventleri
+            EfeOynanisEventleri.SuyaGirdi += OnSuyaGirdi;
+            EfeOynanisEventleri.SudanCikti += OnSudanCikti;
+            EfeOynanisEventleri.SudanKurtarildi += OnSudanKurtarildi;
+
             
             TruckRouteController.OnTruckDepartedHome += EvdenAyrilis;
             TruckRouteController.OnTruckDeparture += DuraktanKalkis;
@@ -41,6 +47,18 @@ namespace ForrestGame.Audio
             WorkshopProductionManager.OnProductionSuccess += UretimBasariliSesi;
             WorkshopProductionManager.OnCraftingStartedGlobal += UretimBasladi;
             WorkshopProductionManager.OnCraftingFinishedGlobal += UretimBitti;
+
+            // Market ve Pazar Satış Eventleri
+            ShopManager.OnItemSold += DukkandaSatisYapildi;
+            EfeMarketSalesController.OnSaleCompleted += PazardaSatisYapildi;
+            EfeMarketSalesController.OnCargoReadyForMarket += KargoHazir;
+            EfeMarketSalesController.OnBalanceChanged += PazarBakiyeDegisti;
+
+            // Depo ve Transfer Eventleri
+            CargoTransferZone.OnWoodTransferred += OdunTransferEdildi;
+
+            // Genel Geliştirme Eventi
+            UpgradeZoneController.OnUpgradeCompletedAction += GenelGelistirme;
         }
 
         private void OnDisable()
@@ -60,6 +78,11 @@ namespace ForrestGame.Audio
             
             EfeOynanisEventleri.HareketDurumuDegisti -= OnHareketDurumuDegisti;
 
+            // Su Eventleri
+            EfeOynanisEventleri.SuyaGirdi -= OnSuyaGirdi;
+            EfeOynanisEventleri.SudanCikti -= OnSudanCikti;
+            EfeOynanisEventleri.SudanKurtarildi -= OnSudanKurtarildi;
+
 
             TruckRouteController.OnTruckDepartedHome -= EvdenAyrilis;
             TruckRouteController.OnTruckDeparture -= DuraktanKalkis;
@@ -73,6 +96,14 @@ namespace ForrestGame.Audio
             WorkshopProductionManager.OnProductionSuccess -= UretimBasariliSesi;
             WorkshopProductionManager.OnCraftingStartedGlobal -= UretimBasladi;
             WorkshopProductionManager.OnCraftingFinishedGlobal -= UretimBitti;
+
+            ShopManager.OnItemSold -= DukkandaSatisYapildi;
+            EfeMarketSalesController.OnSaleCompleted -= PazardaSatisYapildi;
+            EfeMarketSalesController.OnCargoReadyForMarket -= KargoHazir;
+            EfeMarketSalesController.OnBalanceChanged -= PazarBakiyeDegisti;
+
+            CargoTransferZone.OnWoodTransferred -= OdunTransferEdildi;
+            UpgradeZoneController.OnUpgradeCompletedAction -= GenelGelistirme;
         }
 
         private void Start()
@@ -88,6 +119,17 @@ namespace ForrestGame.Audio
             {
                 UpgradeManager.Instance.OnItemUpgraded += ElemanGelistirildi;
             }
+
+            if (XPManager.Instance != null)
+            {
+                XPManager.Instance.OnLevelUp += LevelAtladi;
+                XPManager.Instance.OnXPChanged += XPKazandi;
+            }
+
+            if (RegionManager.Instance != null)
+            {
+                RegionManager.Instance.OnRegionUnlocked += BolgeAcildi;
+            }
         }
 
         private void OnDestroy()
@@ -100,6 +142,17 @@ namespace ForrestGame.Audio
             if (UpgradeManager.Instance != null)
             {
                 UpgradeManager.Instance.OnItemUpgraded -= ElemanGelistirildi;
+            }
+
+            if (XPManager.Instance != null)
+            {
+                XPManager.Instance.OnLevelUp -= LevelAtladi;
+                XPManager.Instance.OnXPChanged -= XPKazandi;
+            }
+
+            if (RegionManager.Instance != null)
+            {
+                RegionManager.Instance.OnRegionUnlocked -= BolgeAcildi;
             }
         }
 
@@ -151,6 +204,24 @@ namespace ForrestGame.Audio
         {
             if (AudioManager.Instance != null) 
                 AudioManager.Instance.PlaySFX("KamyonDoldu");
+        }
+
+        private void OnSuyaGirdi(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SuyaDusme");
+        }
+
+        private void OnSudanCikti(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SudanCikma");
+        }
+
+        private void OnSudanKurtarildi(Transform kaynak)
+        {
+            if (AudioManager.Instance != null) 
+                AudioManager.Instance.PlaySFX("SudanKurtarilma");
         }
 
         private Coroutine hareketSesCoroutine;
@@ -310,13 +381,59 @@ namespace ForrestGame.Audio
         private void ElemanGelistirildi(string itemId, int yeniSeviye)
         {
             // Oyuncu balta, sepet veya arabayı geliştirdiğinde çalacak ses
-            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GelistirmeBasarili");
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GelistirmeSesi");
         }
 
         private void ParaDegisti(int yeniMiktar)
         {
             // Para miktarı her değiştiğinde (arttığında veya azaldığında) bu ses çalar
-            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("ParaSesi");
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GenelBakiyeSesi");
+        }
+
+        private void PazarBakiyeDegisti(int bakiye)
+        {
+            // Pazarda satış yapılıp bakiye arttığında (veya UI güncellendiğinde) çalar
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("YazarKasaSesi");
+        }
+
+        private void LevelAtladi(int yeniSeviye)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("LevelAtlamaSesi");
+        }
+
+        private void XPKazandi(int yeniXP)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("XPKazanmaSesi");
+        }
+
+        private void BolgeAcildi(string bolgeAdi)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("BolgeAcilmaSesi");
+        }
+
+        private void DukkandaSatisYapildi(string itemId, int miktar)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("DukkanSatisSesi");
+        }
+
+        private void PazardaSatisYapildi(EfeMarketSalesController.SaleResult result)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("PazarSatisSesi");
+        }
+
+        private void KargoHazir(RecipeConfig config, int miktar)
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("KargoHazirSesi");
+        }
+
+        private void OdunTransferEdildi()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("OdunTransferSesi");
+        }
+
+        private void GenelGelistirme()
+        {
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GelistirmeSesi");
         }
 
         #endregion
