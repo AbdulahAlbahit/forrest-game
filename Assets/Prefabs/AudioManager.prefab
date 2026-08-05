@@ -105,7 +105,7 @@ MonoBehaviour:
   - name: LevelAtlamaSesi
     clip: {fileID: 8300000, guid: cfea3699d378a94449035b7f51c71c9c, type: 3}
     volume: 1
-    pitch: 0
+    pitch: 0.1
   - name: OdunToplama
     clip: {fileID: 8300000, guid: 55772a57f521e3c45b7acb3082277b74, type: 3}
     volume: 1
@@ -184,7 +184,7 @@ MonoBehaviour:
     pitch: 0.1
   ambienceSounds:
   - name: AtolyeMakine
-    clip: {fileID: 8300000, guid: a123084147ae4324d98db4792ebab199, type: 3}
+    clip: {fileID: 8300000, guid: 19b918b5c66fd014e90b17f6bb1647bb, type: 3}
     volume: 0.4
     pitch: 1
   vehicleSounds:
