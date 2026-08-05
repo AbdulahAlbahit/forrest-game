@@ -51,6 +51,7 @@ public class GameControlPanel : EditorWindow
         DrawSceneComponentButton<EfeKiyafetAnimatorEsleyici>("Efe Kıyafet Animatör Eşleyici");
         DrawSceneComponentButton<EfeBaltaGorunurElBaglayici>("Efe Balta El Bağlayıcı");
         DrawSceneComponentButton<CustomerOrderManager>("Sipariş Süreleri (Order Manager)");
+        DrawSceneComponentButton<ForrestGame.Managers.AdManager>("Reklam Ayarları (Ad Manager)");
 
         GUILayout.EndScrollView();
         GUILayout.EndVertical();

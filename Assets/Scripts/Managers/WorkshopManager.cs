@@ -327,18 +327,7 @@ public class WorkshopManager : MonoBehaviour
             }
         }
 
-        RecipeConfig currentRecipe = null;
-        if (tumTarifler != null)
-        {
-            foreach (var r in tumTarifler)
-            {
-                if (r != null && r.ItemID == aktifUretilenItem)
-                {
-                    currentRecipe = r;
-                    break;
-                }
-            }
-        }
+        RecipeConfig currentRecipe = FindRecipe(aktifUretilenItem);
 
         if (currentRecipe == null)
         {
@@ -349,20 +338,32 @@ public class WorkshopManager : MonoBehaviour
             return;
         }
 
-        if (uretimZamanlayicisi <= 0f)
+        if (uretimZamanlayicisi <= 0f && data.WorkshopRawWood < currentRecipe.RequiredWood)
         {
-            if (data.WorkshopRawWood >= currentRecipe.RequiredWood)
+            // Bu item icin odun yetersiz. Onu kuyrukta oldugu yerde birakip, sirada
+            // odunu su an yeten baska bir item var mi diye bak; oyle ki tek bir
+            // odunsuz siparis butun kuyrugu kilitlemesin.
+            string alternatifItem = FindNextAffordableItem(data, aktifUretilenItem);
+            if (string.IsNullOrEmpty(alternatifItem))
             {
-                data.WorkshopRawWood -= currentRecipe.RequiredWood;
-                OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
-                workshopVisuals?.PlayQueueCraftingStart();
-            }
-            else
-            {
-                // Kuyrukta urun var ama odun yetersiz: aktif uretim sayilmaz, kamyon beklemesin.
                 IsActivelyProducing = false;
                 return;
             }
+
+            aktifUretilenItem = alternatifItem;
+            currentRecipe = FindRecipe(aktifUretilenItem);
+            if (currentRecipe == null)
+            {
+                IsActivelyProducing = false;
+                return;
+            }
+        }
+
+        if (uretimZamanlayicisi <= 0f)
+        {
+            data.WorkshopRawWood -= currentRecipe.RequiredWood;
+            OnQueueChanged?.Invoke(MevcutKuyruk, GetWorkshopCapacity());
+            workshopVisuals?.PlayQueueCraftingStart();
         }
 
         IsActivelyProducing = true;
@@ -463,5 +464,42 @@ public class WorkshopManager : MonoBehaviour
         }
 
         return tumTarifler[0];
+    }
+
+    private RecipeConfig FindRecipe(string itemId)
+    {
+        if (tumTarifler == null || string.IsNullOrEmpty(itemId)) return null;
+
+        foreach (var r in tumTarifler)
+        {
+            if (r != null && r.ItemID == itemId) return r;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Kuyrukta excludeItemId disinda, adedi 0'dan buyuk ve mevcut odunla
+    /// karsilanabilecek ilk (FIFO) siparisi bulur. Odunu yetersiz bir siparisin
+    /// kuyruktaki digerlerini bloke etmesini onlemek icin kullanilir.
+    /// </summary>
+    private string FindNextAffordableItem(PlayerData data, string excludeItemId)
+    {
+        for (int i = 0; i < data.WorkshopQueue.keys.Count; i++)
+        {
+            string itemId = data.WorkshopQueue.keys[i];
+            if (itemId == excludeItemId || data.WorkshopQueue.Get(itemId, 0) <= 0)
+            {
+                continue;
+            }
+
+            RecipeConfig recipe = FindRecipe(itemId);
+            if (recipe != null && data.WorkshopRawWood >= recipe.RequiredWood)
+            {
+                return itemId;
+            }
+        }
+
+        return null;
     }
 }

@@ -408,6 +408,13 @@ public class CharacterStatsPanelController : MonoBehaviour
             basketIsMaxLevel ? normalValueColor : headerColorInventory);
         AddRow("Atölye Odun Stoku", $"{workshopRawWood} / {workshopCap}", headerColorInventory);
 
+        string woodTransferSpeedText = "—";
+        if (woodCarrier != null && woodCarrier.YuklemeTekrarAraligi > 0f)
+        {
+            woodTransferSpeedText = $"{1f / woodCarrier.YuklemeTekrarAraligi:F2} odun/sn";
+        }
+        AddRow("Odun Aktarma Hızı (Kamyona)", woodTransferSpeedText, headerColorInventory);
+
         // 5. ATÖLYE
         AddHeader("ATÖLYE", headerColorWorkshop);
         int workshopLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Workshop") : 1;
