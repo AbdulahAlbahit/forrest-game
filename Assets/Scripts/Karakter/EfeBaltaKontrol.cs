@@ -4,12 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Core;
 
-[Serializable]
-public class AxeDamageUpgradeLevel
-{
-    [Min(1)] public int level = 1;
-    [Min(1)] public int damage = 1;
-}
+
 
 [Serializable]
 public class HousePowerAttackUpgradeLevel
@@ -29,21 +24,16 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     [Header("Ağaç Etkileşimi")]
     [Min(0.5f)] [SerializeField] private float agacEtkilesimMesafesi = 3f;
-    [Min(1)] [SerializeField] private int agacHasari = 1;
     [Range(0f, 1f)] [SerializeField] private float vurusAnGecikmesi = 0.42f;
 
     [Header("Upgrade Baglantilari")]
     [SerializeField] private bool useUpgradeLevels = true;
     [SerializeField] private string axeUpgradeItemId = "Axe";
+    [Tooltip("Karakter saldiri zamanlamalarini tutan ItemUpgradeConfig ItemID degeri.")]
+    [SerializeField] private string characterAttackUpgradeItemId = "Character";
     [Tooltip("Zone_house_Power icin kullanilan ana level. Bu level sepet kapasitesini ve vurma hizini birlikte yonetir.")]
     [SerializeField] private string housePowerUpgradeItemId = "Basket";
     [SerializeField] private string attackSpeedAnimatorParameter = "SaldiriHizi";
-    [SerializeField] private List<AxeDamageUpgradeLevel> axeDamageLevels = new List<AxeDamageUpgradeLevel>
-    {
-        new AxeDamageUpgradeLevel { level = 1, damage = 1 },
-        new AxeDamageUpgradeLevel { level = 2, damage = 2 },
-        new AxeDamageUpgradeLevel { level = 3, damage = 3 }
-    };
     [SerializeField] private List<HousePowerAttackUpgradeLevel> housePowerAttackLevels = new List<HousePowerAttackUpgradeLevel>
     {
         new HousePowerAttackUpgradeLevel { level = 1, attackCooldown = 0.95f, hitDelay = 0.42f, animationSpeed = 1f },
@@ -87,6 +77,7 @@ public class EfeBaltaKontrol : MonoBehaviour
     private bool animatorSaldiriHiziParametresiVar;
     private bool upgradeEventlerineAbone;
     private bool dataEventineAbone;
+    private bool axeEquippedEventineAbone;
 
     public int AktifAgacHasari => aktifAgacHasari;
     public float AktifSaldiriBeklemeSuresi => aktifSaldiriBeklemeSuresi;
@@ -328,7 +319,7 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private void Awake()
     {
-        aktifAgacHasari = agacHasari;
+        aktifAgacHasari = 1;
         aktifSaldiriBeklemeSuresi = saldiriBeklemeSuresi;
         aktifVurusGecikmesi = vurusAnGecikmesi;
         saldiriHiziParametresi = Animator.StringToHash(attackSpeedAnimatorParameter);
@@ -453,6 +444,12 @@ public class EfeBaltaKontrol : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded += DataYuklendiginde;
             dataEventineAbone = true;
         }
+
+        if (!axeEquippedEventineAbone)
+        {
+            AxeTablePanelController.OnAxeEquipped += UpgradeAyarlariniUygula;
+            axeEquippedEventineAbone = true;
+        }
     }
 
     private void UpgradeEventlerindenCik()
@@ -467,13 +464,24 @@ public class EfeBaltaKontrol : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded -= DataYuklendiginde;
         }
 
+        if (axeEquippedEventineAbone)
+        {
+            AxeTablePanelController.OnAxeEquipped -= UpgradeAyarlariniUygula;
+        }
+
         upgradeEventlerineAbone = false;
         dataEventineAbone = false;
+        axeEquippedEventineAbone = false;
     }
 
     private void UpgradeYapildiginda(string itemId, int newLevel)
     {
-        if (itemId == axeUpgradeItemId || itemId == housePowerUpgradeItemId)
+        bool kusanilanBaltaGuncellendi =
+            AxeTablePanelController.Instance != null &&
+            itemId == AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+
+        if (kusanilanBaltaGuncellendi || itemId == axeUpgradeItemId ||
+            itemId == characterAttackUpgradeItemId || itemId == housePowerUpgradeItemId)
         {
             UpgradeAyarlariniUygula();
         }
@@ -486,27 +494,52 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     public void UpgradeAyarlariniUygula()
     {
-        aktifAgacHasari = agacHasari;
+        aktifAgacHasari = 1;
         aktifSaldiriBeklemeSuresi = saldiriBeklemeSuresi;
         aktifVurusGecikmesi = vurusAnGecikmesi;
         aktifSaldiriAnimasyonHizi = 1f;
 
+        if (AxeTablePanelController.Instance != null)
+        {
+            // Kusanilan baltanin Axe Table panelinde gosterilen gercek Guc degeri kullanilir.
+            aktifAgacHasari = Mathf.Max(1, Mathf.RoundToInt(AxeTablePanelController.Instance.CurrentlyEquippedPower));
+        }
+        else if (useUpgradeLevels && UpgradeManager.Instance != null)
+        {
+            if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+            {
+                // AxeTablePanelController henuz olusmadiysa (panel hic acilmadiysa) kusanilan
+                // baltayi kayitli veriden dogrudan cozup gercek Guc degerini kullan.
+                string equippedAxeItemId = ResolveEquippedAxeItemIdFromSaveData();
+                aktifAgacHasari = Mathf.Max(1, Mathf.RoundToInt(UpgradeManager.Instance.GetItemValue(equippedAxeItemId)));
+            }
+        }
+
         if (useUpgradeLevels && UpgradeManager.Instance != null)
         {
-            int axeLevel = UpgradeManager.Instance.GetItemLevel(axeUpgradeItemId);
-            AxeDamageUpgradeLevel damageSetting = UygunHasarAyariniBul(axeLevel);
-            if (damageSetting != null)
+            bool characterConfigApplied = false;
+            if (UpgradeManager.Instance.TryGetConfig(characterAttackUpgradeItemId, out ItemUpgradeConfig characterConfig))
             {
-                aktifAgacHasari = Mathf.Max(1, damageSetting.damage);
+                int characterLevel = UpgradeManager.Instance.GetItemLevel(characterAttackUpgradeItemId);
+                characterConfigApplied = characterConfig.TryGetCharacterAttackTiming(
+                    characterLevel,
+                    out aktifSaldiriBeklemeSuresi,
+                    out aktifVurusGecikmesi,
+                    out aktifSaldiriAnimasyonHizi);
             }
 
-            int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
-            HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
-            if (speedSetting != null)
+            // Eski sahne/prefablar Character config'i baglamadiysa mevcut Basket tablosu
+            // aynen calismaya devam eder. Bu geriye uyumluluk oyun akisinin bozulmasini onler.
+            if (!characterConfigApplied)
             {
-                aktifSaldiriBeklemeSuresi = Mathf.Max(0.1f, speedSetting.attackCooldown);
-                aktifVurusGecikmesi = Mathf.Clamp(speedSetting.hitDelay, 0f, aktifSaldiriBeklemeSuresi);
-                aktifSaldiriAnimasyonHizi = Mathf.Max(0.1f, speedSetting.animationSpeed);
+                int powerLevel = UpgradeManager.Instance.GetItemLevel(housePowerUpgradeItemId);
+                HousePowerAttackUpgradeLevel speedSetting = UygunHizAyariniBul(powerLevel);
+                if (speedSetting != null)
+                {
+                    aktifSaldiriBeklemeSuresi = Mathf.Max(0.1f, speedSetting.attackCooldown);
+                    aktifVurusGecikmesi = Mathf.Clamp(speedSetting.hitDelay, 0f, aktifSaldiriBeklemeSuresi);
+                    aktifSaldiriAnimasyonHizi = Mathf.Max(0.1f, speedSetting.animationSpeed);
+                }
             }
         }
 
@@ -516,19 +549,17 @@ public class EfeBaltaKontrol : MonoBehaviour
         }
     }
 
-    private AxeDamageUpgradeLevel UygunHasarAyariniBul(int level)
+    private string ResolveEquippedAxeItemIdFromSaveData()
     {
-        AxeDamageUpgradeLevel result = null;
-        foreach (AxeDamageUpgradeLevel setting in axeDamageLevels)
-        {
-            if (setting != null && setting.level <= level && (result == null || setting.level > result.level))
-            {
-                result = setting;
-            }
-        }
+        PlayerData data = CloudSaveManager.Instance.CurrentData;
+        int equippedTier = data.ItemLevels != null && data.ItemLevels.ContainsKey(AxeTablePanelController.EquippedAxeSaveKey)
+            ? data.GetItemLevel(AxeTablePanelController.EquippedAxeSaveKey)
+            : 1;
 
-        return result;
+        return equippedTier <= 1 ? axeUpgradeItemId : $"Axe{equippedTier}";
     }
+
+
 
     private HousePowerAttackUpgradeLevel UygunHizAyariniBul(int level)
     {
@@ -564,20 +595,12 @@ public class EfeBaltaKontrol : MonoBehaviour
     private void OnValidate()
     {
         agacEtkilesimMesafesi = Mathf.Max(0.5f, agacEtkilesimMesafesi);
-        agacHasari = Mathf.Max(1, agacHasari);
         vurusAnGecikmesi = Mathf.Clamp(vurusAnGecikmesi, 0f, saldiriBeklemeSuresi);
         sagAyakIleriMesafesi = Mathf.Max(0f, sagAyakIleriMesafesi);
         solAyakGeriMesafesi = Mathf.Max(0f, solAyakGeriMesafesi);
         ayakYanalMesafesi = Mathf.Max(0f, ayakYanalMesafesi);
         durusaGecisSuresi = Mathf.Clamp(durusaGecisSuresi, 0.01f, saldiriBeklemeSuresi);
         durustanCikisSuresi = Mathf.Clamp(durustanCikisSuresi, 0.01f, saldiriBeklemeSuresi);
-
-        foreach (AxeDamageUpgradeLevel setting in axeDamageLevels)
-        {
-            if (setting == null) continue;
-            setting.level = Mathf.Max(1, setting.level);
-            setting.damage = Mathf.Max(1, setting.damage);
-        }
 
         foreach (HousePowerAttackUpgradeLevel setting in housePowerAttackLevels)
         {

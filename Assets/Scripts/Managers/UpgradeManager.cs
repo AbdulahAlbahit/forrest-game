@@ -165,6 +165,10 @@ public class UpgradeManager : MonoBehaviour
         }
 
         OnUpgradeTransactionCompleted?.Invoke(itemId, newLevel, cost, EconomyManager.Instance.MevcutPara);
+
+        // Analitik: Esya yukseltme takibi
+        ForrestGame.Managers.AnalyticsManager.Instance?.LogItemUpgrade(itemId, newLevel, cost);
+
         return true;
     }
 

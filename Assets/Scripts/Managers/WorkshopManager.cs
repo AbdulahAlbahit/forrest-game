@@ -4,6 +4,7 @@ using ForrestGame.Core;
 using System.Collections.Generic;
 using ForrestGame.Utils;
 
+[DefaultExecutionOrder(-50)]
 public class WorkshopManager : MonoBehaviour
 {
     public static WorkshopManager Instance { get; private set; }
@@ -235,8 +236,6 @@ public class WorkshopManager : MonoBehaviour
         return true;
     }
 
-    private float debugLogTimer = 0f;
-
     /// <summary>
     /// Su an atolyede fiilen sayaci ilerleyen bir uretim var mi (kuyrukta urun olup
     /// odun yetersizligiyle beklemede olmak bu sayilmaz). Kamyonun atolyede
@@ -377,13 +376,6 @@ public class WorkshopManager : MonoBehaviour
         uretimZamanlayicisi += Time.deltaTime;
         workshopVisuals?.PlayQueueCraftingProgress(uretimZamanlayicisi / gercekUretimSuresi);
 
-        debugLogTimer += Time.deltaTime;
-        if (debugLogTimer >= 2f)
-        {
-            debugLogTimer = 0f;
-            GameLogger.Log($"[Workshop Timer] {aktifUretilenItem}: {uretimZamanlayicisi:F2} / {gercekUretimSuresi:F2} sn (Hiz:{hizCarpani:F2})");
-        }
-
         if (uretimZamanlayicisi >= gercekUretimSuresi)
         {
             uretimZamanlayicisi -= gercekUretimSuresi;
@@ -435,5 +427,41 @@ public class WorkshopManager : MonoBehaviour
         float gercekUretimSuresi = currentRecipe.BaseProductionTime / hizCarpani;
 
         return Mathf.Clamp01(uretimZamanlayicisi / gercekUretimSuresi);
+    }
+
+    /// <summary>
+    /// Bir urunun mevcut hiz seviyesinde uretilmesi icin gecen gercek sureyi (saniye) dondurur.
+    /// GetProcessingSpeed() sadece bir carpan oldugu icin (seviye arttikca buyur, ornek: 1.0, 1.2, 1.4)
+    /// dogrudan UI'da gosterilirse "yavaslıyor" gibi yanlis anlasilir. Bu metot gercek
+    /// sn/urun degerini verir; seviye arttikca bu deger azalir (daha hizli uretim).
+    /// </summary>
+    public float GetEstimatedProductionTime()
+    {
+        RecipeConfig recipe = GetReferenceRecipe();
+        if (recipe == null) return 0f;
+
+        float hizCarpani = GetProcessingSpeed();
+        if (hizCarpani <= 0f) hizCarpani = 1f;
+
+        return recipe.BaseProductionTime / hizCarpani;
+    }
+
+    /// <summary>
+    /// UI'da genel "uretim hizi" gostermek icin referans alinacak tarifi bulur:
+    /// su an aktif uretilen tarif varsa onu, yoksa listedeki ilk tarifi kullanir.
+    /// </summary>
+    private RecipeConfig GetReferenceRecipe()
+    {
+        if (tumTarifler == null || tumTarifler.Length == 0) return null;
+
+        if (!string.IsNullOrEmpty(aktifUretilenItem))
+        {
+            foreach (var r in tumTarifler)
+            {
+                if (r != null && r.ItemID == aktifUretilenItem) return r;
+            }
+        }
+
+        return tumTarifler[0];
     }
 }

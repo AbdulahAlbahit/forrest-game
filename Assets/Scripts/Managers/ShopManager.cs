@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Utils;
 
 namespace ForrestGame.Managers
 {
+    [DefaultExecutionOrder(-50)]
     public class ShopManager : MonoBehaviour
     {
         public static ShopManager Instance { get; private set; }

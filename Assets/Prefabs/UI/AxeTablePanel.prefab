@@ -1289,314 +1289,39 @@ MonoBehaviour:
   closeButton: {fileID: 1799565385926291081}
   axeUpgradeConfig: {fileID: 11400000, guid: 2d38d7afb195814428c96c789c2ff6e6, type: 2}
   axeTiers:
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
-  - tierName: 
-    icon: {fileID: 0}
-    visualAxeId: 
+  - itemId: Axe
+    tierName: Standart Balta
+    icon: {fileID: 21300000, guid: d37dddec3620bec428dcc162e3dc0eed, type: 3}
+    visualAxeId: lowpoly_axe
+    purchasePrice: 0
+  - itemId: Axe2
+    tierName: "B\xFCy\xFCk Balta"
+    icon: {fileID: 21300000, guid: 354c460603bb0f7429995e82f51f6bf2, type: 3}
+    visualAxeId: Axe2
+    purchasePrice: 1000
+  - itemId: Axe3
+    tierName: "Oduncu Baltas\u0131"
+    icon: {fileID: 21300000, guid: f25b0e1aa7b0a704fb0ffc8e55949056, type: 3}
+    visualAxeId: Axe3
+    purchasePrice: 2000
+  - itemId: Axe4
+    tierName: "Hasat Baltas\u0131"
+    icon: {fileID: 21300000, guid: b1f26645fe4eacf40baa073bd5e7ff45, type: 3}
+    visualAxeId: Axe4
+    purchasePrice: 3000
+  - itemId: Axe5
+    tierName: "\xC7ift Hasat Baltas\u0131"
+    icon: {fileID: 21300000, guid: 11a2a846b58225340883ca4392edb9cd, type: 3}
+    visualAxeId: Axe5
+    purchasePrice: 6000
   scrollRect: {fileID: 1075511916659307414}
   axeListContent: {fileID: 8397374629495567876}
   axeItemPrefab: {fileID: 1453996989006175928, guid: 3c1b18adddc3698478459cab643a1cf4, type: 3}
   currentDamageText: {fileID: 491178700539925064}
   nextDamageText: {fileID: 2781560713834373656}
-  playerLevelText: {fileID: 4498852466346118654}
-  basketCapacityText: {fileID: 3884192190809017644}
-  displayTierCount: 100
+  selectedAxeNameText: {fileID: 4498852466346118654}
+  upgradePriceText: {fileID: 3884192190809017644}
+  displayTierCount: 5
   buttonSfxName: 
 --- !u!114 &-4766598482456203988
 MonoBehaviour:

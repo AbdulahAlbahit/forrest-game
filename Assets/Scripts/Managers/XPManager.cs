@@ -2,9 +2,13 @@ using System;
 using UnityEngine;
 using ForrestGame.Utils;
 
+[DefaultExecutionOrder(-50)]
 public class XPManager : MonoBehaviour
 {
     public static XPManager Instance { get; private set; }
+
+    // --- Analitik: Seviye atlama süresi takibi ---
+    private float timeSinceLastLevelUp = 0f;
 
     [Header("Seviye Ayarlari")]
     [Tooltip("Seviye 1'den 2'ye gecmek icin gereken temel XP miktari.")]
@@ -61,6 +65,11 @@ public class XPManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void Update()
+    {
+        timeSinceLastLevelUp += Time.deltaTime;
+    }
+
     private void OnEnable()
     {
         if (CloudSaveManager.Instance != null)
@@ -100,6 +109,7 @@ public class XPManager : MonoBehaviour
 
         if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null)
         {
+            NotificationManager.Instance?.SendNotification("HATA: XP eklenemiyor, CloudData hazir degil!");
             GameLogger.LogWarning("XPManager: CloudSaveManager veya CurrentData hazir degil. XP eklenemiyor.");
             return;
         }
@@ -107,6 +117,7 @@ public class XPManager : MonoBehaviour
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
         data.XP += amount;
+        NotificationManager.Instance?.SendNotification($"BİLGİ: +{amount} XP eklendi. Yeni XP: {data.XP}");
         GameLogger.Log($"XPManager: +{amount} XP kazanildi. Toplam XP: {data.XP}");
 
 
@@ -114,6 +125,14 @@ public class XPManager : MonoBehaviour
         {
             data.XP -= GetRequiredXPForLevel(data.OyuncuSeviyesi);
             data.OyuncuSeviyesi++;
+
+            // Analitik: Seviye atlama süresi event'i
+            float dakika = timeSinceLastLevelUp / 60f;
+            ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
+                "level_up_time", "minutes_played", dakika);
+            ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
+                "level_up_time", "new_level", data.OyuncuSeviyesi);
+            timeSinceLastLevelUp = 0f;
 
             GameLogger.Log($"XPManager: LEVEL UP! Yeni seviye: {data.OyuncuSeviyesi}");
             OnLevelUp?.Invoke(data.OyuncuSeviyesi);

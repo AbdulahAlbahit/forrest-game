@@ -17,12 +17,8 @@ public class UpgradeZoneController : MonoBehaviour
 {
     [Header("Upgrade Info")]
     public string upgradeTitle = "Table Upgrade";
-    public float targetCost = 500f;
-    public float transferRatePerSecond = 250f;
 
     [Header("Managed Upgrade Connection")]
-    [Tooltip("Aciksa zone mevcut UpgradeManager, EconomyManager ve CloudSaveManager hattini kullanir.")]
-    [SerializeField] private bool useUpgradeManager;
     [SerializeField] private string itemId = "Axe";
     [Tooltip("Yalnizca balta zone'unda acilir; sabit itemId yerine kusanilan baltayi yukseltir.")]
     [SerializeField] private bool useEquippedAxeItem;
@@ -38,8 +34,14 @@ public class UpgradeZoneController : MonoBehaviour
 
     [Header("Managed Upgrade World Text")]
     [SerializeField] private TMP_Text statusText;
+    [Tooltip("Aciksa yazida seviye vb. yerine sadece ucret (sade sayi) yazar.")]
+    [SerializeField] private bool showOnlyPrice = true;
     [SerializeField] private string currencyLabel = "Para";
     [SerializeField] private List<UpgradeLevelDescription> levelDescriptions = new List<UpgradeLevelDescription>();
+
+    [Header("VFX Settings")]
+    [SerializeField] private GameObject upgradeVfxPrefab;
+    [SerializeField] private Transform vfxSpawnPoint;
 
     [Header("Visual Feedback")]
     public Color emptyColor = new Color(0.3f, 0.3f, 0.3f, 0.8f);
@@ -83,13 +85,13 @@ public class UpgradeZoneController : MonoBehaviour
 
     private void Update()
     {
-        if (useUpgradeManager && useEquippedAxeItem)
+        if (useEquippedAxeItem)
         {
             // Maksimum seviyedeki baltadan baska bir baltaya gecilince zone tekrar calissin.
             isCompleted = IsManagedMaxLevel(CurrentLevel);
         }
 
-        if (!useUpgradeManager || Time.unscaledTime < _nextDisplayRefresh)
+        if (Time.unscaledTime < _nextDisplayRefresh)
         {
             return;
         }
@@ -101,7 +103,6 @@ public class UpgradeZoneController : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (isCompleted || !IsPlayer(other)) return;
-        GameLogger.Log($"[UpgradeZone] {other.name} entered the upgrade zone.", this);
         RefreshManagedDisplay();
     }
 
@@ -113,19 +114,12 @@ public class UpgradeZoneController : MonoBehaviour
         }
 
         _lastProcessedFrame = Time.frameCount;
-        if (useUpgradeManager)
-        {
-            ProcessManagedUpgradeHold();
-        }
-        else
-        {
-            ProcessLegacyProgress();
-        }
+        ProcessManagedUpgradeHold();
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!useUpgradeManager || !IsPlayer(other) || isCompleted)
+        if (!IsPlayer(other) || isCompleted)
         {
             return;
         }
@@ -133,19 +127,6 @@ public class UpgradeZoneController : MonoBehaviour
         _managedHoldProgress = 0f;
         currentPaid = 0f;
         ResetProgressVisual();
-    }
-
-    private void ProcessLegacyProgress()
-    {
-        currentPaid += transferRatePerSecond * Time.deltaTime;
-        float progress = Mathf.Clamp01(currentPaid / Mathf.Max(1f, targetCost));
-        SetProgressVisual(progress);
-
-        if (currentPaid >= targetCost)
-        {
-            currentPaid = targetCost;
-            CompleteLegacyUpgrade();
-        }
     }
 
     private void ProcessManagedUpgradeHold()
@@ -165,7 +146,6 @@ public class UpgradeZoneController : MonoBehaviour
         }
 
         int price = GetCurrentPrice(level);
-        targetCost = price;
         _managedHoldProgress += Time.deltaTime / Mathf.Max(0.1f, purchaseHoldDuration);
         float progress = Mathf.Clamp01(_managedHoldProgress);
         currentPaid = price * progress;
@@ -185,7 +165,7 @@ public class UpgradeZoneController : MonoBehaviour
         _managedHoldProgress = 0f;
         currentPaid = 0f;
 
-        if (!useUpgradeManager || !ManagedDependenciesReady())
+        if (!ManagedDependenciesReady())
         {
             ResetProgressVisual();
             return false;
@@ -212,6 +192,7 @@ public class UpgradeZoneController : MonoBehaviour
 
         int newLevel = UpgradeManager.Instance.GetItemLevel(resolvedItemId);
         GameLogger.Log($"[UpgradeZone] {upgradeTitle}: {oldLevel} -> {newLevel}, fiyat: {price}", this);
+        PlayUpgradeVfx();
         OnUpgradeComplete?.Invoke();
         OnUpgradeCompletedAction?.Invoke();
         OnManagedUpgradeCompleted?.Invoke(resolvedItemId, newLevel);
@@ -253,11 +234,22 @@ public class UpgradeZoneController : MonoBehaviour
 
     private string ResolveItemId()
     {
-        if (useEquippedAxeItem &&
-            AxeTablePanelController.Instance != null &&
-            !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
+        if (useEquippedAxeItem)
         {
-            return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+            if (AxeTablePanelController.Instance != null &&
+                !string.IsNullOrWhiteSpace(AxeTablePanelController.Instance.CurrentlyEquippedItemId))
+            {
+                return AxeTablePanelController.Instance.CurrentlyEquippedItemId;
+            }
+            else if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
+            {
+                // Fallback: Read directly from save data if panel is not initialized
+                PlayerData data = CloudSaveManager.Instance.CurrentData;
+                int equippedTier = data.ItemLevels != null && data.ItemLevels.ContainsKey("EquippedAxe")
+                    ? data.GetItemLevel("EquippedAxe")
+                    : 1;
+                return equippedTier <= 1 ? itemId : $"Axe{equippedTier}";
+            }
         }
 
         return itemId;
@@ -265,19 +257,25 @@ public class UpgradeZoneController : MonoBehaviour
 
     public void RefreshManagedDisplay()
     {
-        if (!useUpgradeManager || statusText == null)
+        if (statusText == null)
         {
             return;
         }
 
         int level = CurrentLevel;
-        string currentDescription = GetLevelDescription(level);
         if (IsManagedMaxLevel(level))
         {
-            statusText.text = BuildDisplayText(level, currentDescription, "MAKSIMUM SEVIYE");
+            statusText.text = showOnlyPrice ? "MAX" : BuildDisplayText(level, GetLevelDescription(level), "MAKSIMUM SEVIYE");
             return;
         }
 
+        if (showOnlyPrice)
+        {
+            statusText.text = GetCurrentPrice(level).ToString();
+            return;
+        }
+
+        string currentDescription = GetLevelDescription(level);
         string nextDescription = GetLevelDescription(level + 1);
         string changeLine = string.IsNullOrWhiteSpace(nextDescription)
             ? currentDescription
@@ -349,16 +347,14 @@ public class UpgradeZoneController : MonoBehaviour
         }
     }
 
-    private void CompleteLegacyUpgrade()
+    private void PlayUpgradeVfx()
     {
-        isCompleted = true;
-        SetProgressVisual(1f);
-        GameLogger.Log($"[UpgradeZone] Upgrade Complete: {upgradeTitle} unlocked!", this);
-        OnUpgradeComplete?.Invoke();
-        OnUpgradeCompletedAction?.Invoke();
-
-        Collider zoneCollider = GetComponent<Collider>();
-        if (zoneCollider != null) zoneCollider.enabled = false;
+        if (upgradeVfxPrefab != null)
+        {
+            Vector3 spawnPos = vfxSpawnPoint != null ? vfxSpawnPoint.position : transform.position;
+            GameObject vfxInstance = Instantiate(upgradeVfxPrefab, spawnPos, Quaternion.identity);
+            Destroy(vfxInstance, 5f);
+        }
     }
 
     private void OnValidate()
@@ -367,7 +363,5 @@ public class UpgradeZoneController : MonoBehaviour
         priceIncreasePerLevel = Mathf.Max(0, priceIncreasePerLevel);
         maxLevelOverride = Mathf.Max(0, maxLevelOverride);
         purchaseHoldDuration = Mathf.Max(0.1f, purchaseHoldDuration);
-        transferRatePerSecond = Mathf.Max(0.01f, transferRatePerSecond);
-        targetCost = Mathf.Max(1f, targetCost);
     }
 }
