@@ -1291,12 +1291,12 @@ MonoBehaviour:
   axeTiers:
   - itemId: Axe
     tierName: Standart Balta
-    icon: {fileID: 0}
+    icon: {fileID: 21300000, guid: d37dddec3620bec428dcc162e3dc0eed, type: 3}
     visualAxeId: lowpoly_axe
     purchasePrice: 0
   - itemId: Axe2
     tierName: "B\xFCy\xFCk Balta"
-    icon: {fileID: 21300000, guid: d37dddec3620bec428dcc162e3dc0eed, type: 3}
+    icon: {fileID: 21300000, guid: 354c460603bb0f7429995e82f51f6bf2, type: 3}
     visualAxeId: Axe2
     purchasePrice: 1000
   - itemId: Axe3
