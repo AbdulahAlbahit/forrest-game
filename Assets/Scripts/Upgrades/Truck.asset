@@ -15,10 +15,12 @@ MonoBehaviour:
   ItemID: Truck
   Category: 2
   Effect: 1
-  BasePrice: 100
+  BasePrice: 250
   PriceFormula: 1
   PriceMultiplier: 1.5
   LinearPriceIncrease: 50
-  BaseValue: 30
-  ValueGrowth: 5
+  BaseValue: 20
+  ValueGrowth: 10
   MaxLevel: 10
+  UseCharacterAttackTimings: 0
+  CharacterAttackLevels: []

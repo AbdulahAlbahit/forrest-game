@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: NightStandData
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: NightStand
-  RequiredWood: 20
-  BaseProductionTime: 4
-  BaseSalePrice: 200
+  RequiredWood: 5
+  BaseProductionTime: 3
+  BaseSalePrice: 50
   ItemIcon: {fileID: 21300000, guid: 32366e6d5224c984191f8eb2b53c83d2, type: 3}
   FurniturePrefab: {fileID: 547998917893178106, guid: 3fdb918c08722ef41968e788d19bead0, type: 3}
   Description: 
