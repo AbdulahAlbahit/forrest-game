@@ -34,6 +34,10 @@ namespace ForrestGame.UI
         private string currentPromptMessage = "";
         private Coroutine guideRoutine;
 
+        // ─── Sepet Dolu Zinciri ───
+        private bool basketWasFullLastFrame = false;
+        private Coroutine basketPulseCoroutine;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -76,14 +80,62 @@ namespace ForrestGame.UI
 
         private void EvaluateGuideState()
         {
-            int currentLevel = GetPlayerLevel();
+            bool isBasketFull = IsBasketFull();
 
-            // Seviye 5 ve üzeriyse dinamik rehberi kapat
+            // ─────────────────────────────────────────────────────────────────
+            // DURUM 0: Sepet DOLU → Kamyona yönlendir (SEVİYEDEN BAĞIMSIZ)
+            // ─────────────────────────────────────────────────────────────────
+            if (isBasketFull)
+            {
+                Transform truckTarget = FindTruckOrLoadingZone();
+
+                if (truckTarget != activeTarget)
+                {
+                    activeTarget = truckTarget;
+                    if (compassMarker != null)
+                        compassMarker.SetTarget(activeTarget);
+                }
+
+                // İlk kez doldu → pulse başlat
+                if (!basketWasFullLastFrame)
+                {
+                    basketWasFullLastFrame = true;
+                    StartBasketPulse();
+                }
+
+                const string truckPrompt = "Odunları Kamyona Yükle!";
+                if (showInteractionPrompts && truckPrompt != currentPromptMessage)
+                {
+                    currentPromptMessage = truckPrompt;
+                    InteractionPromptUI.Instance?.ShowPrompt(currentPromptMessage);
+                }
+                return;
+            }
+
+            // Sepet boşaldı → pulse durdur ve ipucu gizle
+            if (basketWasFullLastFrame)
+            {
+                basketWasFullLastFrame = false;
+                StopBasketPulse();
+                if (showInteractionPrompts && InteractionPromptUI.Instance != null)
+                {
+                    InteractionPromptUI.Instance.HidePrompt();
+                    currentPromptMessage = "";
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────────
+            // Seviye kısıtlı rehber (Seviye 5 ve üzerinde kapat)
+            // ─────────────────────────────────────────────────────────────────
+            int currentLevel = GetPlayerLevel();
             if (currentLevel >= maxGuideLevel)
             {
                 if (showInteractionPrompts && InteractionPromptUI.Instance != null && InteractionPromptUI.Instance.IsVisible)
-                {
                     InteractionPromptUI.Instance.HidePrompt();
+                if (activeTarget != null)
+                {
+                    activeTarget = null;
+                    compassMarker?.SetTarget(null);
                 }
                 return;
             }
@@ -92,7 +144,6 @@ namespace ForrestGame.UI
             string newPrompt = "";
 
             int money = GetPlayerMoney();
-            bool isBasketFull = IsBasketFull();
             int currentWood = GetCurrentWoodCount();
 
             // 🟢 DURUM 1: Yeterli para var ve Balta yükseltilebilir -> Balta Masasına git
@@ -106,23 +157,7 @@ namespace ForrestGame.UI
                 }
             }
 
-            // 🟢 DURUM 2: Sepet dolu -> Kamyona / Yükleme alanına götür
-            if (newTarget == null && isBasketFull)
-            {
-                var cargoZone = FindFirstObjectByType<CargoTransferZone>();
-                if (cargoZone != null)
-                {
-                    newTarget = cargoZone.transform;
-                }
-                else
-                {
-                    var truck = FindFirstObjectByType<TruckRouteController>();
-                    if (truck != null) newTarget = truck.transform;
-                }
-                newPrompt = "Odunları Kamyona Yükle!";
-            }
-
-            // 🟢 DURUM 3: Sepet boş veya odun toplanıyor -> En yakın Ağaca git
+            // 🟢 DURUM 2: Sepet boş veya odun toplanıyor -> En yakın Ağaca git
             if (newTarget == null)
             {
                 newTarget = FindNearestTree();
@@ -134,9 +169,7 @@ namespace ForrestGame.UI
             {
                 activeTarget = newTarget;
                 if (compassMarker != null)
-                {
                     compassMarker.SetTarget(activeTarget);
-                }
             }
 
             if (showInteractionPrompts && !string.IsNullOrEmpty(newPrompt) && newPrompt != currentPromptMessage)
@@ -144,6 +177,73 @@ namespace ForrestGame.UI
                 currentPromptMessage = newPrompt;
                 InteractionPromptUI.Instance?.ShowPrompt(currentPromptMessage);
             }
+        }
+
+        // ─── Sepet Dolu Pulse Animasyonu ───
+
+        private Transform FindTruckOrLoadingZone()
+        {
+            var cargoZone = FindFirstObjectByType<CargoTransferZone>();
+            if (cargoZone != null) return cargoZone.transform;
+            var truck = FindFirstObjectByType<TruckRouteController>();
+            return truck != null ? truck.transform : null;
+        }
+
+        private void StartBasketPulse()
+        {
+            if (basketPulseCoroutine != null)
+                StopCoroutine(basketPulseCoroutine);
+            if (compassMarker != null)
+                basketPulseCoroutine = StartCoroutine(BasketPulseRoutine());
+        }
+
+        private void StopBasketPulse()
+        {
+            if (basketPulseCoroutine != null)
+            {
+                StopCoroutine(basketPulseCoroutine);
+                basketPulseCoroutine = null;
+            }
+            // RectTransform ölçeğini sıfırla
+            if (compassMarker != null)
+            {
+                RectTransform rt = compassMarker.GetComponent<RectTransform>();
+                if (rt != null) rt.localScale = Vector3.one;
+            }
+        }
+
+        private System.Collections.IEnumerator BasketPulseRoutine()
+        {
+            RectTransform rt = compassMarker != null ? compassMarker.GetComponent<RectTransform>() : null;
+            if (rt == null) yield break;
+
+            while (isActiveAndEnabled && basketWasFullLastFrame)
+            {
+                // Büyüt
+                float elapsed = 0f;
+                float half = 0.22f;
+                while (elapsed < half)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / half);
+                    rt.localScale = Vector3.LerpUnclamped(Vector3.one, Vector3.one * 1.28f, t * (2f - t));
+                    yield return null;
+                }
+                // Küçült
+                elapsed = 0f;
+                while (elapsed < half)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / half);
+                    rt.localScale = Vector3.LerpUnclamped(Vector3.one * 1.28f, Vector3.one, t * (2f - t));
+                    yield return null;
+                }
+                rt.localScale = Vector3.one;
+                yield return new WaitForSecondsRealtime(0.55f);
+            }
+
+            rt.localScale = Vector3.one;
+            basketPulseCoroutine = null;
         }
 
         private int GetPlayerLevel()

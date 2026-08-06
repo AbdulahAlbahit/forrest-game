@@ -75,6 +75,14 @@ public class AxeTablePanelController : MonoBehaviour
     private bool dataEventSubscribed;
     private bool axePurchaseInProgress;
 
+    // ─── Onay Modalı ───
+    private GameObject confirmModalRoot;
+    private int confirmPendingTier;
+    private bool confirmModalActive;
+    private RectTransform confirmButtonRect;
+    private Image confirmButtonImage;
+    private Coroutine shakeCoroutine;
+
     public int CurrentlyEquippedTier => currentlyEquippedTier;
     public string CurrentlyEquippedItemId => GetItemId(currentlyEquippedTier);
     public string CurrentlyEquippedDisplayName => GetTierName(currentlyEquippedTier);
@@ -373,10 +381,287 @@ public class AxeTablePanelController : MonoBehaviour
 
     private void HandleAxeAction(int tier)
     {
+        ShowConfirmModal(tier);
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    //  ONAY MODALI
+    // ═════════════════════════════════════════════════════════════════
+
+    private void ShowConfirmModal(int tier)
+    {
+        if (confirmModalActive) return;
+
+        // Canvas bul
+        Canvas canvas = mainPanel != null
+            ? mainPanel.GetComponentInParent<Canvas>()
+            : GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null)
+        {
+            // Canvas yoksa doğrudan işlemi yap
+            ExecuteAxeAction(tier);
+            return;
+        }
+
+        confirmPendingTier = tier;
+        confirmModalActive = true;
+
+        // ─── Overlay (yarı şeffaf siyah) ───
+        confirmModalRoot = new GameObject("AxeConfirmModal", typeof(RectTransform), typeof(Image));
+        confirmModalRoot.transform.SetParent(canvas.transform, false);
+        confirmModalRoot.transform.SetAsLastSibling();
+
+        RectTransform overlayRect = confirmModalRoot.GetComponent<RectTransform>();
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.sizeDelta = Vector2.zero;
+        overlayRect.anchoredPosition = Vector2.zero;
+        confirmModalRoot.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+        confirmModalRoot.GetComponent<Image>().raycastTarget = true;
+
+        // ─── Kart paneli (merkez) ───
+        GameObject card = new GameObject("ModalCard", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+        card.transform.SetParent(confirmModalRoot.transform, false);
+
+        RectTransform cardRect = card.GetComponent<RectTransform>();
+        cardRect.anchorMin = new Vector2(0.5f, 0.5f);
+        cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRect.pivot = new Vector2(0.5f, 0.5f);
+        cardRect.sizeDelta = new Vector2(500f, 310f);
+        cardRect.anchoredPosition = Vector2.zero;
+
+        Image cardImg = card.GetComponent<Image>();
+        cardImg.color = new Color(0.10f, 0.12f, 0.17f, 1f);
+        CanvasGroup cardGroup = card.GetComponent<CanvasGroup>();
+
+        BuildModalContent(card.transform, tier);
+
+        // Açılış animasyonu
+        StartCoroutine(ModalOpenRoutine(cardRect, cardGroup));
+    }
+
+    private void BuildModalContent(Transform parent, int tier)
+    {
+        bool isOwned = IsTierOwned(tier);
+        string tierName = GetTierName(tier);
+        string equippedName = GetTierName(currentlyEquippedTier);
+        float currentPower = GetItemValue(CurrentlyEquippedItemId);
+        float newPower = GetItemValue(GetItemId(tier));
+        int price = GetPurchasePrice(tier);
+        int playerMoney = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : 0;
+        bool canAfford = isOwned || playerMoney >= price;
+
+        // ─── Başlık ───
+        GameObject titleObj = new GameObject("Title", typeof(RectTransform), typeof(TextMeshProUGUI));
+        titleObj.transform.SetParent(parent, false);
+        RectTransform titleRect = titleObj.GetComponent<RectTransform>();
+        titleRect.anchorMin = new Vector2(0f, 1f);
+        titleRect.anchorMax = new Vector2(1f, 1f);
+        titleRect.pivot = new Vector2(0.5f, 1f);
+        titleRect.sizeDelta = new Vector2(0f, 52f);
+        titleRect.anchoredPosition = new Vector2(0f, -14f);
+        TextMeshProUGUI titleTMP = titleObj.GetComponent<TextMeshProUGUI>();
+        titleTMP.text = isOwned ? $"{tierName} Kuşan" : $"{tierName} Satın Al";
+        titleTMP.fontSize = 22f;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.color = new Color(1f, 0.9f, 0.4f, 1f);
+
+        // ─── Karşılaştırma metni ───
+        GameObject infoObj = new GameObject("Info", typeof(RectTransform), typeof(TextMeshProUGUI));
+        infoObj.transform.SetParent(parent, false);
+        RectTransform infoRect = infoObj.GetComponent<RectTransform>();
+        infoRect.anchorMin = new Vector2(0f, 0.35f);
+        infoRect.anchorMax = new Vector2(1f, 0.85f);
+        infoRect.sizeDelta = new Vector2(-30f, 0f);
+        infoRect.anchoredPosition = Vector2.zero;
+        TextMeshProUGUI infoTMP = infoObj.GetComponent<TextMeshProUGUI>();
+
+        string powerChange = "";
+        if (!Mathf.Approximately(currentPower, 0f) && newPower > currentPower)
+            powerChange = $" <color=#78FF78>(+{(newPower - currentPower):F0})</color>";
+        else if (newPower < currentPower)
+            powerChange = $" <color=#FF7878>({(newPower - currentPower):F0})</color>";
+
+        string priceInfo = isOwned
+            ? ""
+            : $"\n\n<size=17>Fiyat: <color=#FFD740>{price:N0} Para</color>" +
+              $"  |  Bakıye: <color={(canAfford ? "#78FF78" : "#FF7878")}>{playerMoney:N0} Para</color></size>";
+
+        infoTMP.text = $"<size=15>Mevcut: <color=#AAAAAA>{equippedName}</color>  Güç: {currentPower:F0}</size>\n" +
+                       $"<size=17>Hedef:  <color=#FFFFFF>{tierName}</color>  Güç: <color=#FFD740>{newPower:F0}</color>{powerChange}</size>" +
+                       priceInfo;
+        infoTMP.fontSize = 16f;
+        infoTMP.alignment = TextAlignmentOptions.Center;
+        infoTMP.richText = true;
+        infoTMP.color = Color.white;
+
+        // ─── İptal Butonu ───
+        GameObject cancelObj = new GameObject("CancelBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        cancelObj.transform.SetParent(parent, false);
+        RectTransform cancelRect = cancelObj.GetComponent<RectTransform>();
+        cancelRect.anchorMin = new Vector2(0.05f, 0f);
+        cancelRect.anchorMax = new Vector2(0.46f, 0f);
+        cancelRect.sizeDelta = new Vector2(0f, 52f);
+        cancelRect.anchoredPosition = new Vector2(0f, 22f);
+        cancelObj.GetComponent<Image>().color = new Color(0.25f, 0.25f, 0.28f, 1f);
+        Button cancelBtn = cancelObj.GetComponent<Button>();
+        cancelBtn.onClick.AddListener(HideConfirmModal);
+        AddButtonText(cancelObj.transform, "İptal", 17f, Color.white);
+
+        // ─── Onayla Butonu ───
+        GameObject confirmObj = new GameObject("ConfirmBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        confirmObj.transform.SetParent(parent, false);
+        confirmButtonRect = confirmObj.GetComponent<RectTransform>();
+        confirmButtonRect.anchorMin = new Vector2(0.54f, 0f);
+        confirmButtonRect.anchorMax = new Vector2(0.95f, 0f);
+        confirmButtonRect.sizeDelta = new Vector2(0f, 52f);
+        confirmButtonRect.anchoredPosition = new Vector2(0f, 22f);
+        confirmButtonImage = confirmObj.GetComponent<Image>();
+        confirmButtonImage.color = canAfford
+            ? new Color(0.12f, 0.65f, 0.30f, 1f)  // Yeşil
+            : new Color(0.55f, 0.12f, 0.12f, 1f); // Kırmızı
+        Button confirmBtn = confirmObj.GetComponent<Button>();
+        int capturedTier = tier;
+        confirmBtn.onClick.AddListener(() => OnConfirmClicked(capturedTier));
+        AddButtonText(confirmObj.transform, isOwned ? "Kuşan" : "Satın Al", 17f, Color.white);
+    }
+
+    private void AddButtonText(Transform parent, string text, float fontSize, Color color)
+    {
+        GameObject txtObj = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        txtObj.transform.SetParent(parent, false);
+        RectTransform r = txtObj.GetComponent<RectTransform>();
+        r.anchorMin = Vector2.zero;
+        r.anchorMax = Vector2.one;
+        r.sizeDelta = Vector2.zero;
+        r.anchoredPosition = Vector2.zero;
+        TextMeshProUGUI tmp = txtObj.GetComponent<TextMeshProUGUI>();
+        tmp.text = text;
+        tmp.fontSize = fontSize;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = color;
+        tmp.raycastTarget = false;
+    }
+
+    private void OnConfirmClicked(int tier)
+    {
+        bool isOwned = IsTierOwned(tier);
+        if (!isOwned)
+        {
+            int price = GetPurchasePrice(tier);
+            int playerMoney = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : 0;
+            if (playerMoney < price)
+            {
+                // Yetersiz para → shake + bildirim (modal kapanmıyor)
+                TriggerConfirmButtonShake();
+                NotificationUIController.Instance?.ShowNotification(
+                    $"Yetersiz Para! {price - playerMoney:N0} daha gerekiyor.");
+                return;
+            }
+        }
+
+        HideConfirmModal();
+        ExecuteAxeAction(tier);
+    }
+
+    private void TriggerConfirmButtonShake()
+    {
+        if (shakeCoroutine != null) StopCoroutine(shakeCoroutine);
+        if (confirmButtonRect != null)
+            shakeCoroutine = StartCoroutine(ConfirmButtonShakeRoutine());
+    }
+
+    private IEnumerator ConfirmButtonShakeRoutine()
+    {
+        Vector3 originalPos = confirmButtonRect.anchoredPosition3D;
+        Color originalColor = confirmButtonImage != null ? confirmButtonImage.color : Color.red;
+        Color flashRed = new Color(0.85f, 0.1f, 0.1f, 1f);
+
+        if (confirmButtonImage != null) confirmButtonImage.color = flashRed;
+
+        float elapsed = 0f;
+        float totalDur = 0.40f;
+        float amount = 11f;
+
+        while (elapsed < totalDur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / totalDur;
+            float offset = Mathf.Sin(t * Mathf.PI * 7f) * amount * (1f - t);
+            confirmButtonRect.anchoredPosition3D = originalPos + new Vector3(offset, 0f, 0f);
+            yield return null;
+        }
+
+        confirmButtonRect.anchoredPosition3D = originalPos;
+        if (confirmButtonImage != null) confirmButtonImage.color = originalColor;
+        shakeCoroutine = null;
+    }
+
+    private void HideConfirmModal()
+    {
+        confirmModalActive = false;
+        confirmButtonRect = null;
+        confirmButtonImage = null;
+        if (shakeCoroutine != null) { StopCoroutine(shakeCoroutine); shakeCoroutine = null; }
+
+        if (confirmModalRoot != null)
+        {
+            StartCoroutine(ModalCloseAndDestroyRoutine(confirmModalRoot));
+            confirmModalRoot = null;
+        }
+    }
+
+    private void ExecuteAxeAction(int tier)
+    {
         if (IsTierOwned(tier))
             EquipAxe(tier);
         else
             PurchaseAxe(tier);
+    }
+
+    private IEnumerator ModalOpenRoutine(RectTransform cardRect, CanvasGroup cardGroup)
+    {
+        cardGroup.alpha = 0f;
+        cardRect.localScale = new Vector3(0.75f, 0.75f, 0.75f);
+
+        float elapsed = 0f;
+        float dur = 0.22f;
+        while (elapsed < dur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / dur);
+            float smooth = t * (2f - t); // EaseOutQuad
+            cardGroup.alpha = smooth;
+            cardRect.localScale = Vector3.LerpUnclamped(new Vector3(0.75f, 0.75f, 1f), Vector3.one, smooth);
+            yield return null;
+        }
+        cardGroup.alpha = 1f;
+        cardRect.localScale = Vector3.one;
+    }
+
+    private IEnumerator ModalCloseAndDestroyRoutine(GameObject modalRoot)
+    {
+        CanvasGroup group = modalRoot.GetComponentInChildren<CanvasGroup>();
+        RectTransform rt = group != null ? group.GetComponent<RectTransform>() : null;
+
+        float elapsed = 0f;
+        float dur = 0.16f;
+        float startAlpha = group != null ? group.alpha : 1f;
+
+        while (elapsed < dur)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / dur);
+            if (group != null) group.alpha = Mathf.Lerp(startAlpha, 0f, t);
+            if (rt != null) rt.localScale = Vector3.LerpUnclamped(Vector3.one, new Vector3(0.85f, 0.85f, 1f), t);
+            yield return null;
+        }
+
+        if (modalRoot != null)
+            Destroy(modalRoot);
     }
 
     private void PurchaseAxe(int tier)

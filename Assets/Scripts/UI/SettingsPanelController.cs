@@ -79,9 +79,11 @@ public class SettingsPanelController : MonoBehaviour
 
     private void PlayButtonClickSFX()
     {
-        if (!string.IsNullOrEmpty(buttonSfxName) && AudioManager.Instance != null)
+        if (!string.IsNullOrEmpty(buttonSfxName))
         {
-            AudioManager.Instance.PlaySFX(buttonSfxName);
+            AudioManager audioMgr = GetAudioManager();
+            if (audioMgr != null)
+                audioMgr.PlaySFX(buttonSfxName);
         }
     }
 
@@ -212,9 +214,34 @@ public class SettingsPanelController : MonoBehaviour
     //  Yardimci Metodlar
     // ═══════════════════════════════════════════
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void ApplySavedAudioSettingsOnBoot()
+    {
+        bool musicOn = PlayerPrefs.GetInt(MUSIC_PREF_KEY, 1) == 1;
+        bool sfxOn = PlayerPrefs.GetInt(SFX_PREF_KEY, 1) == 1;
+
+        AudioManager audioMgr = AudioManager.Instance != null 
+            ? AudioManager.Instance 
+            : Object.FindFirstObjectByType<AudioManager>();
+
+        if (audioMgr != null)
+        {
+            if (audioMgr.musicSource != null)
+                audioMgr.musicSource.mute = !musicOn;
+
+            if (audioMgr.sfxSource != null)
+                audioMgr.sfxSource.mute = !sfxOn;
+
+            if (audioMgr.ambienceSource != null)
+                audioMgr.ambienceSource.mute = !sfxOn;
+
+            if (audioMgr.vehicleSource != null)
+                audioMgr.vehicleSource.mute = !sfxOn;
+        }
+    }
+
     /// <summary>
-    /// Hem muzik hem SFX ayarlarini AudioManager'a uygular.
-    /// AudioManager sahnede yoksa sessizce atlar.
+    /// Panel her aktif olduğunda ses ayarlarını kontrol eder ve uygular.
     /// </summary>
     private void ApplyAudioSettings()
     {
@@ -222,14 +249,21 @@ public class SettingsPanelController : MonoBehaviour
         ApplySFXSetting();
     }
 
+    private AudioManager GetAudioManager()
+    {
+        if (AudioManager.Instance != null) return AudioManager.Instance;
+        return FindFirstObjectByType<AudioManager>();
+    }
+
     /// <summary>
     /// Muzik ayarini AudioManager'daki musicSource'a uygular.
     /// </summary>
     private void ApplyMusicSetting()
     {
-        if (AudioManager.Instance != null && AudioManager.Instance.musicSource != null)
+        AudioManager audioMgr = GetAudioManager();
+        if (audioMgr != null && audioMgr.musicSource != null)
         {
-            AudioManager.Instance.musicSource.mute = !isMusicOn;
+            audioMgr.musicSource.mute = !isMusicOn;
         }
     }
 
@@ -239,16 +273,17 @@ public class SettingsPanelController : MonoBehaviour
     /// </summary>
     private void ApplySFXSetting()
     {
-        if (AudioManager.Instance == null) return;
+        AudioManager audioMgr = GetAudioManager();
+        if (audioMgr == null) return;
 
-        if (AudioManager.Instance.sfxSource != null)
-            AudioManager.Instance.sfxSource.mute = !isSfxOn;
+        if (audioMgr.sfxSource != null)
+            audioMgr.sfxSource.mute = !isSfxOn;
 
-        if (AudioManager.Instance.ambienceSource != null)
-            AudioManager.Instance.ambienceSource.mute = !isSfxOn;
+        if (audioMgr.ambienceSource != null)
+            audioMgr.ambienceSource.mute = !isSfxOn;
 
-        if (AudioManager.Instance.vehicleSource != null)
-            AudioManager.Instance.vehicleSource.mute = !isSfxOn;
+        if (audioMgr.vehicleSource != null)
+            audioMgr.vehicleSource.mute = !isSfxOn;
     }
 
     /// <summary>

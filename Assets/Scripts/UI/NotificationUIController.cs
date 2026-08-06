@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+public enum NotificationType { Default, Success, Warning, Error }
+
 /// <summary>
 /// Oyun genelinde tost/pop-up bildirimlerini yöneten arayüz script'i.
 /// Ekranda ufak bir görsel (Image) ve yazı (TextMeshProUGUI) ile kısa süreli bildirim gösterir (Örn: "Yetersiz Odun!").
@@ -31,6 +33,7 @@ public class NotificationUIController : MonoBehaviour
     private CanvasGroup canvasGroup;
     private RectTransform targetRectTransform;
     private Vector2 originalAnchoredPosition;
+    private Color originalPanelColor = Color.clear;
 
     private void Awake()
     {
@@ -40,6 +43,10 @@ public class NotificationUIController : MonoBehaviour
         }
 
         panelImage = GetComponent<Image>();
+        if (panelImage == null && notificationPanel != null)
+            panelImage = notificationPanel.GetComponent<Image>();
+        if (panelImage != null)
+            originalPanelColor = panelImage.color;
 
         GameObject targetObj = notificationPanel != null ? notificationPanel : gameObject;
         canvasGroup = targetObj.GetComponent<CanvasGroup>();
@@ -70,10 +77,15 @@ public class NotificationUIController : MonoBehaviour
 
     private void HandleNotificationReceived(string message)
     {
+        if (string.IsNullOrEmpty(message)) return;
+
+        // XP kazanım bildirimlerini tost pop-up'ta gösterme (Sol taraftaki floating text kullanılıyor)
+        if (message.Contains("XP eklendi") || message.Contains("XP kazanildi")) return;
+
         ShowNotification(message);
     }
 
-    private System.Collections.Generic.Queue<(string message, float duration)> notificationQueue = new System.Collections.Generic.Queue<(string, float)>();
+    private System.Collections.Generic.Queue<(string message, float duration, NotificationType type)> notificationQueue = new System.Collections.Generic.Queue<(string, float, NotificationType)>();
     private bool isProcessingQueue = false;
 
     /// <summary>
@@ -81,10 +93,23 @@ public class NotificationUIController : MonoBehaviour
     /// </summary>
     public void ShowNotification(string message, float duration = -1f)
     {
+        ShowNotification(message, NotificationType.Default, duration);
+    }
+
+    /// <summary>
+    /// Ekranda renklendirilmiş tipte bildirim pop-up'ı gösterir.
+    /// </summary>
+    public void ShowNotification(string message, NotificationType type, float duration = -1f)
+    {
         if (string.IsNullOrEmpty(message)) return;
+
+        // XP ile ilgili hiçbir bildirimi notification panelinde gösterme (Sol taraftaki floating text kullanılıyor)
+        if (message.IndexOf("XP", System.StringComparison.OrdinalIgnoreCase) >= 0) return;
+        if (message.StartsWith("BİLGİ:", System.StringComparison.OrdinalIgnoreCase)) return;
+
         if (duration <= 0) duration = defaultDuration;
 
-        // Mükerrer bildirim engelleme (NotificationManager hem event hem doğrudan Instance çağırdığında çift eklenmesini önler)
+        // Mükerrer bildirim engelleme
         if (notificationQueue.Count > 0)
         {
             var array = notificationQueue.ToArray();
@@ -102,7 +127,7 @@ public class NotificationUIController : MonoBehaviour
         // Maksimum 5 bildirim birikebilsin
         if (notificationQueue.Count < 5)
         {
-            notificationQueue.Enqueue((message, duration));
+            notificationQueue.Enqueue((message, duration, type));
         }
 
         if (!isProcessingQueue)
@@ -118,17 +143,20 @@ public class NotificationUIController : MonoBehaviour
         while (notificationQueue.Count > 0)
         {
             var item = notificationQueue.Dequeue();
-            yield return StartCoroutine(NotificationRoutine(item.message, item.duration));
+            yield return StartCoroutine(NotificationRoutine(item.message, item.duration, item.type));
         }
 
         isProcessingQueue = false;
         currentNoticeCoroutine = null;
     }
 
-    private IEnumerator NotificationRoutine(string message, float duration)
+    private IEnumerator NotificationRoutine(string message, float duration, NotificationType type)
     {
         if (notificationText != null)
             notificationText.text = message;
+
+        // Renk Tipine Göre Arka Plan Ayarı
+        ApplyNotificationTypeColor(type);
 
         // Görünür yap ve animasyonu başlat
         SetVisibilityImmediate(true);
@@ -177,6 +205,27 @@ public class NotificationUIController : MonoBehaviour
         if (targetRectTransform != null) targetRectTransform.anchoredPosition = originalAnchoredPosition;
     }
 
+    private void ApplyNotificationTypeColor(NotificationType type)
+    {
+        if (panelImage == null) return;
+
+        switch (type)
+        {
+            case NotificationType.Success:
+                panelImage.color = new Color(0.12f, 0.55f, 0.25f, 0.92f); // Yeşil
+                break;
+            case NotificationType.Warning:
+                panelImage.color = new Color(0.85f, 0.58f, 0.10f, 0.92f); // Kehribar/Sarı
+                break;
+            case NotificationType.Error:
+                panelImage.color = new Color(0.75f, 0.15f, 0.15f, 0.92f); // Kırmızı
+                break;
+            default:
+                panelImage.color = originalPanelColor != Color.clear ? originalPanelColor : new Color(0.12f, 0.15f, 0.22f, 0.92f);
+                break;
+        }
+    }
+
     private void SetVisibilityImmediate(bool visible)
     {
         if (canvasGroup != null)
@@ -196,6 +245,24 @@ public class NotificationUIController : MonoBehaviour
 
         if (notificationText != null)
             notificationText.enabled = visible;
+    }
+
+    [ContextMenu("TEST: Yeşil Başarı Bildirimi")]
+    public void TestSuccessNotification()
+    {
+        ShowNotification("Üretim Başarıyla Tamamlandı!", NotificationType.Success);
+    }
+
+    [ContextMenu("TEST: Sarı Uyarı Bildirimi")]
+    public void TestWarningNotification()
+    {
+        ShowNotification("Sepetiniz Dolmak Üzere!", NotificationType.Warning);
+    }
+
+    [ContextMenu("TEST: Kırmızı Hata Bildirimi")]
+    public void TestErrorNotification()
+    {
+        ShowNotification("Yetersiz Altın!", NotificationType.Error);
     }
 }
 

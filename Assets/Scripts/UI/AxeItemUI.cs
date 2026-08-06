@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -38,6 +39,10 @@ public class AxeItemUI : MonoBehaviour
     private System.Action onClickCallback;
     private bool isInteractableState = false;
     private float lastClickTime = 0f;
+
+    // ─── Animasyon State ───
+    private bool previouslyEquipped = false;
+    private Coroutine equipAnimCoroutine;
 
     private void Awake()
     {
@@ -97,6 +102,11 @@ public class AxeItemUI : MonoBehaviour
         {
             equippedHighlight.SetActive(isEquipped);
         }
+
+        // ─── Kuşanma Animasyonu ───
+        if (isEquipped && !previouslyEquipped)
+            TriggerEquipAnimation();
+        previouslyEquipped = isEquipped;
 
         // Etkileşim durumu belirleme
         if (isEquipped)
@@ -171,6 +181,11 @@ public class AxeItemUI : MonoBehaviour
         if (equippedHighlight != null)
             equippedHighlight.SetActive(isEquipped);
 
+        // ─── Kuşanma Animasyonu ───
+        if (isEquipped && !previouslyEquipped)
+            TriggerEquipAnimation();
+        previouslyEquipped = isEquipped;
+
         isInteractableState = !isEquipped;
 
         if (cardButton != null)
@@ -181,6 +196,128 @@ public class AxeItemUI : MonoBehaviour
             : isEquipped ? "Kullanılıyor" : "Kuşan";
         SetButtonText(actionText, isInteractableState);
     }
+
+    // ═══════════════════════════════════════════
+    //  Animasyonlar
+    // ═══════════════════════════════════════════
+
+    /// <summary>
+    /// Balta kuşanıldığında: scale-up bounce + altın parıltı çerçeve animasyonu.
+    /// </summary>
+    public void TriggerEquipAnimation()
+    {
+        if (!gameObject.activeInHierarchy) return;
+        if (equipAnimCoroutine != null)
+            StopCoroutine(equipAnimCoroutine);
+        equipAnimCoroutine = StartCoroutine(EquipBounceRoutine());
+    }
+
+    private IEnumerator EquipBounceRoutine()
+    {
+        Vector3 originalScale = transform.localScale;
+
+        // Phase 1: Scale up (0.14s — EaseOut)
+        float elapsed = 0f;
+        float duration = 0.14f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * (2f - t); // EaseOutQuad
+            transform.localScale = Vector3.LerpUnclamped(originalScale, originalScale * 1.22f, t);
+            yield return null;
+        }
+
+        // Phase 2: Scale geri (0.20s — Slight overshoot)
+        elapsed = 0f;
+        duration = 0.20f;
+        Vector3 bigScale = transform.localScale;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t); // SmoothStep
+            transform.localScale = Vector3.LerpUnclamped(bigScale, originalScale, t);
+            yield return null;
+        }
+        transform.localScale = originalScale;
+
+        // Phase 3: Highlight altın parıltı (0.45s)
+        if (equippedHighlight != null)
+        {
+            Image hlImage = equippedHighlight.GetComponent<Image>();
+            if (hlImage != null)
+            {
+                Color originalColor = hlImage.color;
+                Color flashColor = new Color(1f, 0.92f, 0.25f, 1f); // Altın parıltı
+
+                elapsed = 0f;
+                duration = 0.18f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / duration);
+                    hlImage.color = Color.Lerp(originalColor, flashColor, t);
+                    yield return null;
+                }
+
+                elapsed = 0f;
+                duration = 0.27f;
+                while (elapsed < duration)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(elapsed / duration);
+                    hlImage.color = Color.Lerp(flashColor, originalColor, t);
+                    yield return null;
+                }
+                hlImage.color = originalColor;
+            }
+        }
+
+        equipAnimCoroutine = null;
+    }
+
+    /// <summary>
+    /// Yetersiz para durumunda kart kırmızı yanıp söner + yatay titreme.
+    /// AxeTablePanelController tarafından çağrılır.
+    /// </summary>
+    public void TriggerShakeAnimation()
+    {
+        if (!gameObject.activeInHierarchy) return;
+        StartCoroutine(ShakeRoutine());
+    }
+
+    private IEnumerator ShakeRoutine()
+    {
+        Vector3 originalPos = transform.localPosition;
+        Image cardImg = GetComponent<Image>();
+        Color originalColor = cardImg != null ? cardImg.color : Color.clear;
+
+        // Kırmızı flash
+        if (cardImg != null)
+            cardImg.color = new Color(0.85f, 0.15f, 0.15f, 0.55f);
+
+        float elapsed = 0f;
+        float totalDuration = 0.38f;
+        float shakeAmount = 9f;
+
+        while (elapsed < totalDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / totalDuration;
+            float offset = Mathf.Sin(t * Mathf.PI * 7f) * shakeAmount * (1f - t);
+            transform.localPosition = originalPos + new Vector3(offset, 0f, 0f);
+            yield return null;
+        }
+
+        transform.localPosition = originalPos;
+        if (cardImg != null)
+            cardImg.color = originalColor;
+    }
+
+    // ═══════════════════════════════════════════
+    //  Yardımcı
+    // ═══════════════════════════════════════════
 
     private void SetButtonText(string text, bool interactable)
     {
