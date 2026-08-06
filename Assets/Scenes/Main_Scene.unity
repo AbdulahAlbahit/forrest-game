@@ -1160,9 +1160,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
   useEquippedAxeItem: 0
   linkedItemIds: []
@@ -1172,8 +1169,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 1777520824}
@@ -1316,6 +1316,8 @@ MonoBehaviour:
   craftingColor: {r: 0.9, g: 0.8, b: 0.1, a: 1}
   readyColor: {r: 0, g: 0.9, b: 0.9, a: 1}
   fillImage: {fileID: 1040048273}
+  statusText: {fileID: 0}
+  textFormat: '{0} / {1}'
   currentWoodCount: 0
   currentFurnitureCount: 0
   isCraftingInProgress: 0
@@ -1455,9 +1457,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
   useEquippedAxeItem: 0
   linkedItemIds: []
@@ -1467,8 +1466,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 197904407}
@@ -1713,10 +1715,7 @@ PrefabInstance:
     - {fileID: 4348945368860897657, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
     - {fileID: 945245529113248150, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2934517703626636621, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1669036766}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
 --- !u!1 &53916291
 GameObject:
@@ -4206,7 +4205,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1669036766}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: ForrestGame.Managers.AdManager, Assembly-CSharp
         m_MethodName: ShowRewardedAd
         m_Mode: 1
@@ -10316,6 +10315,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainHUDController
   coinValueText: {fileID: 0}
+  coinsVFX: {fileID: 0}
   woodValueText: {fileID: 0}
   basketFillImage: {fileID: 0}
   workshopWoodText: {fileID: 733231362}
@@ -13187,9 +13187,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
   useEquippedAxeItem: 0
   linkedItemIds: []
@@ -13199,8 +13196,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 365425652}
@@ -22431,8 +22431,31 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 464206334339758002, guid: 58dd76242db6ce840a1ecb7c5710b126, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 790685636}
   m_SourcePrefab: {fileID: 100100000, guid: 58dd76242db6ce840a1ecb7c5710b126, type: 3}
+--- !u!1 &790685635 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 464206334339758002, guid: 58dd76242db6ce840a1ecb7c5710b126, type: 3}
+  m_PrefabInstance: {fileID: 790685634}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &790685636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 790685635}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82a85de3008999b42a14e558d0cd33d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.AdManager
+  rewardGold: 100
+  rewardWood: 50
+  interstitialIntervalSeconds: 120
 --- !u!1001 &792349601
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -28939,9 +28962,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
   useEquippedAxeItem: 0
   linkedItemIds: []
@@ -28951,8 +28971,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.8627452, g: 0.8627452, b: 0.8627452, a: 1}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 745432457}
@@ -29396,6 +29419,8 @@ MonoBehaviour:
   craftingColor: {r: 0.9, g: 0.8, b: 0.1, a: 1}
   readyColor: {r: 0, g: 0.9, b: 0.9, a: 1}
   fillImage: {fileID: 1297487650}
+  statusText: {fileID: 0}
+  textFormat: '{0} / {1}'
   currentWoodCount: 0
   currentFurnitureCount: 0
   isCraftingInProgress: 0
@@ -48518,26 +48543,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
   m_PrefabInstance: {fileID: 1665662714}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1669036765 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2934517703626636621, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-  m_PrefabInstance: {fileID: 50516394}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1669036766
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1669036765}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 82a85de3008999b42a14e558d0cd33d5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.AdManager
-  rewardGold: 100
-  rewardWood: 50
-  interstitialIntervalSeconds: 500
 --- !u!1 &1671256997
 GameObject:
   m_ObjectHideFlags: 0
@@ -49512,6 +49517,13 @@ MonoBehaviour:
   logJumpForce: 2
   logSpawnScale: 0.65
   defaultTreeHealth: 3
+  treeHealthByPrototypeIndex:
+  - prototypeIndex: 0
+    health: 60
+  - prototypeIndex: 1
+    health: 200
+  - prototypeIndex: 3
+    health: 400
   searchRadius: 2.5
   fallTorque: 23.3
   nonTreePrototypeIndices: 03000000
@@ -54062,6 +54074,16 @@ MonoBehaviour:
   sfxToggleButton: {fileID: 2098536375}
   musicToggleText: {fileID: 174384145}
   sfxToggleText: {fileID: 646962675}
+  musicOnImage: {fileID: 0}
+  musicOffImage: {fileID: 0}
+  sfxOnImage: {fileID: 0}
+  sfxOffImage: {fileID: 0}
+  musicImage: {fileID: 0}
+  musicOnSprite: {fileID: 0}
+  musicOffSprite: {fileID: 0}
+  sfxImage: {fileID: 0}
+  sfxOnSprite: {fileID: 0}
+  sfxOffSprite: {fileID: 0}
   closeButton: {fileID: 1694006570}
   versionText: {fileID: 930977684}
   buttonSfxName: Button0

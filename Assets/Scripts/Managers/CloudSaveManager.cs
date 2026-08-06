@@ -204,7 +204,8 @@ public class CloudSaveManager : MonoBehaviour
             { "PlayerWoodStock", data.PlayerWoodStock },
             { "AcilanBolgeler", data.AcilanBolgeler },
             { "SonGuncelleme", FieldValue.ServerTimestamp },
-            { "LastSaveTime", data.LastSaveTime }
+            { "LastSaveTime", data.LastSaveTime },
+            { "LastOrderResetTime", data.LastOrderResetTime }
         };
 
         if (FirebaseAuthManager.Instance != null && FirebaseAuthManager.Instance.CurrentUser != null)
@@ -369,6 +370,11 @@ public class CloudSaveManager : MonoBehaviour
                 if (dict.ContainsKey("LastSaveTime")) 
                 {
                     data.LastSaveTime = Convert.ToInt64(dict["LastSaveTime"]);
+                }
+
+                if (dict.ContainsKey("LastOrderResetTime"))
+                {
+                    data.LastOrderResetTime = Convert.ToInt64(dict["LastOrderResetTime"]);
                 }
 
 

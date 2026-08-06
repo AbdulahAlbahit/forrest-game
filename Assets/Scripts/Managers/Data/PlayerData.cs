@@ -46,6 +46,12 @@ public class PlayerData
     public List<CustomerOrderData> PendingCustomerOrders;
     public int NextCustomerOrderId;
 
+    /// <summary>
+    /// Son gunluk siparis sifirlamasinin yapildigi UTC gun numarasi (DateTime.UtcNow.DayOfYear bazli).
+    /// Her 24 saatte bir PendingCustomerOrders bu sayac kontrol edilerek sifirlanir.
+    /// </summary>
+    public long LastOrderResetTime;
+
     // --- Gorev (Quest) Verileri ---
     /// <summary>Gorev ilerleme sayaclari. Ornek: ActiveQuests["satilan_masa"] = 4</summary>
     public SerializableDict ActiveQuests;
@@ -72,6 +78,7 @@ public class PlayerData
         ReadyForTruck = new SerializableDict();
         PendingCustomerOrders = new List<CustomerOrderData>();
         NextCustomerOrderId = 1;
+        LastOrderResetTime = 0;
         ActiveQuests = new SerializableDict();
         CompletedQuests = new List<string>();
     }
