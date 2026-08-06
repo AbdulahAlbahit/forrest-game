@@ -41,12 +41,13 @@ namespace ForrestGame.UI
         [SerializeField] private float delayBetweenTexts = 0.22f;
 
         [Tooltip("Yazı tipi boyutu.")]
-        [SerializeField] private float fontSize = 32f;
+        [SerializeField] private float fontSize = 20f;
 
         [Header("--- Renk Paleti (Altın, XP, Odun) ---")]
         [SerializeField] private Color goldColor = new Color(1f, 0.85f, 0.15f, 1f);
         [SerializeField] private Color xpColor = new Color(0.2f, 0.8f, 1f, 1f);
         [SerializeField] private Color woodColor = new Color(0.4f, 0.9f, 0.3f, 1f);
+        [SerializeField] private Color workshopCompleteColor = new Color(0.7f, 0.5f, 1f, 1f); // Mor-lila: Üretim tamamlandı
 
         [Header("--- Ekran Ortası Floating Text Ayarları (Ağaç Vuruş Hasarı) ---")]
         [Tooltip("Ağaç vuruşlarında ekran ortasında floating text çıksın mı?")]
@@ -65,7 +66,7 @@ namespace ForrestGame.UI
         [SerializeField] private string treeDamageFormat = "-{0} Hasar";
 
         [Tooltip("Ağaç vuruş metni font boyutu.")]
-        [SerializeField] private float treeDamageFontSize = 44f;
+        [SerializeField] private float treeDamageFontSize = 20f;
 
         [Tooltip("Hızlı vuruşlarda üst üste binmeyi önlemek için rastgele offset aralığı (piksel).")]
         [SerializeField] private float randomOffsetRange = 25f;
@@ -212,6 +213,9 @@ namespace ForrestGame.UI
 
             EfeOynanisEventleri.BaltaAgacaVurdu -= HandleBaltaAgacaVurdu;
             EfeOynanisEventleri.BaltaAgacaVurdu += HandleBaltaAgacaVurdu;
+
+            WorkshopManager.OnProductionFinished -= HandleWorkshopProduction;
+            WorkshopManager.OnProductionFinished += HandleWorkshopProduction;
         }
 
         private void UnsubscribeEvents()
@@ -246,6 +250,7 @@ namespace ForrestGame.UI
             TreeManager.OnTreeHitAction -= HandleTreeHitWorldPos;
             TreeController.OnTreeHitAction -= HandleTreeHitSimple;
             EfeOynanisEventleri.BaltaAgacaVurdu -= HandleBaltaAgacaVurdu;
+            WorkshopManager.OnProductionFinished -= HandleWorkshopProduction;
         }
 
         private void HandleDataLoaded(PlayerData data)
@@ -304,8 +309,40 @@ namespace ForrestGame.UI
         {
             if (result.EarnedAmount > 0)
             {
-                SpawnText($"+{result.EarnedAmount} Altın!", goldColor);
+                SpawnText($"Satış Tamamlandı: +{result.EarnedAmount} Altın!", goldColor);
+                UIScreenFlash.Instance?.Flash(new Color(1f, 0.85f, 0.2f, 1f), 0.25f, 0.18f);
+                UIHapticFeedback.Medium();
             }
+        }
+
+        /// <summary>
+        /// Atölye bir ürünü tamamladığında sol floating text alanında üretim bildirimi gösterir.
+        /// </summary>
+        private void HandleWorkshopProduction(string itemId, int amount)
+        {
+            if (string.IsNullOrEmpty(itemId)) return;
+
+            // Tarif adını bul (ItemID'den okunabilir bir isim varsa onu kullan)
+            string displayName = itemId;
+            if (WorkshopManager.Instance != null && WorkshopManager.Instance.tumTarifler != null)
+            {
+                foreach (var recipe in WorkshopManager.Instance.tumTarifler)
+                {
+                    if (recipe != null && recipe.ItemID == itemId)
+                    {
+                        // Description bos degilse ilk satiri al, yoksa ItemID
+                        if (!string.IsNullOrWhiteSpace(recipe.Description))
+                        {
+                            string firstLine = recipe.Description.Split('\n')[0].Trim();
+                            if (!string.IsNullOrEmpty(firstLine)) displayName = firstLine;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            string amountSuffix = amount > 1 ? $" x{amount}" : "";
+            SpawnText($"{displayName} Üretildi!{amountSuffix}", workshopCompleteColor);
         }
 
         /// <summary>
@@ -604,6 +641,13 @@ namespace ForrestGame.UI
             float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
             float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
             CreateAndAnimateTreeDamageText(message, damageColor, new Vector2(posX, posY));
+        }
+
+        [ContextMenu("TEST: Satış Tamamlandı Floating Text")]
+        public void TestSaleCompletedText()
+        {
+            SpawnText("Satış Tamamlandı: +1.250 Altın!", goldColor);
+            UIScreenFlash.Instance?.Flash(new Color(1f, 0.85f, 0.2f, 1f), 0.28f, 0.22f);
         }
     }
 }

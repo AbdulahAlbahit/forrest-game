@@ -236,7 +236,7 @@ MonoBehaviour:
   countText: {fileID: 6134307788941536001}
   progressFillImage: {fileID: 47192789706715384}
   progressText: {fileID: 2773053633886182994}
-  activeIndicator: {fileID: 4195305252240752017}
+  activeIndicator: {fileID: 0}
   clickButton: {fileID: 0}
 --- !u!114 &5725043805337802091
 MonoBehaviour:

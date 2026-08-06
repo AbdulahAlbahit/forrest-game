@@ -1322,7 +1322,7 @@ MonoBehaviour:
   selectedAxeNameText: {fileID: 4498852466346118654}
   upgradePriceText: {fileID: 3884192190809017644}
   displayTierCount: 5
-  buttonSfxName: 
+  buttonSfxName: Button0
 --- !u!114 &-4766598482456203988
 MonoBehaviour:
   m_ObjectHideFlags: 0

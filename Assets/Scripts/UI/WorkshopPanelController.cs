@@ -339,15 +339,17 @@ public class WorkshopPanelController : MonoBehaviour
         }
         spawnedQueueItems.Clear();
 
-        if (CloudSaveManager.Instance?.CurrentData?.WorkshopQueue == null) return;
+        SerializableDict workshopQueue = CloudSaveManager.Instance?.CurrentData?.WorkshopQueue;
+        if (workshopQueue == null) return;
 
-        var queueDict = CloudSaveManager.Instance.CurrentData.WorkshopQueue.ToDictionary();
         bool isFirst = true;
 
-        foreach (var kvp in queueDict)
+        // Siraya girdigi (FIFO) sirayla gostermek icin Dictionary yerine
+        // dogrudan sirali keys/values listeleri kullanilir.
+        for (int i = 0; i < workshopQueue.keys.Count; i++)
         {
-            string itemId = kvp.Key;
-            int count = System.Convert.ToInt32(kvp.Value);
+            string itemId = workshopQueue.keys[i];
+            int count = workshopQueue.values[i];
 
             if (count <= 0) continue;
 
