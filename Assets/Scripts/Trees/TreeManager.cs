@@ -102,6 +102,12 @@ public class TreeManager : MonoBehaviour
     }
     private List<RespawnData> _respawnQueue = new List<RespawnData>();
 
+    // TerrainData.treeInstances her erisimde TUM agaclarin kopyasini dondurur (pahali).
+    // Bu yuzden diziyi bir kere cekip cache'liyoruz, sadece agac silinince/respawn
+    // olunca (RemoveTreeFromTerrain/RespawnTree) yeniden olusturuyoruz.
+    private TreeInstance[] _cachedTreeInstances = Array.Empty<TreeInstance>();
+    private Vector3[] _cachedTreeWorldPositions = Array.Empty<Vector3>();
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -114,8 +120,19 @@ public class TreeManager : MonoBehaviour
             return;
         }
 
+        RefreshTreeInstanceCache();
         BuildPools();
         StartCoroutine(RespawnRoutine());
+    }
+
+    private void RefreshTreeInstanceCache()
+    {
+        _cachedTreeInstances = _activeTerrain.terrainData.treeInstances;
+        _cachedTreeWorldPositions = new Vector3[_cachedTreeInstances.Length];
+        for (int i = 0; i < _cachedTreeInstances.Length; i++)
+        {
+            _cachedTreeWorldPositions[i] = GetTreeWorldPos(_cachedTreeInstances[i]);
+        }
     }
 
     private IEnumerator RespawnRoutine()
@@ -193,8 +210,8 @@ public class TreeManager : MonoBehaviour
         int treeIndex = FindNearestTreeIndex(worldHitPos);
         if (treeIndex < 0) return;
 
-        TreeInstance hitTree = _activeTerrain.terrainData.treeInstances[treeIndex];
-        Vector3 treeWorldPos = GetTreeWorldPos(hitTree);
+        TreeInstance hitTree = _cachedTreeInstances[treeIndex];
+        Vector3 treeWorldPos = _cachedTreeWorldPositions[treeIndex];
 
         int treeMaxHealth = GetTreeHealthForPrototype(hitTree.prototypeIndex);
         if (!_damagedTrees.ContainsKey(treeIndex))
@@ -304,15 +321,14 @@ public class TreeManager : MonoBehaviour
 
     private int FindNearestTreeIndex(Vector3 worldPos)
     {
-        TreeInstance[] trees = _activeTerrain.terrainData.treeInstances;
         int closestIndex = -1;
         float closestDist = searchRadius;
 
-        for (int i = 0; i < trees.Length; i++)
+        for (int i = 0; i < _cachedTreeInstances.Length; i++)
         {
-            if (!IsChoppablePrototype(trees[i].prototypeIndex)) continue;
+            if (!IsChoppablePrototype(_cachedTreeInstances[i].prototypeIndex)) continue;
 
-            Vector3 treePos = GetTreeWorldPos(trees[i]);
+            Vector3 treePos = _cachedTreeWorldPositions[i];
             float dist = Vector2.Distance(
                 new Vector2(worldPos.x, worldPos.z),
                 new Vector2(treePos.x, treePos.z)
@@ -320,6 +336,37 @@ public class TreeManager : MonoBehaviour
             if (dist < closestDist) { closestDist = dist; closestIndex = i; }
         }
         return closestIndex;
+    }
+
+    /// <summary>
+    /// En yakin kesilebilir agacin dunya pozisyonunu dondurur. EfeBaltaKontrol gibi
+    /// disaridaki sistemlerin kendi terrain taramasi yapmasi yerine bu cache'e
+    /// sormasi icin acildi (TerrainData.treeInstances her erisimde pahali kopya doner).
+    /// </summary>
+    public bool TryGetNearestChoppableTree(Vector3 worldPos, float maxDistance, out Vector3 nearestTreeWorldPos)
+    {
+        nearestTreeWorldPos = Vector3.zero;
+        float closestDistSqr = maxDistance * maxDistance;
+        bool found = false;
+
+        for (int i = 0; i < _cachedTreeInstances.Length; i++)
+        {
+            if (!IsChoppablePrototype(_cachedTreeInstances[i].prototypeIndex)) continue;
+
+            Vector3 treePos = _cachedTreeWorldPositions[i];
+            Vector3 yatayFark = treePos - worldPos;
+            yatayFark.y = 0f;
+            float distSqr = yatayFark.sqrMagnitude;
+
+            if (distSqr <= closestDistSqr)
+            {
+                closestDistSqr = distSqr;
+                nearestTreeWorldPos = treePos;
+                found = true;
+            }
+        }
+
+        return found;
     }
 
     private Vector3 GetTreeWorldPos(TreeInstance tree)
@@ -335,24 +382,26 @@ public class TreeManager : MonoBehaviour
 
     private void RemoveTreeFromTerrain(int indexToRemove)
     {
-        TreeInstance[] old = _activeTerrain.terrainData.treeInstances;
+        TreeInstance[] old = _cachedTreeInstances;
         TreeInstance[] updated = new TreeInstance[old.Length - 1];
         for (int i = 0, j = 0; i < old.Length; i++)
             if (i != indexToRemove) updated[j++] = old[i];
 
         _activeTerrain.terrainData.treeInstances = updated;
         _activeTerrain.Flush();
+        RefreshTreeInstanceCache();
     }
 
     private void RespawnTree(TreeInstance treeInstance)
     {
-        TreeInstance[] old = _activeTerrain.terrainData.treeInstances;
+        TreeInstance[] old = _cachedTreeInstances;
         TreeInstance[] updated = new TreeInstance[old.Length + 1];
         old.CopyTo(updated, 0);
         updated[updated.Length - 1] = treeInstance;
 
         _activeTerrain.terrainData.treeInstances = updated;
         _activeTerrain.Flush();
+        RefreshTreeInstanceCache();
 
         GameLogger.Log("[TreeManager] Tree respawned on terrain.", this);
     }

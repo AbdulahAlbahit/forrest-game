@@ -42,6 +42,9 @@ namespace ForrestGame.UI
         [Tooltip("Otomatik arama türü.")]
         [SerializeField] private AutoTargetType autoTarget = AutoTargetType.Truck;
 
+        [Tooltip("Hedef bulunamadiginda otomatik aramanin tekrar denenme araligi (saniye). Her frame taramamak icin.")]
+        [SerializeField] private float autoFindRetryInterval = 1f;
+
         public enum AutoTargetType
         {
             Truck,
@@ -50,6 +53,7 @@ namespace ForrestGame.UI
         }
 
         private Canvas parentCanvas;
+        private float nextAutoFindRetryTime;
 
         private void Start()
         {
@@ -76,8 +80,9 @@ namespace ForrestGame.UI
             if (gameCamera == null)
                 gameCamera = Camera.main ?? FindFirstObjectByType<Camera>();
 
-            if (targetWorldObject == null && autoFindTargetIfNull)
+            if (targetWorldObject == null && autoFindTargetIfNull && Time.time >= nextAutoFindRetryTime)
             {
+                nextAutoFindRetryTime = Time.time + autoFindRetryInterval;
                 TryAutoFindTarget();
             }
 
