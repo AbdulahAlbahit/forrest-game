@@ -26,8 +26,23 @@ public class TreeManager : MonoBehaviour
     public GameObject stumpPrefab;
     public GameObject woodLogPrefab;
 
+    [System.Serializable]
+    public class TreeLogCountEntry
+    {
+        [Tooltip("Terrain'deki ağaç prototip index'i (Terrain > Paint Trees listesindeki sıra).")]
+        public int prototypeIndex;
+        public int logCount = 3;
+    }
+
     [Header("Wood Log Settings")]
+    [Tooltip("Listede olmayan prototip index'leri bu degeri kullanir.")]
     public int logSpawnCount = 3;
+    public List<TreeLogCountEntry> logCountByPrototypeIndex = new List<TreeLogCountEntry>
+    {
+        new TreeLogCountEntry { prototypeIndex = 0, logCount = 3 },
+        new TreeLogCountEntry { prototypeIndex = 1, logCount = 5 },
+        new TreeLogCountEntry { prototypeIndex = 3, logCount = 7 }
+    };
     public float logJumpForce = 5f;
     public float logSpawnScale = 0.65f;
 
@@ -194,6 +209,7 @@ public class TreeManager : MonoBehaviour
         {
             _damagedTrees.Remove(treeIndex);
             int typeIndex = GetTreeTypeIndex(hitTree.prototypeIndex);
+            int logCount = GetLogCountForPrototype(hitTree.prototypeIndex);
             RemoveTreeFromTerrain(treeIndex);
 
             float effectiveRespawnTime = GetEffectiveRespawnTime();
@@ -207,7 +223,7 @@ public class TreeManager : MonoBehaviour
                 });
             }
 
-            StartCoroutine(SpawnFelledVisuals(treeWorldPos, typeIndex, effectiveRespawnTime));
+            StartCoroutine(SpawnFelledVisuals(treeWorldPos, typeIndex, effectiveRespawnTime, logCount));
 
             OnTreeFelled?.Invoke(treeWorldPos);
             OnTreeFelledAction?.Invoke(treeWorldPos);
@@ -265,6 +281,16 @@ public class TreeManager : MonoBehaviour
                 return entry.health;
         }
         return defaultTreeHealth;
+    }
+
+    private int GetLogCountForPrototype(int prototypeIndex)
+    {
+        foreach (TreeLogCountEntry entry in logCountByPrototypeIndex)
+        {
+            if (entry != null && entry.prototypeIndex == prototypeIndex)
+                return entry.logCount;
+        }
+        return logSpawnCount;
     }
 
     public bool IsChoppablePrototype(int prototypeIndex)
@@ -331,7 +357,7 @@ public class TreeManager : MonoBehaviour
         GameLogger.Log("[TreeManager] Tree respawned on terrain.", this);
     }
 
-    private IEnumerator SpawnFelledVisuals(Vector3 pos, int typeIndex, float effectiveRespawnTime)
+    private IEnumerator SpawnFelledVisuals(Vector3 pos, int typeIndex, float effectiveRespawnTime, int logCount)
     {
         if (_stumpPool.Count > 0)
         {
@@ -376,7 +402,7 @@ public class TreeManager : MonoBehaviour
             // Fiziksel çarpışma (patlama) olmaması için ağacın düşmesine çok ufak bir süre tanı
             yield return new WaitForSeconds(0.2f); 
 
-            for (int i = 0; i < logSpawnCount; i++)
+            for (int i = 0; i < logCount; i++)
             {
                 GameObject log = null;
                 
