@@ -15,10 +15,10 @@ MonoBehaviour:
   ItemID: Axe2
   Category: 0
   Effect: 0
-  BasePrice: 10000
+  BasePrice: 2000
   PriceFormula: 0
   PriceMultiplier: 1.5
-  LinearPriceIncrease: 5000
+  LinearPriceIncrease: 1000
   BaseValue: 30
   ValueGrowth: 15
   MaxLevel: 5

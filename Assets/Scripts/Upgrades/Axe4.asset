@@ -15,10 +15,10 @@ MonoBehaviour:
   ItemID: Axe4
   Category: 0
   Effect: 0
-  BasePrice: 25000
+  BasePrice: 4000
   PriceFormula: 0
   PriceMultiplier: 1.5
-  LinearPriceIncrease: 80
+  LinearPriceIncrease: 1000
   BaseValue: 50
   ValueGrowth: 15
   MaxLevel: 5

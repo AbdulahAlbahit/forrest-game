@@ -15,8 +15,8 @@ MonoBehaviour:
   ItemID: Character
   Category: 0
   Effect: 2
-  BasePrice: 100
-  PriceFormula: 1
+  BasePrice: 1000
+  PriceFormula: 0
   PriceMultiplier: 1.5
   LinearPriceIncrease: 50
   BaseValue: 1

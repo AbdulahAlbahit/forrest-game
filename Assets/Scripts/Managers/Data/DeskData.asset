@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: DeskData
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: Desk
-  RequiredWood: 15
-  BaseProductionTime: 4
+  RequiredWood: 7
+  BaseProductionTime: 3
   BaseSalePrice: 100
   ItemIcon: {fileID: 21300000, guid: b877d8fff28d1634dbebb78661ed48bd, type: 3}
   FurniturePrefab: {fileID: 1456884643674659592, guid: 28ed3d3326458504385c31b9e47c50ce, type: 3}
