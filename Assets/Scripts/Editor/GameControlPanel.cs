@@ -53,7 +53,23 @@ public class GameControlPanel : EditorWindow
 
         GUILayout.Space(10);
 
-        // 3. Scene Components
+        // 3. Recipe / Ürün Verileri
+        GUILayout.Label("--- ÜRÜN VERİLERİ (Recipes) ---", headerStyle);
+        DrawAssetButton("Chair (Sandalye)",       "Assets/Scripts/Managers/Data/ChairData.asset");
+        DrawAssetButton("Chair 1",                "Assets/Scripts/Managers/Data/Chair1Data.asset");
+        DrawAssetButton("Coffe Table",            "Assets/Scripts/Managers/Data/CoffeTableData.asset");
+        DrawAssetButton("Console",                "Assets/Scripts/Managers/Data/ConsoleData.asset");
+        DrawAssetButton("Desk (Masa)",            "Assets/Scripts/Managers/Data/DeskData.asset");
+        DrawAssetButton("Desk 1",                 "Assets/Scripts/Managers/Data/Desk1Data.asset");
+        DrawAssetButton("Desk Corner",            "Assets/Scripts/Managers/Data/DeskCornerData.asset");
+        DrawAssetButton("Dining Table",           "Assets/Scripts/Managers/Data/DiningTable.asset");
+        DrawAssetButton("Library (Kitaplık)",     "Assets/Scripts/Managers/Data/LibraryData.asset");
+        DrawAssetButton("Night Stand",            "Assets/Scripts/Managers/Data/NightStandData.asset");
+        DrawAssetButton("Side Table",             "Assets/Scripts/Managers/Data/SideTableData.asset");
+
+        GUILayout.Space(10);
+
+        // 4. Scene Components
         GUILayout.Label("--- SAHNE BİLEŞENLERİ ---", headerStyle);
         DrawSceneComponentButton<ForrestGame.Core.SeasonManager>("Season Manager");
         DrawSceneComponentButton<TreeManager>("Tree Manager");
