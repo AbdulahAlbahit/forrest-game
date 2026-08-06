@@ -33,6 +33,9 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.SudanCikti += OnSudanCikti;
             EfeOynanisEventleri.SudanKurtarildi += OnSudanKurtarildi;
 
+            // Mevsim Eventi
+            SeasonManager.OnMevsimDegisti += OnMevsimDegisti;
+
             
             TruckRouteController.OnTruckDepartedHome += EvdenAyrilis;
             TruckRouteController.OnTruckDeparture += DuraktanKalkis;
@@ -83,6 +86,9 @@ namespace ForrestGame.Audio
             EfeOynanisEventleri.SudanCikti -= OnSudanCikti;
             EfeOynanisEventleri.SudanKurtarildi -= OnSudanKurtarildi;
 
+            // Mevsim Eventi
+            SeasonManager.OnMevsimDegisti -= OnMevsimDegisti;
+
 
             TruckRouteController.OnTruckDepartedHome -= EvdenAyrilis;
             TruckRouteController.OnTruckDeparture -= DuraktanKalkis;
@@ -108,6 +114,18 @@ namespace ForrestGame.Audio
 
         private void Start()
         {
+            // Oyun sahnesi açıldığında menü müziğini durdur ve aktif mevsim müziğini çal
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.StopMusic();
+
+                if (SeasonManager.Instance != null)
+                {
+                    string mevsimMuzigi = SeasonManager.Instance.aktifMevsim.ToString() + "Muzik";
+                    AudioManager.Instance.PlayMusic(mevsimMuzigi);
+                }
+            }
+
             // Instance (Singleton) objelerin eventlerine Start'ta abone oluyoruz ki 
             // diğer scriptlerin Awake'te yüklenmesini beklemiş olalım.
             if (EconomyManager.Instance != null)
@@ -434,6 +452,14 @@ namespace ForrestGame.Audio
         private void GenelGelistirme()
         {
             if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("GelistirmeSesi");
+        }
+
+        private void OnMevsimDegisti(MevsimTuru yeniMevsim)
+        {
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayMusic(yeniMevsim.ToString() + "Muzik");
+            }
         }
 
         #endregion
