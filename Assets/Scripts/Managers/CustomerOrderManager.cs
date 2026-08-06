@@ -19,6 +19,7 @@ public class CustomerOrderManager : MonoBehaviour
 
     public static event Action<CustomerOrderData> OnOrderCreated;
     public static event Action<string> OnOrderInstantlyFulfilled;
+    public static event Action OnOrdersReset;
 
     private Coroutine _spawnRoutine;
 
@@ -55,9 +56,39 @@ public class CustomerOrderManager : MonoBehaviour
     private void HandleDataLoaded(PlayerData data)
     {
         if (data == null) return;
+
+        CheckAndResetDailyOrders(data);
+
         if (_spawnRoutine == null)
         {
             _spawnRoutine = StartCoroutine(SpawnLoop());
+        }
+    }
+
+    /// <summary>
+    /// Son sifirlamadan bu yana 24 saat (86400 saniye) gectiyse
+    /// PendingCustomerOrders listesini temizler ve LastOrderResetTime'i gunceller.
+    /// </summary>
+    private void CheckAndResetDailyOrders(PlayerData data)
+    {
+        long nowUtc = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        const long RESET_INTERVAL_SECONDS = 86400L; // 24 saat
+
+        if (data.LastOrderResetTime == 0 || (nowUtc - data.LastOrderResetTime) >= RESET_INTERVAL_SECONDS)
+        {
+            int oncekiSayac = data.PendingCustomerOrders != null ? data.PendingCustomerOrders.Count : 0;
+            data.PendingCustomerOrders = new System.Collections.Generic.List<CustomerOrderData>();
+            data.LastOrderResetTime = nowUtc;
+
+            GameLogger.Log($"CustomerOrderManager: [GUNLUK SIFIRLAMA] {oncekiSayac} bekleyen siparis temizlendi. Yeni sifirlama zamani: {nowUtc}");
+
+            CloudSaveManager.Instance?.SaveData(data);
+            OnOrdersReset?.Invoke();
+        }
+        else
+        {
+            long kalanSaniye = RESET_INTERVAL_SECONDS - (nowUtc - data.LastOrderResetTime);
+            GameLogger.Log($"CustomerOrderManager: Gunluk sifirlama henuz yapilmaz. Sonraki sifirlama: {kalanSaniye} saniye sonra.");
         }
     }
 

@@ -526,8 +526,6 @@ MonoBehaviour:
   toggleButtonText: {fileID: 0}
   openFullQuestPanelButton: {fileID: 7483867167659482082}
   fullQuestPanel: {fileID: 499364969737605475}
-  questListContent: {fileID: 0}
-  questItemPrefab: {fileID: 0}
   questRow1: {fileID: 6588363767516429290}
   questName1: {fileID: 3088417067515376311}
   questProgress1: {fileID: 7866986630362797298}
@@ -2309,6 +2307,16 @@ MonoBehaviour:
   sfxToggleButton: {fileID: 850875879493411052}
   musicToggleText: {fileID: 8631345234154971782}
   sfxToggleText: {fileID: 8086310204305495248}
+  musicOnImage: {fileID: 0}
+  musicOffImage: {fileID: 0}
+  sfxOnImage: {fileID: 0}
+  sfxOffImage: {fileID: 0}
+  musicImage: {fileID: 0}
+  musicOnSprite: {fileID: 0}
+  musicOffSprite: {fileID: 0}
+  sfxImage: {fileID: 0}
+  sfxOnSprite: {fileID: 0}
+  sfxOffSprite: {fileID: 0}
   closeButton: {fileID: 8479350611671180128}
   versionText: {fileID: 2393120067988997683}
   buttonSfxName: Button0
@@ -3993,6 +4001,7 @@ MonoBehaviour:
   notificationPanel: {fileID: 3030083323032822343}
   notificationText: {fileID: 2175799997684970752}
   defaultDuration: 1
+  animDuration: 0.22
 --- !u!1 &3215932057826679860
 GameObject:
   m_ObjectHideFlags: 0
@@ -5896,11 +5905,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainHUDController
   coinValueText: {fileID: 9045241875322727860}
+  coinsVFX: {fileID: 0}
   woodValueText: {fileID: 7386407583801832628}
+  basketFillImage: {fileID: 0}
   workshopWoodText: {fileID: 3726094970907007446}
   xpValueText: {fileID: 4434306120053584995}
   xpFillImage: {fileID: 0}
   levelText: {fileID: 8261302236165586543}
+  levelButton: {fileID: 0}
+  statsPanel: {fileID: 0}
   settingsButton: {fileID: 861342985660849080}
   settingsPanel: {fileID: 1351567445693994263}
   pauseButton: {fileID: 2769468887631517363}
@@ -5908,7 +5921,7 @@ MonoBehaviour:
   workshopButton: {fileID: 121507912789821656}
   workshopPanel: {fileID: 8607931773814292233}
   depositWoodButton: {fileID: 1245363583940178785}
-  buttonSfxName: button1
+  buttonSfxName: Button1
 --- !u!223 &1544475733687169135
 Canvas:
   m_ObjectHideFlags: 0
@@ -10338,6 +10351,7 @@ MonoBehaviour:
   recipeItemPrefab: {fileID: 8254668770486009491, guid: 5cef84088ae3d4f4da89b5a6c9a56dd0, type: 3}
   selectedNameText: {fileID: 5778719906368429298}
   requiredWoodText: {fileID: 7688272426810895889}
+  workshopWoodStockText: {fileID: 0}
   productionTimeText: {fileID: 3699272353054313766}
   selectedItemIcon: {fileID: 0}
   produceButton: {fileID: 5793803227532742101}

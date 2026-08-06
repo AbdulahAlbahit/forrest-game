@@ -66,13 +66,58 @@ namespace ForrestGame.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!IsInteractable()) return;
+            if (!IsInteractable())
+            {
+                TriggerRedShake();
+                return;
+            }
+
+            UIHapticFeedback.Light();
 
             // Click olayında dokunmanın tescil edildiğini hissettirmek için mikro bounce efekti
             StartScaleAnimation(initialScale * 1.05f, 0.05f, () =>
             {
                 StartScaleAnimation(initialScale, 0.08f);
             });
+        }
+
+        /// <summary>
+        /// Yetersiz para veya pasif durum tıklamalarında kırmızılı yatay sarsıntı patlatır.
+        /// </summary>
+        public void TriggerRedShake()
+        {
+            if (!gameObject.activeInHierarchy) return;
+            UIHapticFeedback.Medium();
+
+            if (activeScaleCoroutine != null) StopCoroutine(activeScaleCoroutine);
+            activeScaleCoroutine = StartCoroutine(RedShakeRoutine());
+        }
+
+        private IEnumerator RedShakeRoutine()
+        {
+            Vector3 originalPos = transform.localPosition;
+            Image img = GetComponent<Image>();
+            Color originalColor = img != null ? img.color : Color.white;
+            Color shakeColor = new Color(0.9f, 0.2f, 0.2f, 1f);
+
+            if (img != null) img.color = shakeColor;
+
+            float elapsed = 0f;
+            float totalDuration = 0.35f;
+            float shakeAmount = 8f;
+
+            while (elapsed < totalDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / totalDuration;
+                float offset = Mathf.Sin(t * Mathf.PI * 6f) * shakeAmount * (1f - t);
+                transform.localPosition = originalPos + new Vector3(offset, 0f, 0f);
+                yield return null;
+            }
+
+            transform.localPosition = originalPos;
+            if (img != null) img.color = originalColor;
+            activeScaleCoroutine = null;
         }
 
         private bool IsInteractable()
