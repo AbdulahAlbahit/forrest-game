@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: CoffeTable
   RequiredWood: 10
-  BaseProductionTime: 3
-  BaseSalePrice: 75
+  BaseProductionTime: 5
+  BaseSalePrice: 150
   ItemIcon: {fileID: 21300000, guid: b59b99b9f9adf9d4ab279cf4ec9d23df, type: 3}
   FurniturePrefab: {fileID: 7852121120265720704, guid: 548159bf012a2e1418b0a27c279fca09, type: 3}
   Description: 

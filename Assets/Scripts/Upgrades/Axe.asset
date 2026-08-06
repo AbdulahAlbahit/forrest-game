@@ -15,7 +15,7 @@ MonoBehaviour:
   ItemID: Axe
   Category: 0
   Effect: 0
-  BasePrice: 3000
+  BasePrice: 1500
   PriceFormula: 0
   PriceMultiplier: 1.5
   LinearPriceIncrease: 50

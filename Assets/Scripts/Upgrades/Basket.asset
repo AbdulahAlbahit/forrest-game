@@ -15,7 +15,7 @@ MonoBehaviour:
   ItemID: Basket
   Category: 1
   Effect: 1
-  BasePrice: 200
+  BasePrice: 1000
   PriceFormula: 0
   PriceMultiplier: 2
   LinearPriceIncrease: 75
