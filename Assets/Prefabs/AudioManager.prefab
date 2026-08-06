@@ -81,7 +81,7 @@ MonoBehaviour:
   - name: Button1
     clip: {fileID: 8300000, guid: 4dddb6ec8066c80479229bf515392494, type: 3}
     volume: 1
-    pitch: 0
+    pitch: 0.1
   - name: BaltaSallama
     clip: {fileID: 8300000, guid: a88d0b0d33ad7254db297c47e7d7eb90, type: 3}
     volume: 0.5
@@ -184,7 +184,7 @@ MonoBehaviour:
     pitch: 0.1
   ambienceSounds:
   - name: AtolyeMakine
-    clip: {fileID: 8300000, guid: 19b918b5c66fd014e90b17f6bb1647bb, type: 3}
+    clip: {fileID: 8300000, guid: 5d094da8f8eea394884dba88efc5dd9a, type: 3}
     volume: 0.4
     pitch: 1
   vehicleSounds:
