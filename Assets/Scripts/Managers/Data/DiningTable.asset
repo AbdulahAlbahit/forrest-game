@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: DiningTable
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: DiningTable
-  RequiredWood: 20
-  BaseProductionTime: 3
-  BaseSalePrice: 200
+  RequiredWood: 10
+  BaseProductionTime: 5
+  BaseSalePrice: 150
   ItemIcon: {fileID: 21300000, guid: 2cab40a04a30e4045b0875c99b48757c, type: 3}
   FurniturePrefab: {fileID: 214212384773774641, guid: bc8970d8285aa114ea3fa279b1f9b6c3, type: 3}
   Description: 

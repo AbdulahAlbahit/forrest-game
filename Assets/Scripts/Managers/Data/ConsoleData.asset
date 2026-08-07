@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: ConsoleData
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: Console
-  RequiredWood: 30
-  BaseProductionTime: 2
-  BaseSalePrice: 300
+  RequiredWood: 15
+  BaseProductionTime: 6
+  BaseSalePrice: 200
   ItemIcon: {fileID: 21300000, guid: a32caa139d12a2542abb8711cdeb8400, type: 3}
   FurniturePrefab: {fileID: 5012711256529975081, guid: 536bb5e47581cb140a58ee5c833703f6, type: 3}
   Description: 

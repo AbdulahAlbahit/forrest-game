@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SideTableData
   m_EditorClassIdentifier: Assembly-CSharp::RecipeConfig
   ItemID: SideTable
-  RequiredWood: 10
-  BaseProductionTime: 4
-  BaseSalePrice: 200
+  RequiredWood: 4
+  BaseProductionTime: 2
+  BaseSalePrice: 50
   ItemIcon: {fileID: 21300000, guid: 6fe08ee1812650c40867639424ce953c, type: 3}
   FurniturePrefab: {fileID: 2175736701514355011, guid: 273a8190715b97246a7f2d45494d31c6, type: 3}
   Description: 

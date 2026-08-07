@@ -267,10 +267,9 @@ public class EfeWorkshopSelectionController : MonoBehaviour
                 }
             }
 
-            bool hasPendingOrders = WorkshopManager.Instance != null && WorkshopManager.Instance.HasPendingQueueOrders;
             bool isActivelyProducing = WorkshopManager.Instance != null && WorkshopManager.Instance.IsActivelyProducing;
 
-            if (hasPendingOrders || isActivelyProducing)
+            if (isActivelyProducing)
             {
                 emptyGraceTimer = 0f;
             }

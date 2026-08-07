@@ -34,7 +34,10 @@ public class EfeOdunTasima : MonoBehaviour
     [SerializeField] private string truckLoadSpeedItemId = "TruckLoadSpeed";
 
     [Header("Kamyon Yukleme Gorseli")]
+    [Tooltip("Seviye 1'deki (TruckLoadSpeed degeri 1 iken) ucus suresi tabani. Upgrade seviyesi arttikca ucus suresi bu degerden asagi duser.")]
     [Min(0.1f)] [SerializeField] private float kamyonaUcusSuresi = 0.5f;
+    [Tooltip("Ucus suresinin upgrade ile inebilecegi en dusuk deger (animasyonun tamamen anlik/glitch olmamasi icin taban).")]
+    [Min(0.05f)] [SerializeField] private float kamyonaUcusSuresiMinimum = 0.15f;
     [Min(0f)] [SerializeField] private float kamyonaUcusYuksekligi = 1.35f;
     [Min(0.05f)] [SerializeField] private float kamyonOdunuOlcegi = 0.52f;
     [Range(1, 30)] [SerializeField] private int kamyonGorselUstSiniri = 30;
@@ -42,6 +45,7 @@ public class EfeOdunTasima : MonoBehaviour
     public int TasinanOdunSayisi { get; private set; }
     public int TasimaKapasitesi => tasimaKapasitesi;
     public float YuklemeTekrarAraligi => yuklemeTekrarAraligi;
+    public float KamyonaUcusSuresi => aktifKamyonaUcusSuresi;
     public bool SepetDolu => TasinanOdunSayisi >= tasimaKapasitesi;
 
     private readonly Collider[] toplamaSonuclari = new Collider[24];
@@ -61,6 +65,7 @@ public class EfeOdunTasima : MonoBehaviour
     private int sonGosterilenKamyonOdunu = -1;
     private bool upgradeEventineAbone;
     private bool dataEventineAbone;
+    private float aktifKamyonaUcusSuresi = 0.5f;
 
     private void OnEnable()
     {
@@ -400,7 +405,7 @@ public class EfeOdunTasima : MonoBehaviour
         Vector3 baslangicYerelOlcegi = ucacakOdun.localScale;
         float gecenSure = 0f;
 
-        while (gecenSure < kamyonaUcusSuresi)
+        while (gecenSure < aktifKamyonaUcusSuresi)
         {
             if (aktifKamyon == null || hedefSlot == null)
             {
@@ -408,7 +413,7 @@ public class EfeOdunTasima : MonoBehaviour
             }
 
             gecenSure += Time.deltaTime;
-            float zaman = Mathf.Clamp01(gecenSure / kamyonaUcusSuresi);
+            float zaman = Mathf.Clamp01(gecenSure / aktifKamyonaUcusSuresi);
             float yumusatilmisZaman = 1f - Mathf.Pow(1f - zaman, 3f);
             Vector3 hedefKonumu = hedefSlot.position;
             Vector3 ortaNokta = (baslangicKonumu + hedefKonumu) * 0.5f
@@ -843,6 +848,7 @@ public class EfeOdunTasima : MonoBehaviour
 
         float odunBasinaHiz = UpgradeManager.Instance.GetItemValue(truckLoadSpeedItemId);
         yuklemeTekrarAraligi = Mathf.Max(0.02f, 1f / Mathf.Max(0.01f, odunBasinaHiz));
+        aktifKamyonaUcusSuresi = Mathf.Max(kamyonaUcusSuresiMinimum, kamyonaUcusSuresi / Mathf.Max(0.01f, odunBasinaHiz));
     }
 
     public void UpgradeKapasitesiniUygula()
@@ -883,6 +889,7 @@ public class EfeOdunTasima : MonoBehaviour
         sepeteUcusDonusAcisi = Mathf.Max(0f, sepeteUcusDonusAcisi);
         yuklemeTekrarAraligi = Mathf.Max(0.02f, yuklemeTekrarAraligi);
         kamyonaUcusSuresi = Mathf.Max(0.1f, kamyonaUcusSuresi);
+        kamyonaUcusSuresiMinimum = Mathf.Max(0.05f, kamyonaUcusSuresiMinimum);
         kamyonaUcusYuksekligi = Mathf.Max(0f, kamyonaUcusYuksekligi);
         kamyonOdunuOlcegi = Mathf.Max(0.05f, kamyonOdunuOlcegi);
         kamyonGorselUstSiniri = Mathf.Clamp(kamyonGorselUstSiniri, 1, 30);

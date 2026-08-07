@@ -15,12 +15,12 @@ MonoBehaviour:
   ItemID: Basket
   Category: 1
   Effect: 1
-  BasePrice: 100
-  PriceFormula: 1
-  PriceMultiplier: 1.5
-  LinearPriceIncrease: 50
+  BasePrice: 1000
+  PriceFormula: 0
+  PriceMultiplier: 2
+  LinearPriceIncrease: 75
   BaseValue: 10
-  ValueGrowth: 2
-  MaxLevel: 5
+  ValueGrowth: 5
+  MaxLevel: 10
   UseCharacterAttackTimings: 0
   CharacterAttackLevels: []

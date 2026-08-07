@@ -15,10 +15,12 @@ MonoBehaviour:
   ItemID: Axe
   Category: 0
   Effect: 0
-  BasePrice: 50
+  BasePrice: 1500
   PriceFormula: 0
   PriceMultiplier: 1.5
   LinearPriceIncrease: 50
-  BaseValue: 10
-  ValueGrowth: 5
-  MaxLevel: 10
+  BaseValue: 20
+  ValueGrowth: 15
+  MaxLevel: 5
+  UseCharacterAttackTimings: 0
+  CharacterAttackLevels: []

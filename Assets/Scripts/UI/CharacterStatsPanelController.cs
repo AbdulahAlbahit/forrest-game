@@ -307,6 +307,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         // Verileri hazırla
         PlayerData data = CloudSaveManager.Instance != null ? CloudSaveManager.Instance.CurrentData : null;
+        EfeOdunTasima woodCarrier = FindFirstObjectByType<EfeOdunTasima>();
 
         // 1. KARAKTER
         AddHeader("KARAKTER", headerColorCharacter);
@@ -331,6 +332,17 @@ public class CharacterStatsPanelController : MonoBehaviour
             hitsPerSecondText = $"{1f / attackCooldown:F2} vuruş/sn";
         }
         AddRow("Vuruş Hızı (Karakter)", hitsPerSecondText, headerColorCharacter);
+
+        string woodTransferSpeedText = "—";
+        if (woodCarrier != null)
+        {
+            float toplamOdunBasinaSure = woodCarrier.KamyonaUcusSuresi + woodCarrier.YuklemeTekrarAraligi;
+            if (toplamOdunBasinaSure > 0f)
+            {
+                woodTransferSpeedText = $"{1f / toplamOdunBasinaSure:F2} odun/sn";
+            }
+        }
+        AddRow("Odun Aktarma Hızı (Kamyona)", woodTransferSpeedText, headerColorCharacter);
 
         // 2. EKONOMİ
         AddHeader("EKONOMİ", headerColorEconomy);
@@ -378,7 +390,6 @@ public class CharacterStatsPanelController : MonoBehaviour
         int configuredBasketCapacity = GetBasketCapacity(basketLvl);
         // Gercek oynanis kapasitesi EfeOdunTasima tarafinda tutuluyor. BasketManager
         // eski/yardimci sistem oldugu icin yuksek seviyelerde 5 degerinde kalabiliyor.
-        EfeOdunTasima woodCarrier = FindFirstObjectByType<EfeOdunTasima>();
         int basketCur = woodCarrier != null
             ? woodCarrier.TasinanOdunSayisi
             : (BasketManager.Instance != null ? BasketManager.Instance.MevcutDoluluk : 0);
@@ -392,7 +403,6 @@ public class CharacterStatsPanelController : MonoBehaviour
         int basketUpgradePrice = UpgradeManager.Instance != null
             ? UpgradeManager.Instance.GetUpgradeCost("Basket")
             : Mathf.Max(100, 100 + (basketLvl - 1) * 50);
-        int workshopRawWood = data != null ? data.WorkshopRawWood : 0;
         int workshopCap = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetWorkshopCapacity() : 10;
 
         AddRow("Sepet Odun Miktarı", $"{basketCur} / {basketMax}", normalValueColor);
@@ -406,21 +416,15 @@ public class CharacterStatsPanelController : MonoBehaviour
             "Yükseltme Fiyatı",
             basketIsMaxLevel ? "Maksimum Seviye" : $"{basketUpgradePrice:N0} Para",
             basketIsMaxLevel ? normalValueColor : headerColorInventory);
-        AddRow("Atölye Odun Stoku", $"{workshopRawWood} / {workshopCap}", headerColorInventory);
-
-        string woodTransferSpeedText = "—";
-        if (woodCarrier != null && woodCarrier.YuklemeTekrarAraligi > 0f)
-        {
-            woodTransferSpeedText = $"{1f / woodCarrier.YuklemeTekrarAraligi:F2} odun/sn";
-        }
-        AddRow("Odun Aktarma Hızı (Kamyona)", woodTransferSpeedText, headerColorInventory);
 
         // 5. ATÖLYE
         AddHeader("ATÖLYE", headerColorWorkshop);
         int workshopLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("Workshop") : 1;
         int queueLvl = UpgradeManager.Instance != null ? UpgradeManager.Instance.GetItemLevel("WorkshopQueue") : 1;
         float prodTime = WorkshopManager.Instance != null ? WorkshopManager.Instance.GetEstimatedProductionTime() : 0f;
+        int workshopRawWood = data != null ? data.WorkshopRawWood : 0;
 
+        AddRow("Atölye Odun Stoku", $"{workshopRawWood} Odun", headerColorWorkshop);
         AddRow("Atölye Seviyesi", $"Seviye {workshopLvl}", normalValueColor);
         AddRow("Kuyruk Seviyesi", $"Seviye {queueLvl}", normalValueColor);
         AddRow("Üretim Hızı", $"{prodTime:F2} sn/ürün", headerColorWorkshop);
