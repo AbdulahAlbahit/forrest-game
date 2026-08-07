@@ -235,6 +235,10 @@ public class AxeTablePanelController : MonoBehaviour
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);
 
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
+
         SubscribeEvents();
         SyncEquippedFromAvailableData();
         RefreshPanel();
