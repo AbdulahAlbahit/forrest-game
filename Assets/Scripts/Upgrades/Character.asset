@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c3981ed0af485d4ab5a93de4d1efc4d, type: 3}
+  m_Name: Character
+  m_EditorClassIdentifier: Assembly-CSharp::ItemUpgradeConfig
+  ItemID: Character
+  Category: 0
+  Effect: 2
+  BasePrice: 1000
+  PriceFormula: 0
+  PriceMultiplier: 1.5
+  LinearPriceIncrease: 50
+  BaseValue: 1
+  ValueGrowth: 0
+  MaxLevel: 5
+  UseCharacterAttackTimings: 1
+  CharacterAttackLevels:
+  - Level: 1
+    AttackCooldown: 0.95
+    HitDelay: 0.42
+    AnimationSpeed: 1
+  - Level: 2
+    AttackCooldown: 0.82
+    HitDelay: 0.36
+    AnimationSpeed: 1.12
+  - Level: 3
+    AttackCooldown: 0.7
+    HitDelay: 0.31
+    AnimationSpeed: 1.25
+  - Level: 4
+    AttackCooldown: 0.6
+    HitDelay: 0.27
+    AnimationSpeed: 1.38
+  - Level: 5
+    AttackCooldown: 0.52
+    HitDelay: 0.23
+    AnimationSpeed: 1.5

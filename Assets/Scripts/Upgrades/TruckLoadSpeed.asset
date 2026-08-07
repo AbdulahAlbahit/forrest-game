@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c3981ed0af485d4ab5a93de4d1efc4d, type: 3}
+  m_Name: TruckLoadSpeed
+  m_EditorClassIdentifier: Assembly-CSharp::ItemUpgradeConfig
+  ItemID: TruckLoadSpeed
+  Category: 2
+  Effect: 2
+  BasePrice: 100
+  PriceFormula: 1
+  PriceMultiplier: 1.5
+  LinearPriceIncrease: 50
+  BaseValue: 7
+  ValueGrowth: 6
+  MaxLevel: 5
+  UseCharacterAttackTimings: 0
+  CharacterAttackLevels: []

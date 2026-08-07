@@ -1,0 +1,134 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1986278174151862227
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8448382221448394271}
+  - component: {fileID: 7695990436429137011}
+  m_Layer: 0
+  m_Name: SeasonManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8448382221448394271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1986278174151862227}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7796494301640965547}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7695990436429137011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1986278174151862227}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad5061746f7c5964c8f56ad66a47d124, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Core.SeasonManager
+  ayarlar: {fileID: 11400000, guid: dda4fe407a7d01643b2dfbc376bf7910, type: 2}
+  aktifMevsim: 0
+  kalanSaniye: 0
+  ilkbaharVFX: {fileID: 0}
+  yazVFX: {fileID: 6800867781283464235}
+  sonbaharVFX: {fileID: 0}
+  kisVFX: {fileID: 0}
+  snowTreeMaterials:
+  - {fileID: 2100000, guid: 60c849a61222dde4288a0d3836ec4833, type: 2}
+  - {fileID: 2100000, guid: fcefb36a42e03634c907bb6ae1290942, type: 2}
+  - {fileID: 2100000, guid: 475612d75cc9c9f448887ad58a9a62f8, type: 2}
+  - {fileID: 2100000, guid: 4c8c227a1496714458efa45384c0b323, type: 2}
+  - {fileID: 2100000, guid: 902153d181dff954c9873f4e6d32af94, type: 2}
+  - {fileID: 2100000, guid: 0826d14a16d9183468d74c30c4207cb2, type: 2}
+  - {fileID: 2100000, guid: e48c0c1c0d59b9749a1990f5e425d79b, type: 2}
+  - {fileID: 2100000, guid: 386094920598ded4fad9d89239a91e86, type: 2}
+  autumnLeafMaterials:
+  - {fileID: 2100000, guid: 475612d75cc9c9f448887ad58a9a62f8, type: 2}
+  - {fileID: 2100000, guid: 902153d181dff954c9873f4e6d32af94, type: 2}
+  - {fileID: 2100000, guid: 60c849a61222dde4288a0d3836ec4833, type: 2}
+  baseLeafColors:
+  - {r: 0.439, g: 0.902, b: 0.839, a: 1}
+  - {r: 0.4392157, g: 0.9019608, b: 0.8392157, a: 1}
+  - {r: 0.447, g: 0.827, b: 0.835, a: 1}
+  autumnLeafColors:
+  - {r: 0.8039216, g: 0.5215687, b: 0.2470588, a: 1}
+  - {r: 0.8235295, g: 0.4117647, b: 0.1176471, a: 1}
+  - {r: 0.79607844, g: 0.2705882, b: 0.050980393, a: 1}
+  sonbaharRainMaxEmissionRate: 140
+  ilkbaharCicekBaselineleri:
+  - {fileID: 11400000, guid: 7a465df58789707498c22d2b795c4ffb, type: 2}
+  - {fileID: 11400000, guid: e9d82b9cb991e44499011e568a23bb3f, type: 2}
+  - {fileID: 11400000, guid: c323d5fa2a554d94ab346f1cedae767b, type: 2}
+  groundTerrainLayerIndex: 0
+  snowTerrainLayerIndex: 1
+  roadTerrainLayerIndex: 2
+  roadSnowTerrainLayerIndex: 3
+  terrainHeavyUpdateInterval: 0.3
+  directionalLight: {fileID: 0}
+  ilkbaharLightColor: {r: 1, g: 1, b: 1, a: 1}
+  yazLightColor: {r: 1, g: 0.968, b: 0.78, a: 1}
+  sonbaharLightColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  kisLightColor: {r: 0.847, g: 0.902, b: 0.949, a: 1}
+  ilkbaharLightIntensity: 1
+  yazLightIntensity: 1
+  sonbaharLightIntensity: 1
+  kisLightIntensity: 0.7
+  fogMode: 3
+  ilkbaharFogColor: {r: 0.58, g: 0.58, b: 0.58, a: 1}
+  ilkbaharFogDensity: 0.01
+  yazFogColor: {r: 0.58, g: 0.58, b: 0.58, a: 1}
+  yazFogDensity: 0.006
+  sonbaharFogColor: {r: 0.22, g: 0.22, b: 0.22, a: 1}
+  sonbaharFogDensity: 0.06
+  kisFogColor: {r: 0.85, g: 0.88, b: 0.92, a: 1}
+  kisFogDensity: 0.06
+--- !u!1 &6800867781283464235
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7796494301640965547}
+  m_Layer: 0
+  m_Name: VFX_summer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7796494301640965547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6800867781283464235}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -58.40365, y: -72.151184, z: -107.09073}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8448382221448394271}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
