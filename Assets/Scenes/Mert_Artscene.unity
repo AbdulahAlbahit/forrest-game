@@ -3411,11 +3411,11 @@ Terrain:
   m_Enabled: 1
   serializedVersion: 6
   m_TerrainData: {fileID: 15600000, guid: d0962cc7ede483440a20a610d6a9b238, type: 2}
-  m_TreeDistance: 25
+  m_TreeDistance: 17
   m_TreeBillboardDistance: 168
   m_TreeCrossFadeLength: 5
-  m_TreeMaximumFullLODCount: 50
-  m_DetailObjectDistance: 25
+  m_TreeMaximumFullLODCount: 17
+  m_DetailObjectDistance: 17
   m_DetailObjectDensity: 1
   m_HeightmapPixelError: 20
   m_SplatMapDistance: 1000
@@ -3429,7 +3429,7 @@ Terrain:
   m_IgnoreQualitySettings: 0
   m_ReflectionProbeUsage: 1
   m_MaterialTemplate: {fileID: 2100000, guid: 594ea882c5a793440b60ff72d896021e, type: 2}
-  m_BakeLightProbesForTrees: 1
+  m_BakeLightProbesForTrees: 0
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1
   m_ReceiveGI: 1
@@ -22751,9 +22751,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82a85de3008999b42a14e558d0cd33d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ForrestGame.Managers.AdManager
-  rewardGold: 100
+  rewardGold: 300
   rewardWood: 50
-  interstitialIntervalSeconds: 120
+  interstitialIntervalSeconds: 600
 --- !u!1001 &1229692300
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38258,6 +38258,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: 'AudioManager '
       objectReference: {fileID: 0}
+    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: sfxSounds.Array.data[9].volume
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8138346300984487735, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
+      propertyPath: sfxSounds.Array.data[17].volume
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8802695761205820420, guid: 37f418007fd9e034092cd4a859846f4f, type: 3}
       propertyPath: m_LocalPosition.x
       value: 82.7345
@@ -48807,6 +48815,10 @@ PrefabInstance:
     - target: {fileID: 2844715243998988279, guid: c14f24d2840e28647873acf74a451bff, type: 3}
       propertyPath: logPoolSize
       value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 2844715243998988279, guid: c14f24d2840e28647873acf74a451bff, type: 3}
+      propertyPath: respawnTime
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 3752864725785904221, guid: c14f24d2840e28647873acf74a451bff, type: 3}
       propertyPath: m_LocalPosition.x
