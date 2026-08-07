@@ -82,7 +82,7 @@ public class CustomerOrderManager : MonoBehaviour
 
             GameLogger.Log($"CustomerOrderManager: [GUNLUK SIFIRLAMA] {oncekiSayac} bekleyen siparis temizlendi. Yeni sifirlama zamani: {nowUtc}");
 
-            CloudSaveManager.Instance?.SaveData(data);
+            CloudSaveManager.Instance?.MarkDirty();
             OnOrdersReset?.Invoke();
         }
         else
@@ -159,6 +159,6 @@ public class CustomerOrderManager : MonoBehaviour
         GameLogger.Log($"CustomerOrderManager: Yeni siparis olusturuldu (#{order.OrderId}) - {itemId}.");
         OnOrderCreated?.Invoke(order);
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
     }
 }

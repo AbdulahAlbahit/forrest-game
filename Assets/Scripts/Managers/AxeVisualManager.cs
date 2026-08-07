@@ -126,7 +126,7 @@ namespace ForrestGame.Managers
                 visualIndex = 0;
                 savedVisual = axeVisuals[visualIndex];
                 data.SetItemLevel(EquippedAxeSaveKey, savedTier);
-                subscribedCloudSaveManager?.SaveData(data);
+                subscribedCloudSaveManager?.MarkDirty();
             }
 
             if (savedVisual == null || savedVisual.model == null || string.IsNullOrWhiteSpace(savedVisual.axeId))

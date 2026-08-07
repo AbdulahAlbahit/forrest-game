@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using ForrestGame.Utils;
@@ -32,7 +32,7 @@ public class RegionManager : MonoBehaviour
             return false;
         }
 
-        List<string> acilanBolgeler = CloudSaveManager.Instance.CurrentData.AcilanBolgeler;
+        List<string> acilanBolgeler = CloudSaveManager.Instance.CurrentData.UnlockedRegions;
         
         if (acilanBolgeler == null)
             return false;
@@ -97,15 +97,15 @@ public class RegionManager : MonoBehaviour
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
-        if (data.AcilanBolgeler == null)
+        if (data.UnlockedRegions == null)
         {
-            data.AcilanBolgeler = new List<string>();
+            data.UnlockedRegions = new List<string>();
         }
 
-        data.AcilanBolgeler.Add(regionData.RegionName);
-        data.Para = EconomyManager.Instance.MevcutPara;
+        data.UnlockedRegions.Add(regionData.RegionName);
+        data.Gold = EconomyManager.Instance.MevcutPara;
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
 
         GameLogger.Log($"RegionManager: {regionData.RegionName} basariyla {cost} karsiliginda acildi ve kaydedildi.");
         OnRegionUnlocked?.Invoke(regionData.RegionName);
@@ -157,15 +157,15 @@ public class RegionManager : MonoBehaviour
 
         PlayerData data = CloudSaveManager.Instance.CurrentData;
 
-        if (data.AcilanBolgeler == null)
+        if (data.UnlockedRegions == null)
         {
-            data.AcilanBolgeler = new List<string>();
+            data.UnlockedRegions = new List<string>();
         }
 
-        data.AcilanBolgeler.Add(regionName);
-        data.Para = EconomyManager.Instance.MevcutPara;
+        data.UnlockedRegions.Add(regionName);
+        data.Gold = EconomyManager.Instance.MevcutPara;
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
 
         GameLogger.Log($"RegionManager: {regionName} basariyla {cost} karsiliginda acildi ve kaydedildi.");
         OnRegionUnlocked?.Invoke(regionName);

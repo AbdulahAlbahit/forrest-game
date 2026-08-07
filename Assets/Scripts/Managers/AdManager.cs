@@ -211,7 +211,7 @@ namespace ForrestGame.Managers
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
             {
                 CloudSaveManager.Instance.CurrentData.PlayerWoodStock += rewardWood;
-                CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+                CloudSaveManager.Instance.MarkDirty();
             }
 
             if (NotificationManager.Instance != null)

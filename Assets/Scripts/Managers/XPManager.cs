@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using ForrestGame.Utils;
 
@@ -48,7 +48,7 @@ public class XPManager : MonoBehaviour
         get 
         {
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
-                return CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+                return CloudSaveManager.Instance.CurrentData.PlayerLevel;
             return 1;
         }
     }
@@ -92,7 +92,7 @@ public class XPManager : MonoBehaviour
     private void HandleDataLoaded(PlayerData data)
     {
         OnXPChanged?.Invoke(data.XP);
-        GameLogger.Log($"XPManager: Bulut verisi ile senkronize edildi. XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
+        GameLogger.Log($"XPManager: Bulut verisi ile senkronize edildi. XP: {data.XP}, Seviye: {data.PlayerLevel}");
     }
 
 
@@ -121,27 +121,27 @@ public class XPManager : MonoBehaviour
         GameLogger.Log($"XPManager: +{amount} XP kazanildi. Toplam XP: {data.XP}");
 
 
-        while (data.XP >= GetRequiredXPForLevel(data.OyuncuSeviyesi))
+        while (data.XP >= GetRequiredXPForLevel(data.PlayerLevel))
         {
-            data.XP -= GetRequiredXPForLevel(data.OyuncuSeviyesi);
-            data.OyuncuSeviyesi++;
+            data.XP -= GetRequiredXPForLevel(data.PlayerLevel);
+            data.PlayerLevel++;
 
             // Analitik: Seviye atlama süresi event'i
             float dakika = timeSinceLastLevelUp / 60f;
             ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
                 "level_up_time", "minutes_played", dakika);
             ForrestGame.Managers.AnalyticsManager.Instance?.LogCustomEvent(
-                "level_up_time", "new_level", data.OyuncuSeviyesi);
+                "level_up_time", "new_level", data.PlayerLevel);
             timeSinceLastLevelUp = 0f;
 
-            GameLogger.Log($"XPManager: LEVEL UP! Yeni seviye: {data.OyuncuSeviyesi}");
-            OnLevelUp?.Invoke(data.OyuncuSeviyesi);
+            GameLogger.Log($"XPManager: LEVEL UP! Yeni seviye: {data.PlayerLevel}");
+            OnLevelUp?.Invoke(data.PlayerLevel);
         }
 
         OnXPChanged?.Invoke(data.XP);
 
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
     }
 
 

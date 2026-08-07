@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -131,7 +131,7 @@ public sealed class EfeMarketEconomyBridge : MonoBehaviour
 
         if (saveImmediatelyAfterSale)
         {
-            _cloudSaveManager.SaveData(_cloudSaveManager.CurrentData);
+            _cloudSaveManager.MarkDirty();
         }
 
         Debug.Log(
@@ -170,11 +170,11 @@ public sealed class EfeMarketEconomyBridge : MonoBehaviour
     private void SynchronizeSalesBalance(PlayerData data)
     {
         if (data != null &&
-            data.Para != _lastSynchronizedBalance &&
+            data.Gold != _lastSynchronizedBalance &&
             EfeMarketSalesController.Instance != null)
         {
-            EfeMarketSalesController.Instance.SynchronizeBalance(data.Para);
-            _lastSynchronizedBalance = data.Para;
+            EfeMarketSalesController.Instance.SynchronizeBalance(data.Gold);
+            _lastSynchronizedBalance = data.Gold;
         }
     }
 

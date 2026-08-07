@@ -218,7 +218,7 @@ public class AxeTablePanelController : MonoBehaviour
         {
             currentlyEquippedTier = 1;
             data.SetItemLevel(EquippedAxeSaveKey, currentlyEquippedTier);
-            CloudSaveManager.Instance?.SaveData(data);
+            CloudSaveManager.Instance?.MarkDirty();
         }
 
         if (!EquipVisual(currentlyEquippedTier))
@@ -368,7 +368,7 @@ public class AxeTablePanelController : MonoBehaviour
             CloudSaveManager.Instance.CurrentData.SetItemLevel(
                 EquippedAxeSaveKey,
                 currentlyEquippedTier);
-            CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+            CloudSaveManager.Instance.MarkDirty();
         }
 
         bool visualChanged = EquipVisual(currentlyEquippedTier);
@@ -703,7 +703,7 @@ public class AxeTablePanelController : MonoBehaviour
         string itemId = GetItemId(tier);
         data.SetItemLevel(AxeVisualManager.GetOwnershipSaveKey(itemId), 1);
         data.SetItemLevel(itemId, 1);
-        cloudSaveManager.SaveData(data);
+        cloudSaveManager.MarkDirty();
         axePurchaseInProgress = false;
 
         NotificationUIController.Instance?.ShowNotification(

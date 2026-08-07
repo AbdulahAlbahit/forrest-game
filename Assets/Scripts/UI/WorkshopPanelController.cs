@@ -382,7 +382,7 @@ public class WorkshopPanelController : MonoBehaviour
 
             if (CloudSaveManager.Instance != null)
             {
-                CloudSaveManager.Instance.SaveData(data);
+                CloudSaveManager.Instance.MarkDirty();
             }
 
             RefreshQueueUI();
