@@ -19,6 +19,8 @@ namespace ForrestGame.Managers
     {
         public static QuestManager Instance { get; private set; }
 
+        public static event System.Action OnQuestsReset;
+
         [Header("Tum Gorevler")]
         [Tooltip("Oyundaki tum QuestConfig asset'lerini buraya surukle.")]
         public List<QuestConfig> tumGorevler;
@@ -35,23 +37,62 @@ namespace ForrestGame.Managers
             DontDestroyOnLoad(gameObject);
         }
 
+        private float _nextResetCheckTime = 0f;
+
+        private void Update()
+        {
+            if (Time.unscaledTime >= _nextResetCheckTime)
+            {
+                _nextResetCheckTime = Time.unscaledTime + 5f;
+                CheckDailyReset();
+            }
+        }
+
+        private void CheckDailyReset()
+        {
+            if (CloudSaveManager.Instance?.CurrentData == null) return;
+            
+            PlayerData data = CloudSaveManager.Instance.CurrentData;
+            long currentDay = (long)(System.DateTime.UtcNow - new System.DateTime(1970, 1, 1)).TotalDays;
+            
+            if (data.LastQuestResetTime < currentDay)
+            {
+                data.LastQuestResetTime = currentDay;
+                
+                if (data.ActiveQuests != null) data.ActiveQuests.Clear();
+                if (data.CompletedQuests != null) data.CompletedQuests.Clear();
+                
+                CloudSaveManager.Instance.SaveData(data);
+                OnQuestsReset?.Invoke();
+                
+                GameLogger.Log("[QuestManager] Gunluk gorevler sifirlandi!");
+            }
+        }
+
         private void OnEnable()
         {
             ShopManager.OnItemSold += HandleItemSold;
+            EfeOynanisEventleri.BaltaAgacaVurdu += HandleAxeHit;
+            EfeOynanisEventleri.OdunToplandi += HandleWoodCollected;
+            TreeManager.OnTreeFelledAction += HandleTreeFelled;
         }
 
         private void OnDisable()
         {
             ShopManager.OnItemSold -= HandleItemSold;
+            EfeOynanisEventleri.BaltaAgacaVurdu -= HandleAxeHit;
+            EfeOynanisEventleri.OdunToplandi -= HandleWoodCollected;
+            TreeManager.OnTreeFelledAction -= HandleTreeFelled;
         }
 
+        private void HandleAxeHit(Transform t) => ReportQuestProgress("agaca_vurma", 1);
+        private void HandleWoodCollected(Transform t, int current, int cap) => ReportQuestProgress("toplanan_odun", 1);
+        private void HandleTreeFelled(Vector3 pos) => ReportQuestProgress("kesilen_agac", 1);
 
-
-
-
-        private void HandleItemSold(string itemId, int amount)
+        public void ReportQuestProgress(string actionKey, int amount = 1)
         {
-            GameLogger.Log($"QuestManager: HandleItemSold tetiklendi! Item: {itemId}, Miktar: {amount}");
+            CheckDailyReset();
+            
             if (CloudSaveManager.Instance?.CurrentData == null) return;
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;
@@ -61,9 +102,7 @@ namespace ForrestGame.Managers
             if (data.CompletedQuests == null)
                 data.CompletedQuests = new System.Collections.Generic.List<string>();
 
-            string actionKey = $"satilan_{itemId.ToLower()}";
             bool progressChanged = false;
-
 
             if (tumGorevler != null)
             {
@@ -72,7 +111,7 @@ namespace ForrestGame.Managers
                     if (quest == null) continue;
                     if (data.CompletedQuests.Contains(quest.QuestID)) continue;
 
-                    if (quest.TargetKey.ToLower() == actionKey)
+                    if (quest.TargetKey.ToLower() == actionKey.ToLower())
                     {
                         int currentProgress = data.ActiveQuests.Get(quest.QuestID, 0);
                         int newProgress = currentProgress + amount;
@@ -88,6 +127,16 @@ namespace ForrestGame.Managers
                 CheckAndRewardQuests(data);
                 CloudSaveManager.Instance.SaveData(data);
             }
+        }
+
+
+
+
+
+        private void HandleItemSold(string itemId, int amount)
+        {
+            GameLogger.Log($"QuestManager: HandleItemSold tetiklendi! Item: {itemId}, Miktar: {amount}");
+            ReportQuestProgress($"satilan_{itemId.ToLower()}", amount);
         }
 
 
