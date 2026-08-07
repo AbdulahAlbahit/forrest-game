@@ -169,6 +169,12 @@ public class PauseMenuController : MonoBehaviour
     {
         Debug.Log("[PauseMenu] Yükleme ekranı gösteriliyor ve çıkış yapılıyor...");
 
+        // Çıkmadan önce veriyi anında Firestore'a kaydet
+        if (CloudSaveManager.Instance != null)
+        {
+            CloudSaveManager.Instance.ForceSaveNow();
+        }
+
         // Firebase oturumunu kapat (oturum sonlandırılsın)
         if (FirebaseAuthManager.Instance != null)
         {

@@ -2,6 +2,7 @@ using UnityEngine;
 using GoogleMobileAds.Api;
 using ForrestGame.Utils;
 using System;
+using System.Collections.Generic;
 using ForrestGame.Core;
 
 namespace ForrestGame.Managers
@@ -32,14 +33,26 @@ namespace ForrestGame.Managers
         private RewardedAd rewardedAd;
         private InterstitialAd interstitialAd;
 
+        // Ana thread'de çalıştırılacak aksiyonlar için kuyruk
+        // AdMob callback'leri background thread'den gelebildiği için tüm
+        // Unity API çağrılarını buraya koyarak main thread'e taşıyoruz.
+        private readonly Queue<Action> _mainThreadActions = new Queue<Action>();
+        private readonly object _lockObj = new object();
+
+        // Ödüllü reklam ödülü için bekleyen aksiyon
+        private bool _pendingReward = false;
+
         [Header("Ödüllü Reklam Ayarları")]
         public int rewardGold = 100;
         public int rewardWood = 50;
 
         [Header("Geçiş Reklamı (Otomatik) Ayarları")]
-        [Tooltip("Geçiş reklamının kaç saniyede bir çıkacağı (Örn: 120 = 2 dakika)")]
-        public float interstitialIntervalSeconds = 120f;
+        [Tooltip("Geçiş reklamının kaç saniyede bir çıkacağı (Örn: 600 = 10 dakika)")]
+        public float interstitialIntervalSeconds = 600f;
         private float timer = 0f;
+
+        // Reklam gösterilirken timer'ı durdur
+        private bool isAdShowing = false;
 
         private void Awake()
         {
@@ -57,23 +70,54 @@ namespace ForrestGame.Managers
             // Google Mobile Ads SDK'yı başlat
             MobileAds.Initialize((InitializationStatus initStatus) =>
             {
-                GameLogger.Log("AdManager: Mobile Ads SDK baslatildi.");
-                
-                // İki reklam türünü de arka planda yükleyip hazırla
-                LoadRewardedAd();
-                LoadInterstitialAd();
+                // Bu callback de background thread'den gelebilir, main thread'e aktar
+                EnqueueMainThread(() =>
+                {
+                    GameLogger.Log("AdManager: Mobile Ads SDK baslatildi.");
+                    LoadRewardedAd();
+                    LoadInterstitialAd();
+                });
             });
         }
 
         private void Update()
         {
+            // --- Main thread kuyruğunu işle ---
+            // Bu sayede tüm AdMob callback'leri güvenli şekilde burada çalışır
+            lock (_lockObj)
+            {
+                while (_mainThreadActions.Count > 0)
+                {
+                    _mainThreadActions.Dequeue()?.Invoke();
+                }
+            }
+
+            // Ödül bekleniyorsa ver
+            if (_pendingReward)
+            {
+                _pendingReward = false;
+                GiveRewardsToPlayer();
+            }
+
+            // Reklam gösterilirken sayacı durdur
+            if (isAdShowing) return;
+
             // Zamanlayıcıyı çalıştır
             timer += Time.deltaTime;
 
-            // Eğer 2 dakika dolduysa ve geçiş reklamı hazırsa göster
+            // Eğer süre dolduysa ve geçiş reklamı hazırsa göster
             if (timer >= interstitialIntervalSeconds)
             {
                 ShowInterstitialAd();
+            }
+        }
+
+        // Bir aksiyonu main thread kuyruğuna ekler (thread-safe)
+        private void EnqueueMainThread(Action action)
+        {
+            lock (_lockObj)
+            {
+                _mainThreadActions.Enqueue(action);
             }
         }
 
@@ -98,20 +142,45 @@ namespace ForrestGame.Managers
                         GameLogger.LogError("AdManager: Odullu reklam yuklenemedi. Hata: " + error);
                         return;
                     }
-                    rewardedAd = ad;
-                    RegisterEventHandlers(rewardedAd);
+                    // Yükleme callback'i de background thread'den gelebilir
+                    EnqueueMainThread(() =>
+                    {
+                        rewardedAd = ad;
+                        RegisterRewardedEventHandlers(rewardedAd);
+                    });
                 });
         }
 
-        private void RegisterEventHandlers(RewardedAd ad)
+        private void RegisterRewardedEventHandlers(RewardedAd ad)
         {
+            ad.OnAdFullScreenContentOpened += () =>
+            {
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = true;
+                    GameLogger.Log("AdManager: Odullu reklam acildi.");
+                });
+            };
+
             ad.OnAdFullScreenContentClosed += () =>
             {
-                LoadRewardedAd(); // Oyuncu reklamı kapattığında yenisini yükle
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = false;
+                    timer = 0f; // Reklam kapanınca interstitial sayacını sıfırla
+                    GameLogger.Log("AdManager: Odullu reklam kapatildi, yeni reklam yukleniyor.");
+                    LoadRewardedAd();
+                });
             };
+
             ad.OnAdFullScreenContentFailed += (AdError error) =>
             {
-                LoadRewardedAd();
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = false;
+                    GameLogger.LogError("AdManager: Odullu reklam gosterilemedi. Hata: " + error);
+                    LoadRewardedAd();
+                });
             };
         }
 
@@ -121,8 +190,9 @@ namespace ForrestGame.Managers
             {
                 rewardedAd.Show((Reward reward) =>
                 {
-                    // Oyuncu reklamı sonuna kadar izledi, ödülü ver
-                    GiveRewardsToPlayer();
+                    // Reward callback de background thread'den gelebilir
+                    // Unity API'larına doğrudan erişmek yerine flag kullan
+                    _pendingReward = true;
                 });
             }
             else
@@ -141,7 +211,7 @@ namespace ForrestGame.Managers
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
             {
                 CloudSaveManager.Instance.CurrentData.PlayerWoodStock += rewardWood;
-                CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
+                CloudSaveManager.Instance.MarkDirty();
             }
 
             if (NotificationManager.Instance != null)
@@ -169,24 +239,42 @@ namespace ForrestGame.Managers
                         GameLogger.LogError("AdManager: Gecis reklami yuklenemedi. Hata: " + error);
                         return;
                     }
-                    interstitialAd = ad;
-                    RegisterEventHandlers(interstitialAd);
+                    EnqueueMainThread(() =>
+                    {
+                        interstitialAd = ad;
+                        RegisterInterstitialEventHandlers(interstitialAd);
+                    });
                 });
         }
 
-        private void RegisterEventHandlers(InterstitialAd ad)
+        private void RegisterInterstitialEventHandlers(InterstitialAd ad)
         {
+            ad.OnAdFullScreenContentOpened += () =>
+            {
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = true;
+                });
+            };
+
             ad.OnAdFullScreenContentClosed += () =>
             {
-                // Reklam kapatıldığında sayacı sıfırla ve yeni reklam yükle
-                timer = 0f;
-                LoadInterstitialAd();
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = false;
+                    timer = 0f;
+                    LoadInterstitialAd();
+                });
             };
+
             ad.OnAdFullScreenContentFailed += (AdError error) =>
             {
-                // Hata olursa yine de sayacı sıfırla ki oyuncu peş peşe hatayla boğuşmasın
-                timer = 0f;
-                LoadInterstitialAd();
+                EnqueueMainThread(() =>
+                {
+                    isAdShowing = false;
+                    timer = interstitialIntervalSeconds - 10f;
+                    LoadInterstitialAd();
+                });
             };
         }
 
@@ -195,12 +283,10 @@ namespace ForrestGame.Managers
             if (interstitialAd != null && interstitialAd.CanShowAd())
             {
                 interstitialAd.Show();
-                // Not: Sayfayı kapattığında OnAdFullScreenContentClosed çalışacak ve timer sıfırlanacak.
-                // Eğer burada sıfırlarsak reklam izlenirken de süre saymaya devam eder.
             }
             else
             {
-                // Hazır değilse süreyi biraz geri al (örneğin 10 saniye sonra tekrar denesin)
+                // Hazır değilse 10 saniye sonra tekrar denesin
                 timer = interstitialIntervalSeconds - 10f;
                 LoadInterstitialAd();
             }

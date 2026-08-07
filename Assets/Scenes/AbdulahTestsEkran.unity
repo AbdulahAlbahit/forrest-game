@@ -264,10 +264,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
+  useEquippedAxeItem: 0
   linkedItemIds: []
   useConfigPrice: 0
   startingPrice: 100
@@ -275,8 +273,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 790933407}
@@ -8657,23 +8658,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.100000076, y: 1, z: 1.0000002}
   m_Center: {x: -0.4500001, y: 0.5, z: -0.0000038146973}
---- !u!1 &175317180 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3227559618511051333, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-  m_PrefabInstance: {fileID: 502457736}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &175317182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 175317180}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ab825ec5763d5f4b8ba98506b92ca40, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FirebaseAuthManager
 --- !u!1 &177649149
 GameObject:
   m_ObjectHideFlags: 0
@@ -9040,6 +9024,8 @@ MonoBehaviour:
   craftingColor: {r: 0.9, g: 0.8, b: 0.1, a: 1}
   readyColor: {r: 0, g: 0.9, b: 0.9, a: 1}
   fillImage: {fileID: 65775705}
+  statusText: {fileID: 0}
+  textFormat: '{0} / {1}'
   currentWoodCount: 0
   currentFurnitureCount: 0
   isCraftingInProgress: 0
@@ -21520,6 +21506,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: MANAGERS
       objectReference: {fileID: 0}
+    - target: {fileID: 7332339490994910637, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: tumGorevler.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7332339490994910637, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: 'tumGorevler.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: a4af65bfa26d23842bfce36233b94118, type: 2}
+    - target: {fileID: 7332339490994910637, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: 'tumGorevler.Array.data[1]'
+      value: 
+      objectReference: {fileID: 11400000, guid: f1dd6be8726ccd041ab1fc001ad63645, type: 2}
+    - target: {fileID: 7332339490994910637, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: 'tumGorevler.Array.data[2]'
+      value: 
+      objectReference: {fileID: 11400000, guid: dff44998f7e373547861f8eb07e49d72, type: 2}
+    - target: {fileID: 7332339490994910637, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: 'tumGorevler.Array.data[3]'
+      value: 
+      objectReference: {fileID: 11400000, guid: fff12b8e37ef7f44ab781b29e2dc42ea, type: 2}
     - target: {fileID: 9147851423849840514, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1280
@@ -21563,10 +21569,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3227559618511051333, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 175317182}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
 --- !u!1001 &514907193
 PrefabInstance:
@@ -23754,6 +23757,8 @@ MonoBehaviour:
   craftingColor: {r: 0.9, g: 0.8, b: 0.1, a: 1}
   readyColor: {r: 0, g: 0.9, b: 0.9, a: 1}
   fillImage: {fileID: 1133031280}
+  statusText: {fileID: 0}
+  textFormat: '{0} / {1}'
   currentWoodCount: 0
   currentFurnitureCount: 0
   isCraftingInProgress: 0
@@ -24005,7 +24010,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainHUDController
   coinValueText: {fileID: 0}
+  coinsVFX: {fileID: 0}
   woodValueText: {fileID: 0}
+  basketFillImage: {fileID: 0}
   workshopWoodText: {fileID: 1842944456}
   xpValueText: {fileID: 1048399933}
   xpFillImage: {fileID: 608321397}
@@ -25661,6 +25668,7 @@ MonoBehaviour:
   notificationPanel: {fileID: 705449244}
   notificationText: {fileID: 502075172}
   defaultDuration: 1
+  animDuration: 0.22
 --- !u!114 &705449247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25748,10 +25756,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
+  useEquippedAxeItem: 0
   linkedItemIds: []
   useConfigPrice: 0
   startingPrice: 100
@@ -25759,8 +25765,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.8627452, g: 0.8627452, b: 0.8627452, a: 1}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 1229827089}
@@ -27760,6 +27769,16 @@ MonoBehaviour:
   sfxToggleButton: {fileID: 403507297}
   musicToggleText: {fileID: 478041685}
   sfxToggleText: {fileID: 229363209}
+  musicOnImage: {fileID: 0}
+  musicOffImage: {fileID: 0}
+  sfxOnImage: {fileID: 0}
+  sfxOffImage: {fileID: 0}
+  musicImage: {fileID: 0}
+  musicOnSprite: {fileID: 0}
+  musicOffSprite: {fileID: 0}
+  sfxImage: {fileID: 0}
+  sfxOnSprite: {fileID: 0}
+  sfxOffSprite: {fileID: 0}
   closeButton: {fileID: 1166479112}
   versionText: {fileID: 215170075}
   buttonSfxName: Button0
@@ -33193,10 +33212,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
+  useEquippedAxeItem: 0
   linkedItemIds: []
   useConfigPrice: 0
   startingPrice: 100
@@ -33204,8 +33221,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 682994672}
@@ -37637,10 +37657,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UpgradeZoneController
   upgradeTitle: " Y\xFCkseltme"
-  targetCost: 500
-  transferRatePerSecond: 250
-  useUpgradeManager: 0
   itemId: Axe
+  useEquippedAxeItem: 0
   linkedItemIds: []
   useConfigPrice: 0
   startingPrice: 100
@@ -37648,8 +37666,11 @@ MonoBehaviour:
   maxLevelOverride: 0
   purchaseHoldDuration: 1
   statusText: {fileID: 0}
+  showOnlyPrice: 1
   currencyLabel: Para
   levelDescriptions: []
+  upgradeVfxPrefab: {fileID: 0}
+  vfxSpawnPoint: {fileID: 0}
   emptyColor: {r: 0.3, g: 0.3, b: 0.3, a: 0.8}
   completedColor: {r: 0.1, g: 0.9, b: 0.2, a: 1}
   fillImage: {fileID: 126025838}
@@ -38115,8 +38136,6 @@ MonoBehaviour:
   toggleButtonText: {fileID: 0}
   openFullQuestPanelButton: {fileID: 54975902}
   fullQuestPanel: {fileID: 1095820384}
-  questListContent: {fileID: 0}
-  questItemPrefab: {fileID: 0}
   questRow1: {fileID: 1181628180}
   questName1: {fileID: 1657097150}
   questProgress1: {fileID: 303818632}
@@ -49090,6 +49109,13 @@ MonoBehaviour:
   logJumpForce: 2
   logSpawnScale: 0.65
   defaultTreeHealth: 3
+  treeHealthByPrototypeIndex:
+  - prototypeIndex: 0
+    health: 60
+  - prototypeIndex: 1
+    health: 200
+  - prototypeIndex: 3
+    health: 400
   searchRadius: 2.5
   fallTorque: 23.3
   nonTreePrototypeIndices: 03000000

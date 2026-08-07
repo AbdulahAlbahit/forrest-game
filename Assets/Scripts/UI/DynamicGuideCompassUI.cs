@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using ForrestGame.Core;
 using ForrestGame.Managers;
@@ -249,14 +249,14 @@ namespace ForrestGame.UI
         private int GetPlayerLevel()
         {
             if (XPManager.Instance != null) return XPManager.Instance.MevcutSeviye;
-            if (CloudSaveManager.Instance?.CurrentData != null) return CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+            if (CloudSaveManager.Instance?.CurrentData != null) return CloudSaveManager.Instance.CurrentData.PlayerLevel;
             return 1;
         }
 
         private int GetPlayerMoney()
         {
             if (EconomyManager.Instance != null) return EconomyManager.Instance.MevcutPara;
-            if (CloudSaveManager.Instance?.CurrentData != null) return CloudSaveManager.Instance.CurrentData.Para;
+            if (CloudSaveManager.Instance?.CurrentData != null) return CloudSaveManager.Instance.CurrentData.Gold;
             return 0;
         }
 

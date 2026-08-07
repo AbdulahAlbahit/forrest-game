@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -36,7 +36,7 @@ public class UpgradeZoneController : MonoBehaviour
     [SerializeField] private TMP_Text statusText;
     [Tooltip("Aciksa yazida seviye vb. yerine sadece ucret (sade sayi) yazar.")]
     [SerializeField] private bool showOnlyPrice = true;
-    [SerializeField] private string currencyLabel = "Para";
+    [SerializeField] private string currencyLabel = "Gold";
     [SerializeField] private List<UpgradeLevelDescription> levelDescriptions = new List<UpgradeLevelDescription>();
 
     [Header("VFX Settings")]

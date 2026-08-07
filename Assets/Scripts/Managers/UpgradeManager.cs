@@ -159,7 +159,7 @@ public class UpgradeManager : MonoBehaviour
             data.SetItemLevel(linkedId, targetLevel);
         }
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
 
         float newValue = config.GetStatValue(targetLevel);
         GameLogger.Log($"[UpgradeManager] '{itemId}' yukseltildi! Seviye: {currentLevel} -> {targetLevel}, Yeni Deger: {newValue:F1}, Harcanan: {cost}");
@@ -304,7 +304,7 @@ public class UpgradeManager : MonoBehaviour
             GameLogger.Log($"[UpgradeManager] '{linkedId}' zorla senkronlandi -> Seviye {targetLevel} (kaynak: '{itemId}')");
         }
 
-        CloudSaveManager.Instance.SaveData(data);
+        CloudSaveManager.Instance.MarkDirty();
     }
 
     private ItemUpgradeConfig FindConfig(string itemId)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using ForrestGame.Utils;
 using ForrestGame.Core;
@@ -27,7 +27,7 @@ public class EconomyManager : MonoBehaviour
         get
         {
             if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
-                return CloudSaveManager.Instance.CurrentData.Para;
+                return CloudSaveManager.Instance.CurrentData.Gold;
             return 0;
         }
     }
@@ -65,8 +65,8 @@ public class EconomyManager : MonoBehaviour
 
     private void HandleDataLoaded(PlayerData data)
     {
-        OnMoneyChanged?.Invoke(data.Para);
-        GameLogger.Log($"EconomyManager: Bulut verisi yuklendi. Para: {data.Para}");
+        OnMoneyChanged?.Invoke(data.Gold);
+        GameLogger.Log($"EconomyManager: Bulut verisi yuklendi. Para: {data.Gold}");
     }
 
     private void Update()
@@ -104,11 +104,12 @@ public class EconomyManager : MonoBehaviour
 
         int effectiveAmount = Mathf.RoundToInt(amount * GetSeasonGoldMultiplier());
 
-        CloudSaveManager.Instance.CurrentData.Para += effectiveAmount;
+        CloudSaveManager.Instance.CurrentData.Gold += effectiveAmount;
         goldEarnedInWindow += effectiveAmount; // Analitik: Pencereye ekle
-        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
+        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Gold);
+        CloudSaveManager.Instance.MarkDirty();
 
-        GameLogger.Log($"EconomyManager: {effectiveAmount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+        GameLogger.Log($"EconomyManager: {effectiveAmount} para eklendi. Mevcut: {CloudSaveManager.Instance.CurrentData.Gold}");
     }
 
     private float GetSeasonGoldMultiplier()
@@ -136,17 +137,18 @@ public class EconomyManager : MonoBehaviour
             return false;
         }
 
-        if (CloudSaveManager.Instance.CurrentData.Para < amount)
+        if (CloudSaveManager.Instance.CurrentData.Gold < amount)
         {
-            GameLogger.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
-            NotificationManager.Instance?.SendNotification($"Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+            GameLogger.LogWarning($"EconomyManager: Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Gold}");
+            NotificationManager.Instance?.SendNotification($"Yetersiz bakiye! Gereken: {amount}, Mevcut: {CloudSaveManager.Instance.CurrentData.Gold}");
             return false;
         }
 
-        CloudSaveManager.Instance.CurrentData.Para -= amount;
-        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Para);
+        CloudSaveManager.Instance.CurrentData.Gold -= amount;
+        OnMoneyChanged?.Invoke(CloudSaveManager.Instance.CurrentData.Gold);
+        CloudSaveManager.Instance.MarkDirty();
         
-        GameLogger.Log($"EconomyManager: {amount} para harcandi. Mevcut: {CloudSaveManager.Instance.CurrentData.Para}");
+        GameLogger.Log($"EconomyManager: {amount} para harcandi. Mevcut: {CloudSaveManager.Instance.CurrentData.Gold}");
         return true;
     }
 
@@ -157,8 +159,8 @@ public class EconomyManager : MonoBehaviour
     {
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
-            CloudSaveManager.Instance.SaveData(CloudSaveManager.Instance.CurrentData);
-            GameLogger.Log("EconomyManager: Oyun kapaniyor, veriler (Para vb.) buluta kaydedildi.");
+            CloudSaveManager.Instance.ForceSaveNow();
+            GameLogger.Log("EconomyManager: Oyun kapaniyor, veriler anlinda buluta kaydedildi.");
         }
     }
 }

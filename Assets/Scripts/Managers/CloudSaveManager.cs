@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,6 +21,9 @@ public class CloudSaveManager : MonoBehaviour
     [SerializeField] private float autoSaveInterval = 60f;
 
     private Coroutine autoSaveCoroutine;
+
+    // Veri değişti mi? Sadece true ise AutoSave buluta gönderir.
+    private bool _isDirty = false;
 
 
 
@@ -158,6 +161,28 @@ public class CloudSaveManager : MonoBehaviour
 
 
 
+    /// <summary>
+    /// Veriyi değiştirildi olarak işaretle. Sadece local'e (PlayerPrefs) yazar,
+    /// Firestore'a YAZMAZ. AutoSaveRoutine tetiklenince buluta gönderilir.
+    /// Tüm Manager'lar SaveData yerine bunu kullanmalı.
+    /// </summary>
+    public void MarkDirty()
+    {
+        if (!isDataLoaded || CurrentData == null) return;
+        _isDirty = true;
+        SaveToLocal(CurrentData);
+    }
+
+    /// <summary>
+    /// Veriyi anında Firestore'a yazar. Sadece kritik durumlarda kullan
+    /// (Oyundan çıkış, önemli satın alımlar vb.)
+    /// </summary>
+    public void ForceSaveNow()
+    {
+        if (CurrentData != null)
+            SaveData(CurrentData);
+    }
+
     public void SaveData(PlayerData data)
     {
         if (data == null)
@@ -195,14 +220,14 @@ public class CloudSaveManager : MonoBehaviour
 
         Dictionary<string, object> playerDict = new Dictionary<string, object>
         {
-            { "Para", data.Para },
+            { "Gold", data.Gold },
             { "XP", data.XP },
-            { "OyuncuSeviyesi", data.OyuncuSeviyesi },
-            { "MevsimZamani", data.MevsimZamani },
-            { "OyunSuresi", data.OyunSuresi },
+            { "PlayerLevel", data.PlayerLevel },
+            { "SeasonTime", data.SeasonTime },
+            { "PlayTime", data.PlayTime },
             { "WorkshopRawWood", data.WorkshopRawWood },
             { "PlayerWoodStock", data.PlayerWoodStock },
-            { "AcilanBolgeler", data.AcilanBolgeler },
+            { "UnlockedRegions", data.UnlockedRegions },
             { "SonGuncelleme", FieldValue.ServerTimestamp },
             { "LastSaveTime", data.LastSaveTime },
             { "LastOrderResetTime", data.LastOrderResetTime }
@@ -288,7 +313,7 @@ public class CloudSaveManager : MonoBehaviour
 
             CurrentData = data;
             GameLogger.Log("CloudSaveManager: Veriler buluta basariyla kaydedildi!");
-            GameLogger.Log($"  -> Para: {data.Para}, XP: {data.XP}, Seviye: {data.OyuncuSeviyesi}");
+            GameLogger.Log($"  -> Para: {data.Gold}, XP: {data.XP}, Seviye: {data.PlayerLevel}");
             OnDataSaved?.Invoke();
         });
     }
@@ -331,7 +356,7 @@ public class CloudSaveManager : MonoBehaviour
                 PlayerData data = new PlayerData();
                 Dictionary<string, object> dict = snapshot.ToDictionary();
 
-                if (dict.ContainsKey("Para")) data.Para = Convert.ToInt32(dict["Para"]);
+                if (dict.ContainsKey("Gold")) data.Gold = Convert.ToInt32(dict["Gold"]);
                 
                 if (dict.ContainsKey("XP")) 
                 {
@@ -342,28 +367,28 @@ public class CloudSaveManager : MonoBehaviour
                     NotificationManager.Instance?.SendNotification("HATA: Firebase verisinde 'XP' alani bulunamadi!");
                 }
                 
-                if (dict.ContainsKey("OyuncuSeviyesi")) 
+                if (dict.ContainsKey("PlayerLevel")) 
                 {
-                    data.OyuncuSeviyesi = Convert.ToInt32(dict["OyuncuSeviyesi"]);
+                    data.PlayerLevel = Convert.ToInt32(dict["PlayerLevel"]);
                 }
                 else
                 {
-                    NotificationManager.Instance?.SendNotification("HATA: Firebase verisinde 'OyuncuSeviyesi' alani bulunamadi!");
+                    NotificationManager.Instance?.SendNotification("HATA: Firebase verisinde 'PlayerLevel' alani bulunamadi!");
                 }
 
 
-                if (dict.ContainsKey("MevsimZamani")) data.MevsimZamani = Convert.ToSingle(dict["MevsimZamani"]);
-                if (dict.ContainsKey("OyunSuresi")) data.OyunSuresi = Convert.ToSingle(dict["OyunSuresi"]);
+                if (dict.ContainsKey("SeasonTime")) data.SeasonTime = Convert.ToSingle(dict["SeasonTime"]);
+                if (dict.ContainsKey("PlayTime")) data.PlayTime = Convert.ToSingle(dict["PlayTime"]);
                 if (dict.ContainsKey("WorkshopRawWood")) data.WorkshopRawWood = Convert.ToInt32(dict["WorkshopRawWood"]);
                 if (dict.ContainsKey("PlayerWoodStock")) data.PlayerWoodStock = Convert.ToInt32(dict["PlayerWoodStock"]);
 
 
-                if (dict.ContainsKey("AcilanBolgeler") && dict["AcilanBolgeler"] is List<object> bolgelerRaw)
+                if (dict.ContainsKey("UnlockedRegions") && dict["UnlockedRegions"] is List<object> bolgelerRaw)
                 {
-                    data.AcilanBolgeler = new List<string>();
+                    data.UnlockedRegions = new List<string>();
                     foreach (object bolge in bolgelerRaw)
                     {
-                        data.AcilanBolgeler.Add(bolge.ToString());
+                        data.UnlockedRegions.Add(bolge.ToString());
                     }
                 }
 
@@ -476,8 +501,8 @@ public class CloudSaveManager : MonoBehaviour
                 PlayerData localData = GetLocalData();
                 if (localData != null && localData.LastSaveTime > data.LastSaveTime)
                 {
-                    long localScore = localData.XP + localData.Para + ((long)localData.OyuncuSeviyesi * 10000);
-                    long cloudScore = data.XP + data.Para + ((long)data.OyuncuSeviyesi * 10000);
+                    long localScore = localData.XP + localData.Gold + ((long)localData.PlayerLevel * 10000);
+                    long cloudScore = data.XP + data.Gold + ((long)data.PlayerLevel * 10000);
 
                     if (localScore < cloudScore)
                     {
@@ -632,14 +657,15 @@ public class CloudSaveManager : MonoBehaviour
         {
             yield return new WaitForSecondsRealtime(autoSaveInterval);
 
-            if (CurrentData != null)
+            if (_isDirty && CurrentData != null)
             {
-                GameLogger.Log("CloudSaveManager: [Auto-Save] Otomatik kayit tetiklendi...");
+                _isDirty = false;
+                GameLogger.Log("CloudSaveManager: [Auto-Save] Degisiklik tespit edildi, buluta kaydediliyor...");
                 SaveData(CurrentData);
             }
             else
             {
-                GameLogger.LogWarning("CloudSaveManager: [Auto-Save] CurrentData null, kayit atlandi.");
+                GameLogger.Log("CloudSaveManager: [Auto-Save] Degisiklik yok, Firestore istegi atlanıyor.");
             }
         }
     }

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -101,7 +101,7 @@ public sealed class EfeCoinHudAdapter : MonoBehaviour
     {
         if (data != null)
         {
-            SetValue(data.Para);
+            SetValue(data.Gold);
         }
     }
 
@@ -114,7 +114,7 @@ public sealed class EfeCoinHudAdapter : MonoBehaviour
     {
         if (_cloudSaveManager != null && _cloudSaveManager.CurrentData != null)
         {
-            SetValue(_cloudSaveManager.CurrentData.Para);
+            SetValue(_cloudSaveManager.CurrentData.Gold);
         }
         else if (_economyManager != null)
         {

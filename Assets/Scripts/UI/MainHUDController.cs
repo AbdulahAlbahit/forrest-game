@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using ForrestGame.Core;
@@ -314,7 +314,7 @@ public class MainHUDController : MonoBehaviour
         if (EconomyManager.Instance != null)
             UpdateCoinText(EconomyManager.Instance.MevcutPara);
         else if (CloudSaveManager.Instance?.CurrentData != null)
-            UpdateCoinText(CloudSaveManager.Instance.CurrentData.Para);
+            UpdateCoinText(CloudSaveManager.Instance.CurrentData.Gold);
 
         if (XPManager.Instance != null)
         {
@@ -325,8 +325,8 @@ public class MainHUDController : MonoBehaviour
         else if (CloudSaveManager.Instance?.CurrentData != null)
         {
             UpdateXPText(CloudSaveManager.Instance.CurrentData.XP);
-            UpdateLevelText(CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi);
-            lastObservedLevel = CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+            UpdateLevelText(CloudSaveManager.Instance.CurrentData.PlayerLevel);
+            lastObservedLevel = CloudSaveManager.Instance.CurrentData.PlayerLevel;
         }
 
         if (BasketManager.Instance != null)

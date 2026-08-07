@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 [System.Serializable]
 public class PlayerData
 {
     // --- Temel Oyuncu Verileri ---
-    public int Para;
+    public int Gold;
     public int XP;
-    public int OyuncuSeviyesi;
+    public int PlayerLevel;
     public long LastSaveTime = 0;
 
     // --- Jenerik Upgrade Seviyeleri ---
@@ -15,11 +15,11 @@ public class PlayerData
     public SerializableDict ItemLevels;
 
     // --- Zaman Verileri ---
-    public float MevsimZamani;
-    public float OyunSuresi;
+    public float SeasonTime;
+    public float PlayTime;
 
     // --- Acilan Bolgeler ---
-    public List<string> AcilanBolgeler;
+    public List<string> UnlockedRegions;
 
     // --- Odun Stoklari ---
     /// <summary>
@@ -61,16 +61,16 @@ public class PlayerData
 
     public PlayerData()
     {
-        Para = 0;
+        Gold = 0;
         XP = 0;
-        OyuncuSeviyesi = 1;
+        PlayerLevel = 1;
 
         ItemLevels = new SerializableDict();
 
-        MevsimZamani = 0f;
-        OyunSuresi = 0f;
+        SeasonTime = 0f;
+        PlayTime = 0f;
 
-        AcilanBolgeler = new List<string>();
+        UnlockedRegions = new List<string>();
         
         PlayerWoodStock = 0;
         WorkshopRawWood = 0;
