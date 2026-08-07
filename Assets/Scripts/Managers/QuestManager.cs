@@ -91,9 +91,14 @@ namespace ForrestGame.Managers
 
         public void ReportQuestProgress(string actionKey, int amount = 1)
         {
+            GameLogger.Log($"[QuestManager] ReportQuestProgress cagirildi: {actionKey} + {amount}");
             CheckDailyReset();
             
-            if (CloudSaveManager.Instance?.CurrentData == null) return;
+            if (CloudSaveManager.Instance?.CurrentData == null) 
+            {
+                GameLogger.LogWarning("[QuestManager] CloudSaveManager.CurrentData NULL!");
+                return;
+            }
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;
 
@@ -104,12 +109,21 @@ namespace ForrestGame.Managers
 
             bool progressChanged = false;
 
-            if (tumGorevler != null)
+            if (tumGorevler == null || tumGorevler.Count == 0)
+            {
+                GameLogger.LogWarning("[QuestManager] tumGorevler listesi bos veya yuklenemedi!");
+            }
+            else
             {
                 foreach (QuestConfig quest in tumGorevler)
                 {
                     if (quest == null) continue;
                     if (data.CompletedQuests.Contains(quest.QuestID)) continue;
+
+                    if (string.IsNullOrEmpty(quest.TargetKey)) continue;
+
+                    // Yalnizca eslesmeleri loglayalim ki konsol dolmasin, ama eger hic eslesmezse sorunu gorelim:
+                    // GameLogger.Log($"[QuestManager] Karsilastiriliyor: '{quest.TargetKey}' vs '{actionKey}'");
 
                     if (quest.TargetKey.Trim().ToLower() == actionKey.Trim().ToLower())
                     {
