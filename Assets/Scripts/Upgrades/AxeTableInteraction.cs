@@ -204,6 +204,25 @@ public class AxeTableInteraction : MonoBehaviour
 
     private static bool IsPointerOverUi(int pointerId = -1)
     {
-        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(pointerId);
+        if (EventSystem.current == null) return false;
+
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        if (pointerId != -1 && Touchscreen.current != null)
+        {
+            // Yeni input sisteminde Touch Id direkt islesemiyor, o yuzden Touch posizyonunu kullanmak en dogrusu
+            eventData.position = Touchscreen.current.primaryTouch.position.ReadValue();
+        }
+        else if (Mouse.current != null)
+        {
+            eventData.position = Mouse.current.position.ReadValue();
+        }
+        else
+        {
+            return EventSystem.current.IsPointerOverGameObject(pointerId);
+        }
+
+        System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult> results = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        return results.Count > 0;
     }
 }

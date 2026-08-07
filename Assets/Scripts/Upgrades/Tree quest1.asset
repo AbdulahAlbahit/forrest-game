@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Tree quest1
   m_EditorClassIdentifier: Assembly-CSharp::QuestConfig
   QuestID: Tqu1
-  QuestName: Tree felling1
+  QuestName: "A\u011Fa\xE7 Kes"
   QuestDescription: Reward for cutting down 10 trees
-  TargetKey: Tree felling
+  TargetKey: kesilen_agac
   TargetAmount: 10
   RewardGold: 5
   RewardXP: 15

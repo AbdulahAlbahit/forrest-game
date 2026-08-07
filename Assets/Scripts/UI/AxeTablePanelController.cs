@@ -235,6 +235,10 @@ public class AxeTablePanelController : MonoBehaviour
         if (!gameObject.activeSelf)
             gameObject.SetActive(true);
 
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+        if (anim != null) anim.Show();
+
         SubscribeEvents();
         SyncEquippedFromAvailableData();
         RefreshPanel();
@@ -244,10 +248,25 @@ public class AxeTablePanelController : MonoBehaviour
     {
         PlayButtonClickSFX();
 
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
+        GameObject targetObj = mainPanel != null ? mainPanel : gameObject;
+        var anim = targetObj.GetComponent<ForrestGame.UI.UIPanelAnimator>();
+
+        if (anim != null)
+        {
+            anim.Hide(() =>
+            {
+                if (mainPanel != null)
+                    mainPanel.SetActive(false);
+                gameObject.SetActive(false);
+            });
+        }
         else
-            gameObject.SetActive(false);
+        {
+            if (mainPanel != null)
+                mainPanel.SetActive(false);
+            else
+                gameObject.SetActive(false);
+        }
     }
 
     public void TogglePanel()

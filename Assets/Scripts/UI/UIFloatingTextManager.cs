@@ -127,10 +127,25 @@ namespace ForrestGame.UI
 
                 if (textContainer == null || GetComponentInParent<Canvas>() == null)
                 {
-                    Canvas targetCanvas = FindFirstObjectByType<Canvas>();
+                    Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+                    Canvas targetCanvas = null;
+
+                    foreach (var c in allCanvases)
+                    {
+                        if (c.renderMode == RenderMode.ScreenSpaceOverlay || c.renderMode == RenderMode.ScreenSpaceCamera)
+                        {
+                            targetCanvas = c;
+                            break;
+                        }
+                    }
+
                     if (targetCanvas != null)
                     {
                         textContainer = targetCanvas.transform as RectTransform;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[UIFloatingTextManager] Screen Space Canvas bulunamadi! Yazi world space'te dogabilir.");
                     }
                 }
             }
@@ -388,10 +403,17 @@ namespace ForrestGame.UI
             TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
             CanvasGroup group = textObj.GetComponent<CanvasGroup>();
 
-            // Konumlandırma (Sol kenara yakın: Screen.width * screenLeftRatio)
-            Vector2 defaultPos = new Vector2(Screen.width * screenLeftRatio, Screen.height * screenHeightRatio);
-            Vector2 spawnPos = screenPosition ?? defaultPos;
-            rect.position = spawnPos;
+            // Konumlandırma: Ekran oranlarını Anchor olarak kullanarak Canvas türünden bağımsız doğru yerleşim sağlar
+            Vector2 ratioPos = new Vector2(screenLeftRatio, screenHeightRatio);
+            if (screenPosition.HasValue)
+            {
+                // Eğer özel bir ekran pozisyonu geldiyse, onu ekrana oranlayarak Anchor'a çevir
+                ratioPos = new Vector2(screenPosition.Value.x / Screen.width, screenPosition.Value.y / Screen.height);
+            }
+
+            rect.anchorMin = ratioPos;
+            rect.anchorMax = ratioPos;
+            rect.anchoredPosition = Vector2.zero; // Tam anchor noktasında başla
             rect.sizeDelta = new Vector2(400f, 70f);
 
             tmp.text = textMessage;
@@ -479,11 +501,9 @@ namespace ForrestGame.UI
             string message = string.Format(treeDamageFormat, damage);
 
             // Ekranın Ortası + Dinamik Ufak Offset (Çakışmayı önlemek için)
-            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            Vector2 spawnPos = new Vector2(posX, posY);
+            Vector2 randomOffset = new Vector2(UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange), UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange));
 
-            CreateAndAnimateTreeDamageText(message, damageColor, spawnPos);
+            CreateAndAnimateTreeDamageText(message, damageColor, treeDamageScreenRatio, randomOffset);
         }
 
         private int GetCurrentAxeDamage(out float levelProgress)
@@ -523,7 +543,7 @@ namespace ForrestGame.UI
             return damage;
         }
 
-        private void CreateAndAnimateTreeDamageText(string message, Color color, Vector2 spawnPos)
+        private void CreateAndAnimateTreeDamageText(string message, Color color, Vector2 screenRatio, Vector2 anchoredOffset)
         {
             EnsureContainer();
 
@@ -535,7 +555,10 @@ namespace ForrestGame.UI
             TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
             CanvasGroup group = textObj.GetComponent<CanvasGroup>();
 
-            rect.position = spawnPos;
+            // Anchor bazlı konumlandırma (Canvas Scaler'dan etkilenmez)
+            rect.anchorMin = screenRatio;
+            rect.anchorMax = screenRatio;
+            rect.anchoredPosition = anchoredOffset;
             rect.sizeDelta = new Vector2(350f, 80f);
 
             tmp.text = message;
@@ -628,9 +651,8 @@ namespace ForrestGame.UI
         {
             Color damageColor = minLevelDamageColor;
             string message = string.Format(treeDamageFormat, 1);
-            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            CreateAndAnimateTreeDamageText(message, damageColor, new Vector2(posX, posY));
+            Vector2 randomOffset = new Vector2(UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange), UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange));
+            CreateAndAnimateTreeDamageText(message, damageColor, treeDamageScreenRatio, randomOffset);
         }
 
         [ContextMenu("TEST: Ağaç Hasar Yazısı Fırlat (Max Seviye - Kırmızı)")]
@@ -638,9 +660,8 @@ namespace ForrestGame.UI
         {
             Color damageColor = maxLevelDamageColor;
             string message = string.Format(treeDamageFormat, 10);
-            float posX = Screen.width * treeDamageScreenRatio.x + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            float posY = Screen.height * treeDamageScreenRatio.y + UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange);
-            CreateAndAnimateTreeDamageText(message, damageColor, new Vector2(posX, posY));
+            Vector2 randomOffset = new Vector2(UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange), UnityEngine.Random.Range(-randomOffsetRange, randomOffsetRange));
+            CreateAndAnimateTreeDamageText(message, damageColor, treeDamageScreenRatio, randomOffset);
         }
 
         [ContextMenu("TEST: Satış Tamamlandı Floating Text")]
