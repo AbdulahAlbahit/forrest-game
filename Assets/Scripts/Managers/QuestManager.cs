@@ -20,6 +20,7 @@ namespace ForrestGame.Managers
         public static QuestManager Instance { get; private set; }
 
         public static event System.Action OnQuestsReset;
+        public static event System.Action OnQuestProgressUpdated;
 
         [Header("Tum Gorevler")]
         [Tooltip("Oyundaki tum QuestConfig asset'lerini buraya surukle.")]
@@ -111,13 +112,14 @@ namespace ForrestGame.Managers
                     if (quest == null) continue;
                     if (data.CompletedQuests.Contains(quest.QuestID)) continue;
 
+                    if (string.IsNullOrEmpty(quest.TargetKey)) continue;
+
                     if (quest.TargetKey.Trim().ToLower() == actionKey.Trim().ToLower())
                     {
                         int currentProgress = data.ActiveQuests.Get(quest.QuestID, 0);
                         int newProgress = currentProgress + amount;
                         data.ActiveQuests.Set(quest.QuestID, newProgress);
                         progressChanged = true;
-                        GameLogger.Log($"QuestManager: Gorev [{quest.QuestName}] ilerledi: {currentProgress} -> {newProgress}");
                     }
                 }
             }
@@ -126,6 +128,7 @@ namespace ForrestGame.Managers
             {
                 CheckAndRewardQuests(data);
                 CloudSaveManager.Instance.MarkDirty();
+                OnQuestProgressUpdated?.Invoke();
             }
         }
 

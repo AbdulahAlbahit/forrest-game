@@ -126,7 +126,10 @@ public class FullQuestPanelController : MonoBehaviour
 
         ShopManager.OnItemSold += HandleItemSold;
         if (QuestManager.Instance != null)
+        {
             QuestManager.OnQuestsReset += RefreshList;
+            QuestManager.OnQuestProgressUpdated += RefreshList;
+        }
 
         SwitchTab(QuestTab.Active);
     }
@@ -138,7 +141,10 @@ public class FullQuestPanelController : MonoBehaviour
 
         ShopManager.OnItemSold -= HandleItemSold;
         if (QuestManager.Instance != null)
+        {
             QuestManager.OnQuestsReset -= RefreshList;
+            QuestManager.OnQuestProgressUpdated -= RefreshList;
+        }
     }
 
     private void HandleDataLoaded(PlayerData data)
