@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using ForrestGame.Utils;
 
 public class PlayTimeManager : MonoBehaviour
@@ -27,7 +27,7 @@ public class PlayTimeManager : MonoBehaviour
 
         if (CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
-            CloudSaveManager.Instance.CurrentData.OyunSuresi += Time.deltaTime;
+            CloudSaveManager.Instance.CurrentData.PlayTime += Time.deltaTime;
         }
     }
 

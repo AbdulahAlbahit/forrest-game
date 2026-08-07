@@ -311,7 +311,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         // 1. KARAKTER
         AddHeader("KARAKTER", headerColorCharacter);
-        int playerLevel = XPManager.Instance != null ? XPManager.Instance.MevcutSeviye : (data?.OyuncuSeviyesi ?? 1);
+        int playerLevel = XPManager.Instance != null ? XPManager.Instance.MevcutSeviye : (data?.PlayerLevel ?? 1);
         int currentXP = XPManager.Instance != null ? XPManager.Instance.MevcutXP : (data?.XP ?? 0);
         int reqXP = XPManager.Instance != null ? XPManager.Instance.GetRequiredXPForLevel(playerLevel) : 100;
         float xpPercent = reqXP > 0 ? ((float)currentXP / reqXP) * 100f : 100f;
@@ -346,7 +346,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         // 2. EKONOMİ
         AddHeader("EKONOMİ", headerColorEconomy);
-        int gold = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : (data?.Para ?? 0);
+        int gold = EconomyManager.Instance != null ? EconomyManager.Instance.MevcutPara : (data?.Gold ?? 0);
         AddRow("Altın Bakiyesi", $"{gold:N0} Gold", headerColorEconomy);
 
         // 3. BALTA
@@ -485,7 +485,7 @@ public class CharacterStatsPanelController : MonoBehaviour
 
         // 8. GENEL İSTATİSTİKLER
         AddHeader("GENEL İSTATİSTİKLER", headerColorStats);
-        float playTime = data != null ? data.OyunSuresi : 0f;
+        float playTime = data != null ? data.PlayTime : 0f;
         TimeSpan pt = TimeSpan.FromSeconds(playTime);
         string playTimeStr = $"{pt.Hours}s {pt.Minutes}dk {pt.Seconds}sn";
 

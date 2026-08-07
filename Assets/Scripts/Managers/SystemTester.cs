@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using ForrestGame.Utils;
 using ForrestGame.Managers;
 
@@ -47,7 +47,7 @@ public class SystemTester : MonoBehaviour
         if (XPManager.Instance != null && CloudSaveManager.Instance != null && CloudSaveManager.Instance.CurrentData != null)
         {
             XPManager.Instance.AddXP(500);
-            int guncelSeviye = CloudSaveManager.Instance.CurrentData.OyuncuSeviyesi;
+            int guncelSeviye = CloudSaveManager.Instance.CurrentData.PlayerLevel;
             GameLogger.Log($"[Test 2] 500 XP Eklendi. PlayerData'dan okunan guncel seviye: {guncelSeviye}");
         }
         else
@@ -167,7 +167,7 @@ public class SystemTester : MonoBehaviour
         if (RegionManager.Instance == null) { GameLogger.LogError("[Test Durum] RegionManager bulunamadi!"); return; }
         if (CloudSaveManager.Instance?.CurrentData == null) { GameLogger.LogError("[Test Durum] CurrentData null!"); return; }
 
-        var acilanBolgeler = CloudSaveManager.Instance.CurrentData.AcilanBolgeler;
+        var acilanBolgeler = CloudSaveManager.Instance.CurrentData.UnlockedRegions;
 
         if (acilanBolgeler == null || acilanBolgeler.Count == 0)
         {

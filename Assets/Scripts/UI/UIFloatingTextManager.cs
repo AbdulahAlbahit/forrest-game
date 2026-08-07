@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -154,7 +154,7 @@ namespace ForrestGame.UI
         private void InitObservedValues()
         {
             if (EconomyManager.Instance != null) lastObservedMoney = EconomyManager.Instance.MevcutPara;
-            else if (CloudSaveManager.Instance?.CurrentData != null) lastObservedMoney = CloudSaveManager.Instance.CurrentData.Para;
+            else if (CloudSaveManager.Instance?.CurrentData != null) lastObservedMoney = CloudSaveManager.Instance.CurrentData.Gold;
 
             if (XPManager.Instance != null) lastObservedXP = XPManager.Instance.MevcutXP;
             else if (CloudSaveManager.Instance?.CurrentData != null) lastObservedXP = CloudSaveManager.Instance.CurrentData.XP;
@@ -271,7 +271,7 @@ namespace ForrestGame.UI
         private void HandleDataLoaded(PlayerData data)
         {
             if (data == null) return;
-            if (lastObservedMoney < 0) lastObservedMoney = data.Para;
+            if (lastObservedMoney < 0) lastObservedMoney = data.Gold;
             if (lastObservedXP < 0) lastObservedXP = data.XP;
             if (lastObservedWood < 0) lastObservedWood = data.PlayerWoodStock;
         }

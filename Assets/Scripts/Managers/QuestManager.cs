@@ -62,7 +62,7 @@ namespace ForrestGame.Managers
                 if (data.ActiveQuests != null) data.ActiveQuests.Clear();
                 if (data.CompletedQuests != null) data.CompletedQuests.Clear();
                 
-                CloudSaveManager.Instance.SaveData(data);
+                CloudSaveManager.Instance.MarkDirty();
                 OnQuestsReset?.Invoke();
                 
                 GameLogger.Log("[QuestManager] Gunluk gorevler sifirlandi!");
@@ -125,7 +125,7 @@ namespace ForrestGame.Managers
             if (progressChanged)
             {
                 CheckAndRewardQuests(data);
-                CloudSaveManager.Instance.SaveData(data);
+                CloudSaveManager.Instance.MarkDirty();
             }
         }
 

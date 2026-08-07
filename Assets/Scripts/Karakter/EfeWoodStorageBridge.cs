@@ -116,7 +116,7 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
 
         if (saveImmediately)
         {
-            _cloudSaveManager.SaveData(data);
+            _cloudSaveManager.MarkDirty();
         }
 
         NotificationUIController.Instance?.ShowNotification(
@@ -170,7 +170,7 @@ public sealed class EfeWoodStorageBridge : MonoBehaviour
 
         if (saveImmediately)
         {
-            _cloudSaveManager.SaveData(data);
+            _cloudSaveManager.MarkDirty();
         }
 
         NotificationUIController.Instance?.ShowNotification(

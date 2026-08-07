@@ -108,7 +108,7 @@ namespace ForrestGame.Managers
 
             CheckAndFulfillPendingOrders(data, false);
 
-            CloudSaveManager.Instance.SaveData(data);
+            CloudSaveManager.Instance.MarkDirty();
         }
 
         public void CheckAndFulfillPendingOrders(PlayerData data, bool autoSave = true)
@@ -150,7 +150,7 @@ namespace ForrestGame.Managers
 
             if (anyFulfilled && autoSave)
             {
-                CloudSaveManager.Instance.SaveData(data);
+                CloudSaveManager.Instance.MarkDirty();
             }
         }
 
@@ -198,8 +198,8 @@ namespace ForrestGame.Managers
                 
                 AnalyticsManager.Instance?.LogCustomEvent("item_sold", "item_id", itemId);
 
-                CloudSaveManager.Instance.SaveData(data);
-                GameLogger.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (buluta kaydedildi)");
+                CloudSaveManager.Instance.MarkDirty();
+                GameLogger.Log($"ShopManager: {itemId} satis sonrasi stok {currentStock} -> {newStock} (dirty olarak isaretlendi)");
                 
                 return true;
             }
