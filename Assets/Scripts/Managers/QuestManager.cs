@@ -20,6 +20,7 @@ namespace ForrestGame.Managers
         public static QuestManager Instance { get; private set; }
 
         public static event System.Action OnQuestsReset;
+        public static event System.Action OnQuestProgressUpdated;
 
         [Header("Tum Gorevler")]
         [Tooltip("Oyundaki tum QuestConfig asset'lerini buraya surukle.")]
@@ -91,14 +92,9 @@ namespace ForrestGame.Managers
 
         public void ReportQuestProgress(string actionKey, int amount = 1)
         {
-            GameLogger.Log($"[QuestManager] ReportQuestProgress cagirildi: {actionKey} + {amount}");
             CheckDailyReset();
             
-            if (CloudSaveManager.Instance?.CurrentData == null) 
-            {
-                GameLogger.LogWarning("[QuestManager] CloudSaveManager.CurrentData NULL!");
-                return;
-            }
+            if (CloudSaveManager.Instance?.CurrentData == null) return;
 
             PlayerData data = CloudSaveManager.Instance.CurrentData;
 
@@ -109,11 +105,7 @@ namespace ForrestGame.Managers
 
             bool progressChanged = false;
 
-            if (tumGorevler == null || tumGorevler.Count == 0)
-            {
-                GameLogger.LogWarning("[QuestManager] tumGorevler listesi bos veya yuklenemedi!");
-            }
-            else
+            if (tumGorevler != null)
             {
                 foreach (QuestConfig quest in tumGorevler)
                 {
@@ -122,16 +114,12 @@ namespace ForrestGame.Managers
 
                     if (string.IsNullOrEmpty(quest.TargetKey)) continue;
 
-                    // Yalnizca eslesmeleri loglayalim ki konsol dolmasin, ama eger hic eslesmezse sorunu gorelim:
-                    // GameLogger.Log($"[QuestManager] Karsilastiriliyor: '{quest.TargetKey}' vs '{actionKey}'");
-
                     if (quest.TargetKey.Trim().ToLower() == actionKey.Trim().ToLower())
                     {
                         int currentProgress = data.ActiveQuests.Get(quest.QuestID, 0);
                         int newProgress = currentProgress + amount;
                         data.ActiveQuests.Set(quest.QuestID, newProgress);
                         progressChanged = true;
-                        GameLogger.Log($"QuestManager: Gorev [{quest.QuestName}] ilerledi: {currentProgress} -> {newProgress}");
                     }
                 }
             }
@@ -140,6 +128,7 @@ namespace ForrestGame.Managers
             {
                 CheckAndRewardQuests(data);
                 CloudSaveManager.Instance.MarkDirty();
+                OnQuestProgressUpdated?.Invoke();
             }
         }
 
