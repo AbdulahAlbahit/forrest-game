@@ -52,28 +52,19 @@ namespace ForrestGame.Managers
             if (truck == null) return;
             if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return;
 
-            PlayerData data = CloudSaveManager.Instance.CurrentData;
             bool anyLoaded = false;
 
             foreach (var kvp in truck.LoadedProducts)
             {
                 if (kvp.Value <= 0) continue;
 
-                if (HasPendingOrderFor(data, kvp.Key))
-                {
-                    AddStock(kvp.Key, kvp.Value);
-                    anyLoaded = true;
-                }
-                else
-                {
-                    NotificationManager.Instance?.SendNotification($"{kvp.Key} icin siparis yoktu, kamyonla kayboldu!");
-                    GameLogger.Log($"ShopManager: {kvp.Value}x {kvp.Key} icin bekleyen siparis yok, kamyonla kayboldu.");
-                }
+                AddStock(kvp.Key, kvp.Value);
+                anyLoaded = true;
             }
 
             if (anyLoaded)
             {
-                GameLogger.Log("ShopManager: Kamyon markete ulasti, siparis edilen urunler stoga eklendi ve bekleyen siparisler kontrol edildi!");
+                GameLogger.Log("ShopManager: Kamyon markete ulasti, tasinan urunler magaza stoguna eklendi ve bekleyen siparisler kontrol edildi!");
             }
         }
 
@@ -87,6 +78,16 @@ namespace ForrestGame.Managers
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Verilen urun icin bekleyen bir musteri siparisi olup olmadigini kontrol eder.
+        /// Shop panelindeki manuel satis butonlari, siparis olmadan satisi engellemek icin bunu kullanir.
+        /// </summary>
+        public bool HasPendingOrder(string itemId)
+        {
+            if (CloudSaveManager.Instance == null || CloudSaveManager.Instance.CurrentData == null) return false;
+            return HasPendingOrderFor(CloudSaveManager.Instance.CurrentData, itemId);
         }
 
         public void AddStock(string itemId, int amount)

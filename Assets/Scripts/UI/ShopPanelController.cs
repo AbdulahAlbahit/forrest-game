@@ -303,6 +303,8 @@ public class ShopPanelController : MonoBehaviour
                 rect.anchoredPosition3D = Vector3.zero;
             }
 
+            bool hasPendingOrder = ShopManager.Instance != null && ShopManager.Instance.HasPendingOrder(itemId);
+
             ShopItemUI itemUI = obj.GetComponent<ShopItemUI>();
             if (itemUI != null)
             {
@@ -312,6 +314,7 @@ public class ShopPanelController : MonoBehaviour
                     stock,
                     price,
                     isSelected,
+                    hasPendingOrder,
                     (id) => OnSellClickedFromItem(id),
                     (id) => OnCardSelected(id)
                 );
@@ -389,20 +392,22 @@ public class ShopPanelController : MonoBehaviour
         }
 
         bool hasStock = currentStock > 0;
+        bool hasPendingOrder = ShopManager.Instance != null && ShopManager.Instance.HasPendingOrder(selectedItemId);
+        bool canSell = hasStock && hasPendingOrder;
 
         if (sellOneButton != null)
-            sellOneButton.interactable = hasStock;
+            sellOneButton.interactable = canSell;
 
         if (sellOneButtonText != null)
-            sellOneButtonText.text = hasStock ? $"1 Adet Sat (+{price} Gold)" : "Stok Yok";
+            sellOneButtonText.text = !hasStock ? "Stok Yok" : (!hasPendingOrder ? "Sipariş Yok" : $"1 Adet Sat (+{price} Gold)");
 
         if (sellAllButton != null)
-            sellAllButton.interactable = hasStock;
+            sellAllButton.interactable = canSell;
 
         if (sellAllButtonText != null)
         {
             int totalValue = currentStock * price;
-            sellAllButtonText.text = hasStock ? $"Tümünü Sat ({currentStock} Adet = +{totalValue} Gold)" : "Stok Yok";
+            sellAllButtonText.text = !hasStock ? "Stok Yok" : (!hasPendingOrder ? "Sipariş Yok" : $"Tümünü Sat ({currentStock} Adet = +{totalValue} Gold)");
         }
     }
 
@@ -473,6 +478,13 @@ public class ShopPanelController : MonoBehaviour
 
         if (ShopManager.Instance != null)
         {
+            if (!ShopManager.Instance.HasPendingOrder(selectedItemId))
+            {
+                NotificationUIController.Instance?.ShowNotification("Bu ürün için bekleyen sipariş yok, satılamaz!");
+                RefreshPanel();
+                return;
+            }
+
             RecipeConfig recipe = GetRecipeConfig(selectedItemId);
             int unitPrice = recipe != null && recipe.BaseSalePrice > 0 ? recipe.BaseSalePrice : 100;
 
@@ -512,6 +524,13 @@ public class ShopPanelController : MonoBehaviour
 
         if (ShopManager.Instance != null)
         {
+            if (!ShopManager.Instance.HasPendingOrder(selectedItemId))
+            {
+                NotificationUIController.Instance?.ShowNotification("Bu ürün için bekleyen sipariş yok, satılamaz!");
+                RefreshPanel();
+                return;
+            }
+
             RecipeConfig recipe = GetRecipeConfig(selectedItemId);
             int unitPrice = recipe != null && recipe.BaseSalePrice > 0 ? recipe.BaseSalePrice : 100;
 

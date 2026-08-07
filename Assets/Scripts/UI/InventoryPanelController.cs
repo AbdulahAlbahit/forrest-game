@@ -261,6 +261,7 @@ public class InventoryPanelController : MonoBehaviour
                         stock,
                         price,
                         false,
+                        true,
                         (id) => OnProductCardClicked(id),
                         null
                     );

@@ -70,6 +70,7 @@ public class ShopItemUI : MonoBehaviour
         int stock,
         int unitPrice,
         bool isSelected,
+        bool hasPendingOrder,
         System.Action<string> onSellClicked,
         System.Action<string> onCardSelected = null)
     {
@@ -103,15 +104,16 @@ public class ShopItemUI : MonoBehaviour
             selectionHighlight.SetActive(isSelected);
 
         bool hasStock = stock > 0;
+        bool canSell = hasStock && hasPendingOrder;
 
         if (emptyStockOverlay != null)
             emptyStockOverlay.SetActive(!hasStock);
 
         if (sellButton != null)
-            sellButton.interactable = hasStock;
+            sellButton.interactable = canSell;
 
         if (sellButtonText != null)
-            sellButtonText.text = hasStock ? "Sat" : "Stok Yok";
+            sellButtonText.text = !hasStock ? "Stok Yok" : (!hasPendingOrder ? "Sipariş Yok" : "Sat");
     }
 
     /// <summary>

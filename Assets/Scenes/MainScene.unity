@@ -2274,15 +2274,19 @@ PrefabInstance:
     - target: {fileID: 8966086457576715668, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
       propertyPath: joystick
       value: 
-      objectReference: {fileID: 408850583}
-    m_RemovedComponents: []
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 8966086457576715668, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
     m_RemovedGameObjects:
     - {fileID: 722519233556452532, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 893042180401084536, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
       insertIndex: -1
       addedObject: {fileID: 422369419}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2734461089388727783, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2080858339}
   m_SourcePrefab: {fileID: 100100000, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
 --- !u!4 &167987200 stripped
 Transform:
@@ -10746,17 +10750,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
   m_PrefabInstance: {fileID: 406105491}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &408850583 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8704289030755264353, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
-  m_PrefabInstance: {fileID: 2108574233}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6fb6d266b77f6f04fa9ec89d5e065eab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VirtualJoystick
 --- !u!1001 &410754653
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22670,7 +22663,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -3.5999756, y: -419}
+  m_AnchoredPosition: {x: -3.5998535, y: -419}
   m_SizeDelta: {x: -1632.8, y: -1016}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1215559613
@@ -23265,11 +23258,11 @@ PrefabInstance:
       objectReference: {fileID: 11400000, guid: f1dd6be8726ccd041ab1fc001ad63645, type: 2}
     - target: {fileID: 8901936520205673595, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
       propertyPath: maxIntervalSeconds
-      value: 150
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: 8901936520205673595, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
       propertyPath: minIntervalSeconds
-      value: 100
+      value: 60
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -27188,7 +27181,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3734500346664638397, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
   m_PrefabInstance: {fileID: 167987199}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 2080858337}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6b3c5854f45436db2a88f3558974105, type: 3}
@@ -37971,8 +37964,8 @@ GameObject:
   - component: {fileID: 1910191547}
   - component: {fileID: 1910191546}
   - component: {fileID: 1910191545}
-  - component: {fileID: 1910191544}
   - component: {fileID: 1910191549}
+  - component: {fileID: 1910191550}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -37980,20 +37973,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1910191544
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1910191543}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3f102ce9a2d39949803f66dbfb60efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KameraTakip
-  hedef: {fileID: 167987200}
-  yumusaklik: 5
 --- !u!114 &1910191545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38131,6 +38110,20 @@ MonoBehaviour:
   layerCullSettings:
   - layerName: SmallObjects
     cullDistance: 20
+--- !u!114 &1910191550
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1910191543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fddf1913c7a689b4cac66ec0e05a1e76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KameraTakip
+  hedef: {fileID: 167987200}
+  yumusaklik: 5
 --- !u!1001 &1911639103
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -40614,7 +40607,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7204569171676720323, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
   m_PrefabInstance: {fileID: 167987199}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 2080858337}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a8e4d7260b94df6a9c6814f2ef1d475, type: 3}
@@ -46105,6 +46098,40 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -7513297493162946847, guid: 8a53dcb8b069aa04fad15590187a33b6, type: 3}
+--- !u!1 &2080858337 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2734461089388727783, guid: e1e0cc526219ed248918cd7647e59e58, type: 3}
+  m_PrefabInstance: {fileID: 167987199}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2080858339
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2080858337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05767d970272ede42966d9d4931d75c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EfeKarakterKontrol
+  yuruHizi: 1.75
+  kosuyaGecisHizi: 2.4
+  kosuHizi: 4.6
+  hizlanma: 12
+  durmaSertligi: 40
+  aniDonusSertligi: 45
+  donmeHizi: 12
+  yercekimi: 20
+  suNesnesiAdi: water_river
+  suBacakDerinligi: 1.25
+  suYukseklikDuzeltmeHizi: 5
+  suIcindekiAzamiSure: 5
+  suHareketHiziCarpani: 0.3
+  joystick: {fileID: 2134596788}
+  hareketEsigi: 0.12
+  kosuEsigi: 0.75
+  animasyonGecisSuresi: 0.12
 --- !u!1001 &2082853329
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -46902,6 +46929,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1315793633926122606, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1528043975388400553, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 302.00006
@@ -46933,6 +46964,14 @@ PrefabInstance:
     - target: {fileID: 1972851089871136791, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -429
+      objectReference: {fileID: 0}
+    - target: {fileID: 3363694075189605771, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3470935782084546040, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3530300688090184785, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchorMax.y
@@ -47122,6 +47161,10 @@ PrefabInstance:
       propertyPath: axeTiers.Array.data[4].purchasePrice
       value: 4000
       objectReference: {fileID: 0}
+    - target: {fileID: 5554000618509724877, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5568420132563364969, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -47202,6 +47245,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 75
       objectReference: {fileID: 0}
+    - target: {fileID: 7609653848016895271, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8212390754879670730, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -175.00006
@@ -47209,6 +47256,10 @@ PrefabInstance:
     - target: {fileID: 8212390754879670730, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -172.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8299032951817298579, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8925803922795176340, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -47222,8 +47273,13 @@ PrefabInstance:
       propertyPath: useHapticFeedback
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9210421332302689869, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4945840179710586727, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+    - {fileID: 8704289030755264353, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 1147863388203790522, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
@@ -47232,7 +47288,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1147863388203790522, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1215559612}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2234107954222228476, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2134596788}
   m_SourcePrefab: {fileID: 100100000, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
 --- !u!224 &2108574234 stripped
 RectTransform:
@@ -47806,6 +47865,23 @@ MonoBehaviour:
   upgradePriceText: {fileID: 80428763}
   displayTierCount: 5
   buttonSfxName: Button0
+--- !u!1 &2134596787 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2234107954222228476, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+  m_PrefabInstance: {fileID: 2108574233}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2134596788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2134596787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3726d34addef9254d9298d43446efc72, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VirtualJoystick
 --- !u!1 &2138361011
 GameObject:
   m_ObjectHideFlags: 0
