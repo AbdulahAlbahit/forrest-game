@@ -164,46 +164,16 @@ public class EfeBaltaKontrol : MonoBehaviour
 
     private bool EnYakinTerrainAgaciniBul(out Vector3 enYakinAgacKonumu)
     {
-        enYakinAgacKonumu = Vector3.zero;
-        float enYakinMesafeKaresi = agacEtkilesimMesafesi * agacEtkilesimMesafesi;
-        bool agacBulundu = false;
-
-        foreach (Terrain terrain in Terrain.activeTerrains)
+        if (TreeManager.Instance == null)
         {
-            if (terrain == null || terrain.terrainData == null)
-            {
-                continue;
-            }
-
-            Vector3 terrainBoyutu = terrain.terrainData.size;
-            Vector3 terrainKonumu = terrain.transform.position;
-
-            foreach (TreeInstance agac in terrain.terrainData.treeInstances)
-            {
-                if (TreeManager.Instance != null && !TreeManager.Instance.IsChoppablePrototype(agac.prototypeIndex))
-                {
-                    continue;
-                }
-
-                Vector3 agacDunyaKonumu = new Vector3(
-                    agac.position.x * terrainBoyutu.x + terrainKonumu.x,
-                    agac.position.y * terrainBoyutu.y + terrainKonumu.y,
-                    agac.position.z * terrainBoyutu.z + terrainKonumu.z);
-
-                Vector3 yatayFark = agacDunyaKonumu - transform.position;
-                yatayFark.y = 0f;
-                float mesafeKaresi = yatayFark.sqrMagnitude;
-
-                if (mesafeKaresi <= enYakinMesafeKaresi)
-                {
-                    enYakinMesafeKaresi = mesafeKaresi;
-                    enYakinAgacKonumu = agacDunyaKonumu;
-                    agacBulundu = true;
-                }
-            }
+            enYakinAgacKonumu = Vector3.zero;
+            return false;
         }
 
-        return agacBulundu;
+        return TreeManager.Instance.TryGetNearestChoppableTree(
+            transform.position,
+            agacEtkilesimMesafesi,
+            out enYakinAgacKonumu);
     }
 
     private void AgacaDon(Vector3 agacKonumu)
