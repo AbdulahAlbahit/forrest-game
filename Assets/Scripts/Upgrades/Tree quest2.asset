@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tree quest2
   m_EditorClassIdentifier: Assembly-CSharp::QuestConfig
   QuestID: Tqu2
-  QuestName: Tree felling2
+  QuestName: "A\u011Fa\xE7 Kes"
   QuestDescription: Reward for cutting down 20 trees
   TargetKey: kesilen_agac
   TargetAmount: 20

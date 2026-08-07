@@ -46982,6 +46982,18 @@ PrefabInstance:
       propertyPath: baltaKontrol
       value: 
       objectReference: {fileID: 1461704596}
+    - target: {fileID: 4261919080059640866, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4261919080059640866, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0.00088646886
+      objectReference: {fileID: 0}
+    - target: {fileID: 4261919080059640866, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.0008843726
+      objectReference: {fileID: 0}
     - target: {fileID: 4331154635086671227, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 612
@@ -47110,6 +47122,10 @@ PrefabInstance:
       propertyPath: axeTiers.Array.data[4].purchasePrice
       value: 4000
       objectReference: {fileID: 0}
+    - target: {fileID: 5568420132563364969, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5610157915325716422, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: -104.96
@@ -47117,6 +47133,10 @@ PrefabInstance:
     - target: {fileID: 5610157915325716422, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 406
+      objectReference: {fileID: 0}
+    - target: {fileID: 5697027037555541021, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5802718192198058927, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_AnchorMax.y

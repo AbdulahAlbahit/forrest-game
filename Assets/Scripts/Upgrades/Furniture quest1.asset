@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Furniture quest1
   m_EditorClassIdentifier: Assembly-CSharp::QuestConfig
   QuestID: Fqu1
-  QuestName: selling furniture1
+  QuestName: "E\u015Fya Sat"
   QuestDescription: Reward for selling 3 furniture
   TargetKey: satilan_wood
   TargetAmount: 3
