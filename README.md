@@ -1,4 +1,4 @@
-# 🪓 (Geçici Proje Adı)
+# 🪓 (FORREST GAME)
 
 Unity ile geliştirilen İzometrik ve Hyper casual tarzı oyun projesi.
 
