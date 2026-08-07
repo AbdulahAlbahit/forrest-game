@@ -165,6 +165,19 @@ public class UpgradeZoneController : MonoBehaviour
         _managedHoldProgress = 0f;
         currentPaid = 0f;
 
+        string resolvedItemId = ItemId;
+
+        if (resolvedItemId == "Truck")
+        {
+            TruckRouteController truck = FindObjectOfType<TruckRouteController>();
+            if (truck != null && (!truck.isAtHomePosition || truck.currentLoadedWood > 0 || truck.TotalLoadedProducts > 0))
+            {
+                NotificationManager.Instance?.SendNotification("Lütfen araç boşken upgrade edin!");
+                ResetProgressVisual();
+                return false;
+            }
+        }
+
         if (!ManagedDependenciesReady())
         {
             ResetProgressVisual();
@@ -181,7 +194,6 @@ public class UpgradeZoneController : MonoBehaviour
         }
 
         int price = GetCurrentPrice(oldLevel);
-        string resolvedItemId = ItemId;
         bool success = UpgradeManager.Instance.UpgradeItem(resolvedItemId, price, linkedItemIds);
         if (!success)
         {

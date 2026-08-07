@@ -53,6 +53,7 @@ public class PlayerData
     public long LastOrderResetTime;
 
     // --- Gorev (Quest) Verileri ---
+    public long LastQuestResetTime;
     /// <summary>Gorev ilerleme sayaclari. Ornek: ActiveQuests["satilan_masa"] = 4</summary>
     public SerializableDict ActiveQuests;
     /// <summary>Odulu alinmis gorev ID'lerinin listesi. Ornek: ["q_ilk_masa", "q_buyuk_satis"]</summary>
@@ -79,6 +80,7 @@ public class PlayerData
         PendingCustomerOrders = new List<CustomerOrderData>();
         NextCustomerOrderId = 1;
         LastOrderResetTime = 0;
+        LastQuestResetTime = 0;
         ActiveQuests = new SerializableDict();
         CompletedQuests = new List<string>();
     }

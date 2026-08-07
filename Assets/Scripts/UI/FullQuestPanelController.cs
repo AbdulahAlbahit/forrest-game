@@ -125,6 +125,8 @@ public class FullQuestPanelController : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded += HandleDataLoaded;
 
         ShopManager.OnItemSold += HandleItemSold;
+        if (QuestManager.Instance != null)
+            QuestManager.OnQuestsReset += RefreshList;
 
         SwitchTab(QuestTab.Active);
     }
@@ -135,6 +137,8 @@ public class FullQuestPanelController : MonoBehaviour
             CloudSaveManager.Instance.OnDataLoaded -= HandleDataLoaded;
 
         ShopManager.OnItemSold -= HandleItemSold;
+        if (QuestManager.Instance != null)
+            QuestManager.OnQuestsReset -= RefreshList;
     }
 
     private void HandleDataLoaded(PlayerData data)

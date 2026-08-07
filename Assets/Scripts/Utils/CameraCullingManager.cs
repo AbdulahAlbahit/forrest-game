@@ -66,8 +66,7 @@ namespace ForrestGame.CameraControl
             if (hasCustomCull)
             {
                 _mainCam.layerCullDistances = distances;
-                _mainCam.layerCullSpherical = true; // Use spherical culling for more accurate distance checks
-                GameLogger.Log("[CameraCulling] Spherical Layer Culling applied successfully.", this);
+                GameLogger.Log("[CameraCulling] Layer Culling applied successfully.", this);
             }
         }
     }
