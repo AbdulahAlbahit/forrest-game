@@ -22,3 +22,5 @@ MonoBehaviour:
   BaseValue: 15
   ValueGrowth: 6
   MaxLevel: 10
+  UseCharacterAttackTimings: 0
+  CharacterAttackLevels: []
