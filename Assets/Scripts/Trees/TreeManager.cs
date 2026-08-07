@@ -389,6 +389,14 @@ public class TreeManager : MonoBehaviour
 
         _activeTerrain.terrainData.treeInstances = updated;
         _activeTerrain.Flush();
+        
+        TerrainCollider tc = _activeTerrain.GetComponent<TerrainCollider>();
+        if (tc != null)
+        {
+            tc.enabled = false;
+            tc.enabled = true;
+        }
+        
         RefreshTreeInstanceCache();
     }
 
@@ -401,6 +409,14 @@ public class TreeManager : MonoBehaviour
 
         _activeTerrain.terrainData.treeInstances = updated;
         _activeTerrain.Flush();
+        
+        TerrainCollider tc = _activeTerrain.GetComponent<TerrainCollider>();
+        if (tc != null)
+        {
+            tc.enabled = false;
+            tc.enabled = true;
+        }
+        
         RefreshTreeInstanceCache();
 
         GameLogger.Log("[TreeManager] Tree respawned on terrain.", this);
@@ -408,9 +424,19 @@ public class TreeManager : MonoBehaviour
 
     private IEnumerator SpawnFelledVisuals(Vector3 pos, int typeIndex, float effectiveRespawnTime, int logCount)
     {
+        GameObject stump = null;
         if (_stumpPool.Count > 0)
         {
-            GameObject stump = _stumpPool.Dequeue();
+            stump = _stumpPool.Dequeue();
+        }
+        else if (stumpPrefab != null)
+        {
+            stump = Instantiate(stumpPrefab);
+            stump.name = "Pool_Stump_Dynamic";
+        }
+
+        if (stump != null)
+        {
             stump.transform.position = pos;
             stump.transform.localScale = Vector3.one;
             stump.transform.rotation = Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f);
@@ -419,31 +445,44 @@ public class TreeManager : MonoBehaviour
             StartCoroutine(ShrinkAndReturn(stump, _stumpPool, effectiveRespawnTime > 0 ? effectiveRespawnTime - 0.5f : disappearDelay));
         }
 
-        if (typeIndex < treeTypes.Length && treeTypes[typeIndex].fallenPool.Count > 0)
+        if (typeIndex < treeTypes.Length && treeTypes[typeIndex].fallenPrefab != null)
         {
-            GameObject fallen = treeTypes[typeIndex].fallenPool.Dequeue();
-            float randomY = UnityEngine.Random.Range(0f, 360f);
-            
-            fallen.transform.position = pos + Vector3.up * 1.2f;
-            fallen.transform.rotation = Quaternion.Euler(0f, randomY, 0f);
-            fallen.transform.localScale = Vector3.one;
-            fallen.SetActive(true);
-
-            Rigidbody rb = fallen.GetComponent<Rigidbody>();
-            if (rb != null)
+            GameObject fallen = null;
+            if (treeTypes[typeIndex].fallenPool.Count > 0)
             {
-                rb.isKinematic = false;
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-                rb.maxDepenetrationVelocity = 2f;
-
-                Vector3 pushDirection = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)).normalized;
-                Vector3 pushPoint = fallen.transform.position + Vector3.up * 3f; 
-                
-                rb.AddForceAtPosition(pushDirection * (fallTorque * 2f), pushPoint, ForceMode.Impulse);
+                fallen = treeTypes[typeIndex].fallenPool.Dequeue();
+            }
+            else
+            {
+                fallen = Instantiate(treeTypes[typeIndex].fallenPrefab);
+                fallen.name = $"Pool_{treeTypes[typeIndex].typeName}_Fallen_Dynamic";
             }
 
-            StartCoroutine(ShrinkAndReturn(fallen, treeTypes[typeIndex].fallenPool, disappearDelay, rb));
+            if (fallen != null)
+            {
+                float randomY = UnityEngine.Random.Range(0f, 360f);
+                
+                fallen.transform.position = pos + Vector3.up * 1.2f;
+                fallen.transform.rotation = Quaternion.Euler(0f, randomY, 0f);
+                fallen.transform.localScale = Vector3.one;
+                fallen.SetActive(true);
+
+                Rigidbody rb = fallen.GetComponent<Rigidbody>();
+                if (rb != null)
+                {
+                    rb.isKinematic = false;
+                    rb.linearVelocity = Vector3.zero;
+                    rb.angularVelocity = Vector3.zero;
+                    rb.maxDepenetrationVelocity = 2f;
+
+                    Vector3 pushDirection = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f)).normalized;
+                    Vector3 pushPoint = fallen.transform.position + Vector3.up * 3f; 
+                    
+                    rb.AddForceAtPosition(pushDirection * (fallTorque * 2f), pushPoint, ForceMode.Impulse);
+                }
+
+                StartCoroutine(ShrinkAndReturn(fallen, treeTypes[typeIndex].fallenPool, disappearDelay, rb));
+            }
         }
 
         if (woodLogPrefab != null)
