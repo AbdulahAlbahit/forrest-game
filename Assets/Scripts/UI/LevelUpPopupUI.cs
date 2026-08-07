@@ -131,11 +131,19 @@ namespace ForrestGame.UI
 
             if (canvas == null)
             {
-                // Fallback
-                canvas = FindFirstObjectByType<Canvas>();
+                // Create a temporary ScreenSpaceOverlay canvas for the popup
+                GameObject canvasObj = new GameObject("LevelUpCanvas", typeof(Canvas), typeof(UnityEngine.UI.CanvasScaler), typeof(UnityEngine.UI.GraphicRaycaster));
+                canvas = canvasObj.GetComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 100;
+                
+                UnityEngine.UI.CanvasScaler scaler = canvasObj.GetComponent<UnityEngine.UI.CanvasScaler>();
+                scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920, 1080);
+                
+                // Optional: Destroy it after the popup is done
+                Destroy(canvasObj, 5f);
             }
-
-            if (canvas == null) return;
 
             // Görsel & Dokunsal efektler
             UIScreenFlash.Instance?.Flash(new Color(0.2f, 0.75f, 1f, 1f), 0.35f, 0.28f);

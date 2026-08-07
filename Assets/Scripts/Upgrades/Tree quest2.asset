@@ -15,7 +15,7 @@ MonoBehaviour:
   QuestID: Tqu2
   QuestName: Tree felling2
   QuestDescription: Reward for cutting down 20 trees
-  TargetKey: Tree felling2
+  TargetKey: kesilen_agac
   TargetAmount: 20
   RewardGold: 5
   RewardXP: 15

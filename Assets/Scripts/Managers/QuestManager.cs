@@ -111,7 +111,7 @@ namespace ForrestGame.Managers
                     if (quest == null) continue;
                     if (data.CompletedQuests.Contains(quest.QuestID)) continue;
 
-                    if (quest.TargetKey.ToLower() == actionKey.ToLower())
+                    if (quest.TargetKey.Trim().ToLower() == actionKey.Trim().ToLower())
                     {
                         int currentProgress = data.ActiveQuests.Get(quest.QuestID, 0);
                         int newProgress = currentProgress + amount;

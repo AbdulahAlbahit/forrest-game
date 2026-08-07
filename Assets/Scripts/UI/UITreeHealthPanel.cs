@@ -40,6 +40,7 @@ namespace ForrestGame.UI
 
             if (healthSlider != null)
             {
+                healthSlider.wholeNumbers = false;
                 healthSlider.minValue = 0f;
                 healthSlider.maxValue = 1f;
                 healthSlider.value = 1f;

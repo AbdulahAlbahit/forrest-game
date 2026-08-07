@@ -15,7 +15,7 @@ MonoBehaviour:
   QuestID: Fqu1
   QuestName: selling furniture1
   QuestDescription: Reward for selling 3 furniture
-  TargetKey: selling furniture1
+  TargetKey: satilan_wood
   TargetAmount: 3
   RewardGold: 5
   RewardXP: 10
