@@ -117,7 +117,24 @@ namespace ForrestGame.UI
         /// </summary>
         public void ShowLevelUpPopup(int newLevel)
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
+            Canvas[] allCanvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+            Canvas canvas = null;
+
+            foreach (var c in allCanvases)
+            {
+                if (c.renderMode == RenderMode.ScreenSpaceOverlay || c.renderMode == RenderMode.ScreenSpaceCamera)
+                {
+                    canvas = c;
+                    break;
+                }
+            }
+
+            if (canvas == null)
+            {
+                // Fallback
+                canvas = FindFirstObjectByType<Canvas>();
+            }
+
             if (canvas == null) return;
 
             // Görsel & Dokunsal efektler

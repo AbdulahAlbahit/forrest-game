@@ -89,6 +89,7 @@ public class TreeManager : MonoBehaviour
     // SFX Actions for AudioManager
     public static event Action<Vector3> OnTreeFelledAction;
     public static event Action<Vector3> OnTreeHitAction;
+    public static event Action<int, int> OnTreeHealthChanged; // (currentHealth, maxHealth)
 
     private Terrain _activeTerrain;
     private Dictionary<int, int> _damagedTrees = new Dictionary<int, int>();
@@ -221,6 +222,7 @@ public class TreeManager : MonoBehaviour
         GameLogger.Log($"[TreeManager] Tree Hit! Health: {_damagedTrees[treeIndex]}/{treeMaxHealth}", this);
         
         OnTreeHitAction?.Invoke(treeWorldPos);
+        OnTreeHealthChanged?.Invoke(_damagedTrees[treeIndex], treeMaxHealth);
 
         if (_damagedTrees[treeIndex] <= 0)
         {
@@ -244,6 +246,7 @@ public class TreeManager : MonoBehaviour
 
             OnTreeFelled?.Invoke(treeWorldPos);
             OnTreeFelledAction?.Invoke(treeWorldPos);
+            OnTreeHealthChanged?.Invoke(0, treeMaxHealth); // Ağaç devrildi, canı 0 olarak bildir
 
             if (XPManager.Instance != null)
             {
