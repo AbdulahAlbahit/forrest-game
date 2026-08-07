@@ -22,6 +22,9 @@ namespace ForrestGame.UI
         [Tooltip("Serbest bırakma / yaylanma süresi (saniye).")]
         [SerializeField] private float releaseDuration = 0.12f;
 
+        [Tooltip("Bu buton tıklandığında haptic titreşim versin mi?")]
+        public bool useHapticFeedback = true;
+
         [Tooltip("Sadece buton aktif/etkileşimli durumdayken mi çalışsın?")]
         [SerializeField] private bool checkButtonInteractable = true;
 
@@ -72,7 +75,10 @@ namespace ForrestGame.UI
                 return;
             }
 
-            UIHapticFeedback.Light();
+            if (useHapticFeedback)
+            {
+                UIHapticFeedback.Light();
+            }
 
             // Click olayında dokunmanın tescil edildiğini hissettirmek için mikro bounce efekti
             StartScaleAnimation(initialScale * 1.05f, 0.05f, () =>

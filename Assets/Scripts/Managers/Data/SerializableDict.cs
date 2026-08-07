@@ -99,4 +99,13 @@ public class SerializableDict
             values.Add(System.Convert.ToInt32(kvp.Value));
         }
     }
+
+    /// <summary>
+    /// Tum verileri temizler.
+    /// </summary>
+    public void Clear()
+    {
+        keys.Clear();
+        values.Clear();
+    }
 }

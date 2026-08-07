@@ -22719,6 +22719,14 @@ PrefabInstance:
       propertyPath: 'tumGorevler.Array.data[3]'
       value: 
       objectReference: {fileID: 11400000, guid: f1dd6be8726ccd041ab1fc001ad63645, type: 2}
+    - target: {fileID: 8901936520205673595, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: maxIntervalSeconds
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 8901936520205673595, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
+      propertyPath: minIntervalSeconds
+      value: 100
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 6624927814134773921, guid: 0bfe58869490ecc4c9cae444cd080594, type: 3}
@@ -46570,6 +46578,10 @@ PrefabInstance:
     - target: {fileID: 8925803922795176340, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: OpenPanel
+      objectReference: {fileID: 0}
+    - target: {fileID: 9207102063508853320, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
+      propertyPath: useHapticFeedback
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4945840179710586727, guid: b63fbe74ad0c58e4ca5eed1a0c1e2493, type: 3}
